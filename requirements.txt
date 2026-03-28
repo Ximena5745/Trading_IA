@@ -1,0 +1,35 @@
+# Core
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+pydantic==2.6.0
+pydantic-settings==2.2.1
+python-jose[cryptography]==3.3.0
+slowapi==0.1.9
+
+# Data
+sqlalchemy[asyncio]==2.0.28
+asyncpg==0.29.0
+alembic==1.13.1
+redis==5.0.1
+pandas==2.2.0
+numpy==1.26.4
+
+# ML
+lightgbm==4.3.0
+xgboost==2.0.3
+scikit-learn==1.4.1
+shap==0.44.1
+pandas-ta==0.3.14b
+vectorbt==0.26.1
+optuna==3.5.0
+hmmlearn==0.3.0
+
+# Binance
+python-binance==1.0.19
+
+# Observability
+structlog==24.1.0
+prometheus-client==0.20.0
+
+# Alerts
+python-telegram-bot==21.0.1
