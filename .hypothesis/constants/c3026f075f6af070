@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\features\feature_validator.py
+# hypothesis_version: 6.151.9
+
+[0.5, 5.0, 100, 'atr_14', 'bb_width', 'ema_200', 'ema_50', 'macd_line', 'rsi_14', 'rsi_7', 'volume_ratio']

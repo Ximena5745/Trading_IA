@@ -3,6 +3,7 @@ Module: core/ingestion/binance_client.py
 Responsibility: Binance REST API client
 Dependencies: python-binance, base_client, models, logger
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -94,7 +95,11 @@ class BinanceClient(ExchangeClient):
             raise ExecutionError("BinanceClient not connected")
         try:
             account = await self._client.get_account()
-            return {b["asset"]: float(b["free"]) for b in account["balances"] if float(b["free"]) > 0}
+            return {
+                b["asset"]: float(b["free"])
+                for b in account["balances"]
+                if float(b["free"]) > 0
+            }
         except BinanceAPIException as e:
             raise ExecutionError(f"Binance API error: {e}") from e
 

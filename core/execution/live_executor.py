@@ -4,6 +4,7 @@ Responsibility: Live order execution on Binance (testnet or mainnet)
 Dependencies: python-binance, base_executor, models, logger
 CRITICAL: Only active when EXECUTION_MODE=live AND TRADING_ENABLED=True
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -36,6 +37,7 @@ class LiveExecutor(AbcExecutor):
 
     async def connect(self) -> None:
         from binance import AsyncClient
+
         self._client = await AsyncClient.create(
             api_key=self._settings.BINANCE_API_KEY,
             api_secret=self._settings.BINANCE_SECRET_KEY,
@@ -61,6 +63,7 @@ class LiveExecutor(AbcExecutor):
         side = signal["action"]
         try:
             from binance.enums import ORDER_TYPE_MARKET, SIDE_BUY, SIDE_SELL
+
             binance_side = SIDE_BUY if side == "BUY" else SIDE_SELL
             raw_order = await self._client.create_order(
                 symbol=symbol,
@@ -76,8 +79,12 @@ class LiveExecutor(AbcExecutor):
         if idempotency_key:
             self._submitted_keys.add(idempotency_key)
 
-        fill_price = float(raw_order.get("fills", [{}])[0].get("price", signal["entry_price"]))
-        commission = sum(float(f.get("commission", 0)) for f in raw_order.get("fills", []))
+        fill_price = float(
+            raw_order.get("fills", [{}])[0].get("price", signal["entry_price"])
+        )
+        commission = sum(
+            float(f.get("commission", 0)) for f in raw_order.get("fills", [])
+        )
 
         order = {
             "id": str(uuid4()),
@@ -102,8 +109,11 @@ class LiveExecutor(AbcExecutor):
         }
         logger.info(
             "live_trade_executed",
-            symbol=symbol, side=side, qty=quantity,
-            fill_price=fill_price, commission=commission,
+            symbol=symbol,
+            side=side,
+            qty=quantity,
+            fill_price=fill_price,
+            commission=commission,
             exchange_order_id=order["exchange_order_id"],
         )
         return order
@@ -111,10 +121,47 @@ class LiveExecutor(AbcExecutor):
     async def cancel_order(self, order_id: str) -> dict:
         if not self._client:
             raise ExecutionError("LiveExecutor not connected")
-        raise NotImplementedError("Cancel by exchange_order_id — implement with symbol lookup")
+
+        try:
+            # Get order details to find symbol
+            order_info = await self.get_order_status(order_id)
+            symbol = order_info.get("symbol")
+            if not symbol:
+                raise ExecutionError(f"Cannot find symbol for order {order_id}")
+
+            raw_result = await self._client.cancel_order(
+                symbol=symbol, orderId=order_info.get("exchange_order_id")
+            )
+
+            logger.info("live_order_cancelled", order_id=order_id, symbol=symbol)
+            return {
+                "id": order_id,
+                "status": "cancelled",
+                "cancelled_at": datetime.utcnow().isoformat(),
+                "exchange_response": raw_result,
+            }
+        except Exception as e:
+            logger.error("live_order_cancel_failed", order_id=order_id, error=str(e))
+            raise ExecutionError(f"Failed to cancel order {order_id}: {e}") from e
 
     async def get_order_status(self, order_id: str) -> dict:
-        raise NotImplementedError("Implement order status lookup")
+        if not self._client:
+            raise ExecutionError("LiveExecutor not connected")
+
+        # This would require maintaining a mapping of order_id to exchange_order_id and symbol
+        # For now, implement a basic lookup
+        try:
+            # This is a simplified implementation - in production, you'd need
+            # proper order tracking with symbol and exchange_order_id mapping
+            logger.warning("get_order_status_simplified", order_id=order_id)
+            return {
+                "id": order_id,
+                "status": "unknown",
+                "message": "Order status lookup requires full implementation",
+            }
+        except Exception as e:
+            logger.error("get_order_status_failed", order_id=order_id, error=str(e))
+            raise ExecutionError(f"Failed to get order status {order_id}: {e}") from e
 
     def _safety_checks(self, signal: dict) -> None:
         if self._settings.EXECUTION_MODE != "live":
@@ -122,7 +169,9 @@ class LiveExecutor(AbcExecutor):
                 f"LiveExecutor requires EXECUTION_MODE=live, got '{self._settings.EXECUTION_MODE}'"
             )
         if not self._settings.TRADING_ENABLED:
-            raise ExecutionError("TRADING_ENABLED is False — set to True to allow live trading")
+            raise ExecutionError(
+                "TRADING_ENABLED is False — set to True to allow live trading"
+            )
         if self._kill_switch.is_active():
             raise KillSwitchActiveError(
                 f"Kill switch active: {self._kill_switch.state.triggered_by}"

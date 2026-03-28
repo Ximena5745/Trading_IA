@@ -3,10 +3,10 @@ Module: core/portfolio/portfolio_manager.py
 Responsibility: Capital allocation across strategies with Kelly criterion
 Dependencies: models, settings, logger
 """
+
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from core.config.constants import HARD_LIMITS
@@ -42,7 +42,9 @@ class PortfolioManager:
     def get_available_capital(self) -> float:
         return self._portfolio.available_capital
 
-    def open_position(self, signal: Signal, quantity: float, fill_price: float) -> Position:
+    def open_position(
+        self, signal: Signal, quantity: float, fill_price: float
+    ) -> Position:
         position = Position(
             symbol=signal.symbol,
             quantity=quantity,
@@ -58,10 +60,18 @@ class PortfolioManager:
         self._portfolio.positions.append(position)
         self._update_risk_exposure()
         self._portfolio.updated_at = datetime.utcnow()
-        logger.info("position_opened", symbol=signal.symbol, qty=quantity, price=fill_price, cost=cost)
+        logger.info(
+            "position_opened",
+            symbol=signal.symbol,
+            qty=quantity,
+            price=fill_price,
+            cost=cost,
+        )
         return position
 
-    def close_position(self, symbol: str, exit_price: float, strategy_id: str) -> Optional[float]:
+    def close_position(
+        self, symbol: str, exit_price: float, strategy_id: str
+    ) -> float | None:
         for i, pos in enumerate(self._portfolio.positions):
             if pos.symbol == symbol and pos.strategy_id == strategy_id:
                 pnl = (exit_price - pos.entry_price) * pos.quantity
@@ -71,17 +81,28 @@ class PortfolioManager:
                 self._portfolio.daily_pnl += pnl
                 self._portfolio.positions.pop(i)
                 self._update_metrics()
-                logger.info("position_closed", symbol=symbol, pnl=round(pnl, 4), exit_price=exit_price)
+                logger.info(
+                    "position_closed",
+                    symbol=symbol,
+                    pnl=round(pnl, 4),
+                    exit_price=exit_price,
+                )
                 return pnl
-        logger.warning("close_position_not_found", symbol=symbol, strategy_id=strategy_id)
+        logger.warning(
+            "close_position_not_found", symbol=symbol, strategy_id=strategy_id
+        )
         return None
 
     def update_prices(self, prices: dict[str, float]) -> None:
         for pos in self._portfolio.positions:
             if pos.symbol in prices:
                 pos.current_price = prices[pos.symbol]
-                pos.unrealized_pnl = (pos.current_price - pos.entry_price) * pos.quantity
-                pos.unrealized_pnl_pct = pos.unrealized_pnl / (pos.entry_price * pos.quantity)
+                pos.unrealized_pnl = (
+                    pos.current_price - pos.entry_price
+                ) * pos.quantity
+                pos.unrealized_pnl_pct = pos.unrealized_pnl / (
+                    pos.entry_price * pos.quantity
+                )
         self._update_metrics()
 
     def kelly_fraction(self, win_rate: float, avg_win: float, avg_loss: float) -> float:
@@ -115,26 +136,25 @@ class PortfolioManager:
 
     def _update_risk_exposure(self) -> None:
         total_at_risk = sum(
-            abs(pos.entry_price - 0) * pos.quantity
-            for pos in self._portfolio.positions
+            abs(pos.entry_price - 0) * pos.quantity for pos in self._portfolio.positions
         )
         self._portfolio.risk_exposure = (
             total_at_risk / self._portfolio.total_capital
-            if self._portfolio.total_capital > 0 else 0.0
+            if self._portfolio.total_capital > 0
+            else 0.0
         )
 
     def _update_metrics(self) -> None:
-        unrealized = sum(pos.unrealized_pnl for pos in self._portfolio.positions)
-        self._portfolio.total_capital = (
-            self._portfolio.available_capital
-            + sum(pos.current_price * pos.quantity for pos in self._portfolio.positions)
+        self._portfolio.total_capital = self._portfolio.available_capital + sum(
+            pos.current_price * pos.quantity for pos in self._portfolio.positions
         )
         if self._portfolio.total_capital > self._peak_capital:
             self._peak_capital = self._portfolio.total_capital
 
         self._portfolio.drawdown_current = (
             (self._peak_capital - self._portfolio.total_capital) / self._peak_capital
-            if self._peak_capital > 0 else 0.0
+            if self._peak_capital > 0
+            else 0.0
         )
         self._portfolio.drawdown_max = max(
             self._portfolio.drawdown_max, self._portfolio.drawdown_current

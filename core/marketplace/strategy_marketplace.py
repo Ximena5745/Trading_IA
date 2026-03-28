@@ -3,11 +3,11 @@ Module: core/marketplace/strategy_marketplace.py
 Responsibility: Strategy marketplace — publish, discover, subscribe and review
 Dependencies: marketplace.models, strategy_registry, backtesting, logger
 """
+
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from core.marketplace.models import (
     ListingStatus,
@@ -31,7 +31,7 @@ class StrategyMarketplace:
 
     def __init__(self):
         self._listings: dict[str, StrategyListing] = {}
-        self._reviews: dict[str, list[MarketplaceReview]] = {}   # listing_id → reviews
+        self._reviews: dict[str, list[MarketplaceReview]] = {}  # listing_id → reviews
         self._subscriptions: dict[str, list[Subscription]] = {}  # user_id → subs
 
     # ── Publishing ─────────────────────────────────────────────────────────
@@ -79,7 +79,9 @@ class StrategyMarketplace:
         listing = self._get_or_raise(listing_id)
         listing.status = ListingStatus.REJECTED
         listing.updated_at = datetime.utcnow()
-        logger.warning("marketplace_listing_rejected", listing_id=listing_id, reason=reason)
+        logger.warning(
+            "marketplace_listing_rejected", listing_id=listing_id, reason=reason
+        )
         return listing
 
     def suspend(self, listing_id: str) -> StrategyListing:
@@ -93,32 +95,39 @@ class StrategyMarketplace:
 
     def list_active(
         self,
-        tag: Optional[str] = None,
-        tier: Optional[SubscriptionTier] = None,
+        tag: str | None = None,
+        tier: SubscriptionTier | None = None,
         sort_by: str = "subscriber_count",
         limit: int = 50,
     ) -> list[dict]:
         active = [
-            l for l in self._listings.values()
-            if l.status == ListingStatus.ACTIVE
+            listing
+            for listing in self._listings.values()
+            if listing.status == ListingStatus.ACTIVE
         ]
         if tag:
-            active = [l for l in active if tag.lower() in [t.lower() for t in l.tags]]
+            active = [
+                listing
+                for listing in active
+                if tag.lower() in [t.lower() for t in listing.tags]
+            ]
         if tier:
-            active = [l for l in active if l.tier == tier]
+            active = [listing for listing in active if listing.tier == tier]
 
         sort_key = {
-            "subscriber_count": lambda l: l.subscriber_count,
-            "sharpe": lambda l: l.backtest_sharpe or 0.0,
-            "win_rate": lambda l: l.backtest_win_rate or 0.0,
-        }.get(sort_by, lambda l: l.subscriber_count)
+            "subscriber_count": lambda lst: lst.subscriber_count,
+            "sharpe": lambda lst: lst.backtest_sharpe or 0.0,
+            "win_rate": lambda lst: lst.backtest_win_rate or 0.0,
+        }.get(sort_by, lambda lst: lst.subscriber_count)
 
         active.sort(key=sort_key, reverse=True)
-        return [l.public_view() for l in active[:limit]]
+        return [listing.public_view() for listing in active[:limit]]
 
-    def get_listing(self, listing_id: str, requester_id: Optional[str] = None) -> dict:
+    def get_listing(self, listing_id: str, requester_id: str | None = None) -> dict:
         listing = self._get_or_raise(listing_id)
-        is_subscribed = self._is_subscribed(requester_id, listing_id) if requester_id else False
+        is_subscribed = (
+            self._is_subscribed(requester_id, listing_id) if requester_id else False
+        )
         return listing.subscriber_view() if is_subscribed else listing.public_view()
 
     # ── Reviews ────────────────────────────────────────────────────────────
@@ -150,7 +159,7 @@ class StrategyMarketplace:
     def get_reviews(self, listing_id: str) -> list[dict]:
         return [r.model_dump() for r in self._reviews.get(listing_id, [])]
 
-    def average_rating(self, listing_id: str) -> Optional[float]:
+    def average_rating(self, listing_id: str) -> float | None:
         reviews = self._reviews.get(listing_id, [])
         if not reviews:
             return None
@@ -200,37 +209,45 @@ class StrategyMarketplace:
                     listing_id=listing_id,
                 )
                 return
-        raise KeyError(f"Active subscription not found for user {user_id}, listing {listing_id}")
+        raise KeyError(
+            f"Active subscription not found for user {user_id}, listing {listing_id}"
+        )
 
     def get_user_subscriptions(self, user_id: str) -> list[dict]:
         return [
-            s.model_dump()
-            for s in self._subscriptions.get(user_id, [])
-            if s.active
+            s.model_dump() for s in self._subscriptions.get(user_id, []) if s.active
         ]
 
     # ── Stats ──────────────────────────────────────────────────────────────
 
     def get_stats(self) -> MarketplaceStats:
-        active = [l for l in self._listings.values() if l.status == ListingStatus.ACTIVE]
-        sharpe_values = [l.backtest_sharpe for l in active if l.backtest_sharpe is not None]
-        top = max(active, key=lambda l: l.subscriber_count, default=None)
+        active = [
+            lst for lst in self._listings.values() if lst.status == ListingStatus.ACTIVE
+        ]
+        sharpe_values = [
+            lst.backtest_sharpe for lst in active if lst.backtest_sharpe is not None
+        ]
+        top = max(active, key=lambda lst: lst.subscriber_count, default=None)
 
         return MarketplaceStats(
             total_listings=len(self._listings),
             active_listings=len(active),
-            total_subscribers=sum(l.subscriber_count for l in active),
+            total_subscribers=sum(lst.subscriber_count for lst in active),
             top_strategy_id=top.strategy_id if top else None,
-            avg_sharpe=round(sum(sharpe_values) / len(sharpe_values), 3) if sharpe_values else None,
+            avg_sharpe=(
+                round(sum(sharpe_values) / len(sharpe_values), 3)
+                if sharpe_values
+                else None
+            ),
         )
 
     def update_performance(
         self,
         listing_id: str,
-        backtest_sharpe: Optional[float] = None,
-        backtest_win_rate: Optional[float] = None,
-        backtest_max_drawdown: Optional[float] = None,
-        backtest_profit_factor: Optional[float] = None,
+        backtest_sharpe: float | None = None,
+        backtest_win_rate: float | None = None,
+        backtest_max_drawdown: float | None = None,
+        backtest_profit_factor: float | None = None,
     ) -> None:
         listing = self._get_or_raise(listing_id)
         if backtest_sharpe is not None:

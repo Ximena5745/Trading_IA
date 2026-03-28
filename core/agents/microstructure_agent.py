@@ -3,9 +3,8 @@ Module: core/agents/microstructure_agent.py
 Responsibility: Order book L2 analysis for buy/sell pressure
 Dependencies: base_agent, models, logger
 """
-from __future__ import annotations
 
-from datetime import datetime
+from __future__ import annotations
 
 from core.agents.base_agent import AbcAgent
 from core.exceptions import AgentPredictionError
@@ -38,7 +37,9 @@ class MicrostructureAgent(AbcAgent):
             spread = features.bid_ask_spread or 0.0
 
             score = self._compute_score(imbalance, spread)
-            direction = "BUY" if score > 0.3 else ("SELL" if score < -0.3 else "NEUTRAL")
+            direction = (
+                "BUY" if score > 0.3 else ("SELL" if score < -0.3 else "NEUTRAL")
+            )
             confidence = min(abs(imbalance) * 1.5, 1.0)
 
             return AgentOutput(
@@ -74,7 +75,10 @@ class MicrostructureAgent(AbcAgent):
         best_ask = float(asks[0][0])
         spread = (best_ask - best_bid) / best_bid if best_bid > 0 else 0.0
 
-        return {"order_book_imbalance": round(imbalance, 6), "bid_ask_spread": round(spread, 6)}
+        return {
+            "order_book_imbalance": round(imbalance, 6),
+            "bid_ask_spread": round(spread, 6),
+        }
 
     def _compute_score(self, imbalance: float, spread: float) -> float:
         return max(-1.0, min(1.0, imbalance * 0.8 - spread * 0.2))

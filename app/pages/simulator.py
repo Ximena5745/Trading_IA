@@ -2,6 +2,7 @@
 Module: app/pages/simulator.py
 Responsibility: Streamlit "what if" historical simulator — interactive scenario analysis
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -47,6 +48,7 @@ def _submit_simulation(payload: dict) -> dict | None:
 
 def _poll_results(job_id: str, max_attempts: int = 20) -> dict | None:
     import time
+
     for _ in range(max_attempts):
         try:
             r = requests.get(
@@ -79,8 +81,6 @@ def render_equity_curve(equity_curve: list[dict]) -> None:
         return
     df = pd.DataFrame(equity_curve)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
-
-    in_pos = df[df.get("in_position", pd.Series([False] * len(df))) == True]
 
     fig = go.Figure()
     fig.add_trace(
@@ -145,19 +145,36 @@ def render_trade_analysis(trades: list[dict]) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
     st.dataframe(
-        df[["entry_ts", "exit_ts", "side", "entry_price", "exit_price", "net_pnl", "bars_held"]
-           if all(c in df.columns for c in ["entry_ts", "bars_held"]) else df.columns.tolist()],
+        df[
+            (
+                [
+                    "entry_ts",
+                    "exit_ts",
+                    "side",
+                    "entry_price",
+                    "exit_price",
+                    "net_pnl",
+                    "bars_held",
+                ]
+                if all(c in df.columns for c in ["entry_ts", "bars_held"])
+                else df.columns.tolist()
+            )
+        ],
         use_container_width=True,
     )
 
 
 def render():
     st.title("🔬 Historical Simulator")
-    st.markdown("Run any strategy on any historical date range and see what would have happened.")
+    st.markdown(
+        "Run any strategy on any historical date range and see what would have happened."
+    )
 
     # ── Configuration form ─────────────────────────────────────────────────
     strategies = _fetch_strategies()
-    strategy_options = {s.get("name", s.get("strategy_id")): s.get("strategy_id") for s in strategies}
+    strategy_options = {
+        s.get("name", s.get("strategy_id")): s.get("strategy_id") for s in strategies
+    }
 
     with st.form("sim_form"):
         col1, col2 = st.columns(2)
@@ -167,18 +184,30 @@ def render():
                 "Strategy",
                 options=list(strategy_options.keys()) or ["ema_rsi", "mean_reversion"],
             )
-            initial_capital = st.number_input("Initial Capital (USD)", value=10_000.0, step=1000.0)
+            initial_capital = st.number_input(
+                "Initial Capital (USD)", value=10_000.0, step=1000.0
+            )
 
         with col2:
-            start_date = st.date_input("Start Date", value=datetime.now() - timedelta(days=180))
-            end_date = st.date_input("End Date", value=datetime.now() - timedelta(days=1))
-            risk_pct = st.slider("Risk per Trade (%)", min_value=0.5, max_value=5.0, value=2.0, step=0.5)
+            start_date = st.date_input(
+                "Start Date", value=datetime.now() - timedelta(days=180)
+            )
+            end_date = st.date_input(
+                "End Date", value=datetime.now() - timedelta(days=1)
+            )
+            risk_pct = st.slider(
+                "Risk per Trade (%)", min_value=0.5, max_value=5.0, value=2.0, step=0.5
+            )
 
         col3, col4 = st.columns(2)
         with col3:
-            commission = st.number_input("Commission (%)", value=0.10, step=0.01, format="%.2f")
+            commission = st.number_input(
+                "Commission (%)", value=0.10, step=0.01, format="%.2f"
+            )
         with col4:
-            slippage = st.number_input("Slippage (%)", value=0.05, step=0.01, format="%.2f")
+            slippage = st.number_input(
+                "Slippage (%)", value=0.05, step=0.01, format="%.2f"
+            )
 
         run_btn = st.form_submit_button("▶️ Run Simulation", use_container_width=True)
 
@@ -239,6 +268,7 @@ def render():
 
     # ── Export ─────────────────────────────────────────────────────────────
     import json
+
     st.download_button(
         "⬇️ Export Results (JSON)",
         data=json.dumps(results, indent=2),

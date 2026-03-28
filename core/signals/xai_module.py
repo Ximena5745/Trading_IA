@@ -3,6 +3,7 @@ Module: core/signals/xai_module.py
 Responsibility: Convert SHAP values into human-readable explanations
 Dependencies: models, logger
 """
+
 from __future__ import annotations
 
 from core.models import AgentOutput, ConsensusOutput, SignalExplanationFactor
@@ -49,7 +50,11 @@ class XAIModule:
             direction = "bullish" if shap_val > 0 else "bearish"
             feature_val = shap_val  # use shap as proxy when raw value unavailable
             desc_fn = FEATURE_DESCRIPTIONS.get(feature)
-            description = desc_fn(feature_val, shap_val) if desc_fn else f"{feature}: {shap_val:+.4f}"
+            description = (
+                desc_fn(feature_val, shap_val)
+                if desc_fn
+                else f"{feature}: {shap_val:+.4f}"
+            )
             factors.append(
                 SignalExplanationFactor(
                     factor=feature,
@@ -76,6 +81,7 @@ class XAIModule:
     @staticmethod
     def _get_lead_agent(consensus: ConsensusOutput) -> AgentOutput | None:
         from core.consensus.voting_engine import AGENT_WEIGHTS
+
         best = None
         best_weight = -1.0
         for output in consensus.agent_outputs:

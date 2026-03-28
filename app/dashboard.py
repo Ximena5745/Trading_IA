@@ -3,6 +3,7 @@ Module: app/dashboard.py
 Responsibility: Streamlit MVP dashboard entry point
 Dependencies: streamlit
 """
+
 import streamlit as st
 
 st.set_page_config(

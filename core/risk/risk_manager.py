@@ -3,11 +3,11 @@ Module: core/risk/risk_manager.py
 Responsibility: Validate signals and enforce all risk limits
 Dependencies: settings, kill_switch, position_sizer, constants
 """
+
 from __future__ import annotations
 
 from core.config.constants import HARD_LIMITS
 from core.config.settings import Settings
-from core.exceptions import KillSwitchActiveError, RiskLimitExceededError
 from core.observability.logger import get_logger
 from core.risk.kill_switch import KillSwitch
 from core.risk.position_sizer import PositionSizer
@@ -42,7 +42,9 @@ class RiskManager:
 
         rr = signal.get("risk_reward_ratio", 0.0)
         if rr < HARD_LIMITS["min_risk_reward_ratio"]:
-            reason = f"R:R ratio too low ({rr:.2f} < {HARD_LIMITS['min_risk_reward_ratio']})"
+            reason = (
+                f"R:R ratio too low ({rr:.2f} < {HARD_LIMITS['min_risk_reward_ratio']})"
+            )
             logger.warning("signal_rejected", reason=reason)
             return False, reason
 

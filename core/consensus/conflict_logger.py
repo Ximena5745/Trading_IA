@@ -3,6 +3,7 @@ Module: core/consensus/conflict_logger.py
 Responsibility: Log explicit disagreements between agents
 Dependencies: logger
 """
+
 from __future__ import annotations
 
 from core.models import AgentOutput
@@ -18,7 +19,9 @@ class ConflictLogger:
         directions = [a.direction for a in agent_outputs if a.direction != "NEUTRAL"]
 
         if len(set(directions)) > 1:
-            summary = ", ".join(f"{a.agent_id}={a.direction}({a.score:+.2f})" for a in agent_outputs)
+            summary = ", ".join(
+                f"{a.agent_id}={a.direction}({a.score:+.2f})" for a in agent_outputs
+            )
             conflicts.append(f"Direction conflict: {summary}")
 
         high_conf = [a for a in agent_outputs if a.confidence >= 0.70]
@@ -26,7 +29,7 @@ class ConflictLogger:
             dirs = {a.direction for a in high_conf}
             if len(dirs) > 1:
                 conflicts.append(
-                    f"High-confidence conflict: "
+                    "High-confidence conflict: "
                     + ", ".join(f"{a.agent_id}={a.direction}" for a in high_conf)
                 )
 

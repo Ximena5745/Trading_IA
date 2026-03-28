@@ -3,9 +3,8 @@ Module: api/routes/execution.py
 Responsibility: Order execution, cancellation and order tracking endpoints
 Dependencies: executor, order_tracker, risk_manager, auth dependencies
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -54,17 +53,19 @@ class ExecuteRequest(BaseModel):
     stop_loss: float
     take_profit: float
     confidence: float
-    idempotency_key: Optional[str] = None
+    idempotency_key: str | None = None
 
 
-@router.post("", dependencies=[Depends(require_trader)], status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "", dependencies=[Depends(require_trader)], status_code=status.HTTP_202_ACCEPTED
+)
 async def execute_signal(
     req: ExecuteRequest,
     user=Depends(get_current_user),
 ):
     """Submit a signal for execution after risk validation."""
     rm = _get_rm()
-    ot = _get_ot()
+    _get_ot()  # validate tracker is initialized
 
     # Build a minimal Signal for risk validation
     signal = Signal(
@@ -76,7 +77,11 @@ async def execute_signal(
         take_profit=req.take_profit,
         confidence=req.confidence,
         idempotency_key=req.idempotency_key or req.signal_id,
-        explanation=None,
+        explanation=[],
+        summary=f"API signal: {req.direction} {req.symbol}",
+        regime="bull_trending",  # Default regime for API signals
+        strategy_id="api_manual",
+        status="pending",
     )
 
     approved, reason = rm.validate_signal(signal, portfolio=None)
@@ -108,7 +113,7 @@ async def execute_signal(
 
 
 @router.get("/orders")
-async def get_orders(symbol: Optional[str] = None, user=Depends(get_current_user)):
+async def get_orders(symbol: str | None = None, user=Depends(get_current_user)):
     """Return open orders, optionally filtered by symbol."""
     ot = _get_ot()
     orders = ot.get_open_orders(symbol=symbol)

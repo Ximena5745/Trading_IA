@@ -3,6 +3,7 @@ Module: core/ingestion/base_client.py
 Responsibility: Abstract interface for exchange clients
 Dependencies: models
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

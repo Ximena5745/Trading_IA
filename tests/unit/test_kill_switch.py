@@ -2,18 +2,21 @@
 Tests for KillSwitch — property-based with Hypothesis.
 Every circuit breaker must trigger without exception when its threshold is crossed.
 """
+
 from __future__ import annotations
 
-import pytest
-from hypothesis import given, settings as h_settings
-from hypothesis import strategies as st
 from unittest.mock import MagicMock
+
+from hypothesis import given
+from hypothesis import strategies as st
 
 from core.config.settings import Settings
 from core.risk.kill_switch import KillSwitch
 
 
-def make_settings(daily_loss_limit: float = 0.05, max_consecutive: int = 5, max_drawdown: float = 0.15) -> Settings:
+def make_settings(
+    daily_loss_limit: float = 0.05, max_consecutive: int = 5, max_drawdown: float = 0.15
+) -> Settings:
     s = MagicMock(spec=Settings)
     s.DAILY_LOSS_LIMIT_PCT = daily_loss_limit
     s.MAX_CONSECUTIVE_LOSSES = max_consecutive
@@ -30,7 +33,9 @@ class TestKillSwitchDailyLoss:
         ks = KillSwitch(make_settings(daily_loss_limit=limit))
         ks.check_and_trigger(daily_pnl_pct, drawdown_current=0.0, recent_trades=[])
         if daily_pnl_pct <= -limit:
-            assert ks.is_active(), f"Should be active: pnl={daily_pnl_pct}, limit={limit}"
+            assert (
+                ks.is_active()
+            ), f"Should be active: pnl={daily_pnl_pct}, limit={limit}"
             assert ks.state.triggered_by == "daily_loss_limit"
         else:
             assert not ks.is_active()

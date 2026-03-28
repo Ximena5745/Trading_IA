@@ -3,13 +3,13 @@ Module: core/ingestion/bybit_client.py
 Responsibility: Bybit exchange adapter (V5 API) — stub ready for activation
 Dependencies: exchange_adapter, httpx, logger
 """
+
 from __future__ import annotations
 
 import hashlib
 import hmac
 import time
 from datetime import datetime
-from typing import Optional
 
 from core.ingestion.exchange_adapter import ExchangeAdapter
 from core.models import MarketData
@@ -65,6 +65,7 @@ class BybitClient(ExchangeAdapter):
     async def connect(self) -> None:
         try:
             import httpx
+
             self._session = httpx.AsyncClient(base_url=self._base_url, timeout=10.0)
             self._connected = True
             logger.info("bybit_connected", testnet=self._testnet)
@@ -183,7 +184,7 @@ class BybitClient(ExchangeAdapter):
         side: str,
         quantity: float,
         order_type: str = "MARKET",
-        client_order_id: Optional[str] = None,
+        client_order_id: str | None = None,
     ) -> dict:
         """Place a spot market or limit order on Bybit."""
         if not self._session:
@@ -202,7 +203,9 @@ class BybitClient(ExchangeAdapter):
         ts = str(int(time.time() * 1000))
         headers = self._auth_headers("POST", "/v5/order/create", payload, ts)
 
-        response = await self._session.post("/v5/order/create", json=payload, headers=headers)
+        response = await self._session.post(
+            "/v5/order/create", json=payload, headers=headers
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -231,7 +234,9 @@ class BybitClient(ExchangeAdapter):
         ts = str(int(time.time() * 1000))
         headers = self._auth_headers("POST", "/v5/order/cancel", payload, ts)
 
-        response = await self._session.post("/v5/order/cancel", json=payload, headers=headers)
+        response = await self._session.post(
+            "/v5/order/cancel", json=payload, headers=headers
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -279,6 +284,7 @@ class BybitClient(ExchangeAdapter):
             param_str = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
         else:
             import json
+
             param_str = json.dumps(params, separators=(",", ":"))
 
         sign_str = timestamp + self._api_key + recv_window + param_str

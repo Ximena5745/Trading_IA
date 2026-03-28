@@ -3,6 +3,7 @@ Module: core/execution/order_tracker.py
 Responsibility: Track and update order states
 Dependencies: logger
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -37,7 +38,11 @@ class OrderTracker:
         return order
 
     def get_open_orders(self) -> list[dict]:
-        return [o for o in self._orders.values() if o["status"] in ("pending", "submitted", "partial")]
+        return [
+            o
+            for o in self._orders.values()
+            if o["status"] in ("pending", "submitted", "partial")
+        ]
 
     def get_all(self) -> list[dict]:
         return list(self._orders.values())

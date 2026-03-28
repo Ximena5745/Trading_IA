@@ -3,6 +3,7 @@ Script: scripts/retrain.py
 Responsibility: CLI to manually trigger agent retraining from stored features
 Usage: python scripts/retrain.py --symbol BTCUSDT [--force]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -13,9 +14,9 @@ sys.path.insert(0, ".")
 
 from core.adaptation.retraining import AdaptationEngine
 from core.agents.technical_agent import TechnicalAgent
+from core.config.settings import get_settings
 from core.features.feature_store import FeatureStore
 from core.observability.logger import configure_logging, get_logger
-from core.config.settings import get_settings
 
 configure_logging()
 logger = get_logger("retrain")
@@ -23,7 +24,7 @@ settings = get_settings()
 
 
 async def retrain(symbol: str, force: bool) -> None:
-    print(f"🤖 TRADER AI — Manual Retraining")
+    print("🤖 TRADER AI — Manual Retraining")
     print(f"   Symbol  : {symbol}")
     print(f"   Force   : {force}")
     print()
@@ -52,13 +53,13 @@ async def retrain(symbol: str, force: bool) -> None:
 
     if success:
         status = engine.get_status()
-        print(f"\n✅ Retraining completed!")
+        print("\n✅ Retraining completed!")
         print(f"   Agent version : {status['agent_version']}")
         print(f"   Retrain count : {status['retrain_count']}")
         print(f"   Last retrain  : {status['last_retrain_at']}")
     else:
         status = engine.get_status()
-        print(f"\n⚠️  Retraining skipped. Status:")
+        print("\n⚠️  Retraining skipped. Status:")
         for k, v in status.items():
             print(f"   {k:30s}: {v}")
 

@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\config\settings.py
+# hypothesis_version: 6.151.9
+
+[0.01, 0.05, 0.1, 0.15, '.env', '1h', 'BTCUSDT', 'DAILY_LOSS_LIMIT_PCT', 'ETHUSDT', 'EXECUTION_MODE', 'HS256', 'JWT_SECRET_KEY', 'live', 'paper', 'utf-8', 'v1']

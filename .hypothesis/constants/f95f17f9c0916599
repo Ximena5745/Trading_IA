@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\risk\kill_switch.py
+# hypothesis_version: 6.151.9
+
+[0.0, 'consecutive_losses', 'daily_loss_limit', 'kill_switch_reset', 'max_drawdown', 'net_pnl']

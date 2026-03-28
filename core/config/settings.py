@@ -3,9 +3,10 @@ Module: core/config/settings.py
 Responsibility: Application settings with Pydantic validation
 Dependencies: pydantic-settings
 """
+
 from __future__ import annotations
 
-from pydantic import validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -44,22 +45,32 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
 
-    @validator("EXECUTION_MODE")
+    @field_validator("EXECUTION_MODE")
+    @classmethod
     def validate_execution_mode(cls, v: str) -> str:
         if v not in ("paper", "live"):
             raise ValueError("EXECUTION_MODE must be 'paper' or 'live'")
         return v
 
-    @validator("DAILY_LOSS_LIMIT_PCT")
+    @field_validator("DAILY_LOSS_LIMIT_PCT")
+    @classmethod
     def validate_daily_loss_limit(cls, v: float) -> float:
         if v > 0.10:
             raise ValueError("Daily loss limit cannot exceed 10%")
         return v
 
-    @validator("JWT_SECRET_KEY")
+    @field_validator("JWT_SECRET_KEY")
+    @classmethod
     def validate_jwt_secret(cls, v: str) -> str:
         if v == "change-me-in-production" and False:  # skip in dev
             raise ValueError("JWT_SECRET_KEY must be set in production")
+        return v
+
+    @field_validator("BINANCE_API_KEY", "BINANCE_SECRET_KEY")
+    @classmethod
+    def validate_binance_keys(cls, v: str) -> str:
+        if len(v) > 0 and len(v) < 32:
+            raise ValueError("Binance keys must be at least 32 characters")
         return v
 
     class Config:

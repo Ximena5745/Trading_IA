@@ -3,12 +3,11 @@ Module: core/agents/regime_agent.py
 Responsibility: Market regime classification (5 states) using HMM or Random Forest
 Dependencies: hmmlearn/sklearn, base_agent, models, logger
 """
+
 from __future__ import annotations
 
 import os
 import pickle
-from datetime import datetime
-from typing import Optional
 
 import numpy as np
 
@@ -58,7 +57,11 @@ class RegimeAgent(AbcAgent):
                 agent_id=self.agent_id,
                 timestamp=features.timestamp,
                 symbol=features.symbol,
-                direction="NEUTRAL" if not regime_output.signal_allowed else self._regime_direction(regime_output.regime),
+                direction=(
+                    "NEUTRAL"
+                    if not regime_output.signal_allowed
+                    else self._regime_direction(regime_output.regime)
+                ),
                 score=score,
                 confidence=regime_output.confidence,
                 features_used=REGIME_FEATURES,
@@ -106,7 +109,9 @@ class RegimeAgent(AbcAgent):
         if len(self._regime_history) > 100:
             self._regime_history.pop(0)
 
-        signal_allowed = regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        signal_allowed = (
+            regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        )
 
         return RegimeOutput(
             timestamp=features.timestamp,
@@ -124,7 +129,9 @@ class RegimeAgent(AbcAgent):
         proba = self._model.predict_proba(X)[0]
         regime = MarketRegime(pred)
         confidence = float(max(proba))
-        signal_allowed = regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        signal_allowed = (
+            regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        )
         prev = self._regime_history[-1] if self._regime_history else None
         self._regime_history.append(regime)
         return RegimeOutput(

@@ -3,9 +3,8 @@ Module: core/notifications/telegram_bot.py
 Responsibility: Send Telegram alerts with signal + XAI explanation
 Dependencies: python-telegram-bot, models, logger
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from core.models import Signal
 from core.observability.logger import get_logger
@@ -24,6 +23,7 @@ class TelegramBot:
     def _init_bot(self) -> None:
         try:
             from telegram import Bot
+
             self._bot = Bot(token=self._token)
             logger.info("telegram_bot_initialized")
         except Exception as e:
@@ -62,9 +62,7 @@ class TelegramBot:
     @staticmethod
     def _format_signal(signal: Signal) -> str:
         emoji = "🟢" if signal.action == "BUY" else "🔴"
-        factors = "\n".join(
-            f"  • {f.description}" for f in signal.explanation[:3]
-        )
+        factors = "\n".join(f"  • {f.description}" for f in signal.explanation[:3])
         return (
             f"{emoji} *{signal.action} — {signal.symbol}*\n"
             f"💰 Entrada: `{signal.entry_price:.2f}`\n"

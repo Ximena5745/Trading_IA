@@ -3,6 +3,7 @@ Module: core/ingestion/websocket_stream.py
 Responsibility: Binance WebSocket with exponential backoff reconnection
 Dependencies: python-binance, redis, data_validator, logger
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -27,7 +28,13 @@ STREAM_KEY_PREFIX = "market_data"
 
 
 class BinanceWebsocketStream:
-    def __init__(self, client: AsyncClient, redis_url: str, symbols: list[str], interval: str = "1h"):
+    def __init__(
+        self,
+        client: AsyncClient,
+        redis_url: str,
+        symbols: list[str],
+        interval: str = "1h",
+    ):
         self._client = client
         self._redis_url = redis_url
         self._symbols = symbols
@@ -55,7 +62,7 @@ class BinanceWebsocketStream:
                 attempt = 0  # reset on successful run
             except Exception as e:
                 attempt += 1
-                backoff = BACKOFF_BASE_SECONDS ** attempt
+                backoff = BACKOFF_BASE_SECONDS**attempt
                 logger.warning(
                     "websocket_reconnecting",
                     symbol=symbol,
@@ -64,7 +71,9 @@ class BinanceWebsocketStream:
                     error=str(e),
                 )
                 if attempt >= 3:
-                    logger.error("websocket_repeated_failures", symbol=symbol, attempt=attempt)
+                    logger.error(
+                        "websocket_repeated_failures", symbol=symbol, attempt=attempt
+                    )
                     # TODO: send Telegram alert here (Fase 5)
                 if attempt >= MAX_RECONNECT_ATTEMPTS:
                     logger.critical("websocket_max_reconnects_exceeded", symbol=symbol)
@@ -110,7 +119,9 @@ class BinanceWebsocketStream:
         except (DataValidationError, Exception) as e:
             stream_key = f"dead_letter:{k.get('s', 'unknown')}"
             if self._redis:
-                await self._redis.xadd(stream_key, {"raw": json.dumps(k), "error": str(e)})
+                await self._redis.xadd(
+                    stream_key, {"raw": json.dumps(k), "error": str(e)}
+                )
             logger.warning("kline_validation_failed", error=str(e))
 
     async def _publish_to_redis(self, data: MarketData) -> None:

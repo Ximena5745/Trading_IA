@@ -3,13 +3,13 @@ Module: core/execution/paper_executor.py
 Responsibility: Realistic paper trading simulation
 Dependencies: base_executor, settings, constants, logger
 """
+
 from __future__ import annotations
 
 import asyncio
 import random
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from core.config.constants import (
     PAPER_COMMISSION_PCT,
@@ -17,8 +17,8 @@ from core.config.constants import (
     PAPER_LATENCY_MS_MIN,
     PAPER_SLIPPAGE_PCT,
 )
-from core.execution.base_executor import AbcExecutor
 from core.exceptions import ExecutionError
+from core.execution.base_executor import AbcExecutor
 from core.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -37,7 +37,9 @@ class PaperExecutor(AbcExecutor):
     async def execute(self, signal: dict, quantity: float) -> dict:
         idempotency_key = signal.get("idempotency_key", "")
         if idempotency_key and idempotency_key in _orders:
-            logger.info("paper_executor_idempotent_hit", idempotency_key=idempotency_key)
+            logger.info(
+                "paper_executor_idempotent_hit", idempotency_key=idempotency_key
+            )
             return _orders[idempotency_key]
 
         await self._simulate_latency()
@@ -45,7 +47,9 @@ class PaperExecutor(AbcExecutor):
         entry_price = signal.get("entry_price", 0.0)
         action = signal.get("action", "BUY")
         slippage = entry_price * PAPER_SLIPPAGE_PCT
-        fill_price = entry_price + slippage if action == "BUY" else entry_price - slippage
+        fill_price = (
+            entry_price + slippage if action == "BUY" else entry_price - slippage
+        )
         commission = fill_price * quantity * PAPER_COMMISSION_PCT
 
         order = {
@@ -86,7 +90,9 @@ class PaperExecutor(AbcExecutor):
         for order in _orders.values():
             if order["id"] == order_id:
                 if order["status"] in ("filled", "cancelled"):
-                    raise ExecutionError(f"Cannot cancel order in status: {order['status']}")
+                    raise ExecutionError(
+                        f"Cannot cancel order in status: {order['status']}"
+                    )
                 order["status"] = "cancelled"
                 order["updated_at"] = datetime.utcnow().isoformat()
                 return order
@@ -98,7 +104,7 @@ class PaperExecutor(AbcExecutor):
                 return order
         raise ExecutionError(f"Order not found: {order_id}")
 
-    def simulate_sl_tp(self, position: dict, current_price: float) -> Optional[str]:
+    def simulate_sl_tp(self, position: dict, current_price: float) -> str | None:
         """Check if stop loss or take profit was hit. Returns 'sl', 'tp', or None."""
         sl = position.get("stop_loss")
         tp = position.get("take_profit")

@@ -44,9 +44,17 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        # Use minimal CI requirements — avoids pandas-ta/hmmlearn/asyncpg
+        # compilation issues. Full stack is tested in the Docker build job.
+        run: pip install -r requirements-ci.txt
 
       - name: Run unit tests
+        env:
+          EXECUTION_MODE: paper
+          TRADING_ENABLED: "false"
+          JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
+          BINANCE_API_KEY: ""
+          BINANCE_API_SECRET: ""
         run: pytest tests/unit/ -v --tb=short --cov=core --cov-report=xml
 
       - name: Upload coverage
@@ -70,7 +78,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: pip install -r requirements-ci.txt
 
       - name: Run integration tests
         env:
@@ -120,7 +128,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: pip install -r requirements-ci.txt
 
       - name: Run backtest gate
         env:

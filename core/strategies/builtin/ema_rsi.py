@@ -3,9 +3,8 @@ Module: core/strategies/builtin/ema_rsi.py
 Responsibility: Default EMA crossover + RSI confirmation strategy
 Dependencies: base_strategy, models
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from core.config.constants import ATR_STOP_LOSS_MULTIPLIER, ATR_TAKE_PROFIT_MULTIPLIER
 from core.models import FeatureSet
@@ -37,7 +36,7 @@ class EmaRsiStrategy(AbcStrategy):
         self.rsi_overbought = rsi_overbought
         self.min_volume_ratio = min_volume_ratio
 
-    def should_enter(self, features: FeatureSet) -> Optional[dict]:
+    def should_enter(self, features: FeatureSet) -> dict | None:
         if features.volume_ratio < self.min_volume_ratio:
             return None
         if features.volatility_regime == "extreme":
@@ -47,20 +46,33 @@ class EmaRsiStrategy(AbcStrategy):
             entry = features.close
             sl = entry - ATR_STOP_LOSS_MULTIPLIER * features.atr_14
             tp = entry + ATR_TAKE_PROFIT_MULTIPLIER * features.atr_14
-            return {"action": "BUY", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "BUY",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         if self._is_sell(features):
             entry = features.close
             sl = entry + ATR_STOP_LOSS_MULTIPLIER * features.atr_14
             tp = entry - ATR_TAKE_PROFIT_MULTIPLIER * features.atr_14
-            return {"action": "SELL", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "SELL",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         return None
 
     def should_exit(self, features: FeatureSet, position: dict) -> bool:
         side = position.get("side", "BUY")
         if side == "BUY":
-            return features.rsi_14 > self.rsi_overbought or features.ema_9 < features.ema_21
+            return (
+                features.rsi_14 > self.rsi_overbought
+                or features.ema_9 < features.ema_21
+            )
         return features.rsi_14 < self.rsi_oversold or features.ema_9 > features.ema_21
 
     def _is_buy(self, f: FeatureSet) -> bool:

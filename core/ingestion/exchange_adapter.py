@@ -3,10 +3,10 @@ Module: core/ingestion/exchange_adapter.py
 Responsibility: Multi-exchange abstraction layer — normalises API differences
 Dependencies: base_client, logger
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from core.models import MarketData
 from core.observability.logger import get_logger
@@ -65,7 +65,7 @@ class ExchangeAdapter(ABC):
         side: str,
         quantity: float,
         order_type: str = "MARKET",
-        client_order_id: Optional[str] = None,
+        client_order_id: str | None = None,
     ) -> dict: ...
 
     @abstractmethod
@@ -81,7 +81,12 @@ class ExchangeAdapter(ABC):
         return symbol.upper().replace("-", "").replace("/", "")
 
     def log_request(self, method: str, endpoint: str) -> None:
-        logger.debug("exchange_request", exchange=self.exchange_id, method=method, endpoint=endpoint)
+        logger.debug(
+            "exchange_request",
+            exchange=self.exchange_id,
+            method=method,
+            endpoint=endpoint,
+        )
 
 
 class ExchangeAdapterRegistry:

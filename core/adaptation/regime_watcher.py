@@ -3,11 +3,11 @@ Module: core/adaptation/regime_watcher.py
 Responsibility: Detect regime changes that trigger retraining
 Dependencies: models, logger
 """
+
 from __future__ import annotations
 
 from collections import deque
 from datetime import datetime
-from typing import Optional
 
 from core.models import MarketRegime, RegimeOutput
 from core.observability.logger import get_logger
@@ -20,8 +20,8 @@ CHANGE_WINDOW = 5  # consecutive bars in new regime to confirm change
 class RegimeWatcher:
     def __init__(self):
         self._history: deque[RegimeOutput] = deque(maxlen=100)
-        self._last_confirmed_regime: Optional[MarketRegime] = None
-        self._change_detected_at: Optional[datetime] = None
+        self._last_confirmed_regime: MarketRegime | None = None
+        self._change_detected_at: datetime | None = None
 
     def update(self, regime: RegimeOutput) -> bool:
         """Returns True if a confirmed regime change is detected."""
@@ -48,10 +48,10 @@ class RegimeWatcher:
             return True
         return False
 
-    def get_current_regime(self) -> Optional[MarketRegime]:
+    def get_current_regime(self) -> MarketRegime | None:
         return self._last_confirmed_regime
 
-    def time_since_last_change(self) -> Optional[float]:
+    def time_since_last_change(self) -> float | None:
         if not self._change_detected_at:
             return None
         return (datetime.utcnow() - self._change_detected_at).total_seconds()

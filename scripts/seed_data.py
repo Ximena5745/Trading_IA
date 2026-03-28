@@ -3,6 +3,7 @@ Script: scripts/seed_data.py
 Responsibility: Seed TimescaleDB with historical Binance candles for development
 Usage: python scripts/seed_data.py --symbol BTCUSDT --interval 1h --days 90
 """
+
 from __future__ import annotations
 
 import argparse
@@ -46,9 +47,13 @@ async def seed(symbol: str, interval: str, days: int) -> None:
 
         # Print sample
         for k in klines[:3]:
-            print(f"  {k.timestamp} O={k.open} H={k.high} L={k.low} C={k.close} V={k.volume}")
+            print(
+                f"  {k.timestamp} O={k.open} H={k.high} L={k.low} C={k.close} V={k.volume}"
+            )
 
-        print(f"\n✅ Fetched {len(klines)} candles for {symbol} ({interval}) over last {days} days")
+        print(
+            f"\n✅ Fetched {len(klines)} candles for {symbol} ({interval}) over last {days} days"
+        )
         print("   Connect a TimescaleDB writer to persist these to the DB.")
 
     finally:
@@ -57,9 +62,15 @@ async def seed(symbol: str, interval: str, days: int) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Seed market data from Binance")
-    parser.add_argument("--symbol", default="BTCUSDT", help="Trading pair (default: BTCUSDT)")
-    parser.add_argument("--interval", default="1h", help="Candle interval (default: 1h)")
-    parser.add_argument("--days", type=int, default=90, help="Days of history (default: 90)")
+    parser.add_argument(
+        "--symbol", default="BTCUSDT", help="Trading pair (default: BTCUSDT)"
+    )
+    parser.add_argument(
+        "--interval", default="1h", help="Candle interval (default: 1h)"
+    )
+    parser.add_argument(
+        "--days", type=int, default=90, help="Days of history (default: 90)"
+    )
     args = parser.parse_args()
 
     asyncio.run(seed(args.symbol, args.interval, args.days))

@@ -3,10 +3,8 @@ Module: api/routes/signals.py
 Responsibility: Signal endpoints — list, detail, latest
 Dependencies: require_trader, models
 """
-from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -20,8 +18,8 @@ _signals: dict[str, dict] = {}
 
 @router.get("")
 async def list_signals(
-    symbol: Optional[str] = None,
-    signal_status: Optional[str] = Query(default=None, alias="status"),
+    symbol: str | None = None,
+    signal_status: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=50, le=200),
     _: dict = Depends(require_trader),
 ):
@@ -38,7 +36,8 @@ async def list_signals(
 async def get_latest_signal(symbol: str, _: dict = Depends(require_trader)):
     symbol = symbol.upper()
     active = [
-        s for s in _signals.values()
+        s
+        for s in _signals.values()
         if s["symbol"] == symbol and s["status"] == "pending"
     ]
     if not active:
@@ -50,7 +49,9 @@ async def get_latest_signal(symbol: str, _: dict = Depends(require_trader)):
 async def get_signal(signal_id: str, _: dict = Depends(require_trader)):
     signal = _signals.get(signal_id)
     if not signal:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signal not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Signal not found"
+        )
     return signal
 
 

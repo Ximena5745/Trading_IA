@@ -3,20 +3,19 @@ Module: core/models.py
 Responsibility: Shared Pydantic data models for the entire pipeline
 Dependencies: pydantic
 """
+
 from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
-from uuid import uuid4
 
 from pydantic import BaseModel, validator
-
 
 # ---------------------------------------------------------------------------
 # Market Data
 # ---------------------------------------------------------------------------
+
 
 class MarketData(BaseModel):
     timestamp: datetime
@@ -48,6 +47,7 @@ class MarketData(BaseModel):
 # ---------------------------------------------------------------------------
 # Feature Set
 # ---------------------------------------------------------------------------
+
 
 class FeatureSet(BaseModel):
     timestamp: datetime
@@ -82,8 +82,8 @@ class FeatureSet(BaseModel):
     obv: float
 
     # Microstructure (optional)
-    bid_ask_spread: Optional[float] = None
-    order_book_imbalance: Optional[float] = None
+    bid_ask_spread: float | None = None
+    order_book_imbalance: float | None = None
 
     # Raw close for signal engine
     close: float = 0.0
@@ -92,6 +92,7 @@ class FeatureSet(BaseModel):
 # ---------------------------------------------------------------------------
 # Market Regime
 # ---------------------------------------------------------------------------
+
 
 class MarketRegime(str, Enum):
     BULL_TRENDING = "bull_trending"
@@ -107,7 +108,7 @@ class RegimeOutput(BaseModel):
     regime: MarketRegime
     confidence: float
     regime_duration_bars: int
-    previous_regime: Optional[MarketRegime] = None
+    previous_regime: MarketRegime | None = None
     signal_allowed: bool  # False in VOLATILE_CRASH or confidence < 0.5
 
 
@@ -115,12 +116,13 @@ class RegimeOutput(BaseModel):
 # Agent Output
 # ---------------------------------------------------------------------------
 
+
 class AgentOutput(BaseModel):
     agent_id: str
     timestamp: datetime
     symbol: str
     direction: str  # "BUY" | "SELL" | "NEUTRAL"
-    score: float    # -1.0 to +1.0
+    score: float  # -1.0 to +1.0
     confidence: float
     features_used: list[str]
     shap_values: dict[str, float]
@@ -130,6 +132,7 @@ class AgentOutput(BaseModel):
 # ---------------------------------------------------------------------------
 # Consensus Output
 # ---------------------------------------------------------------------------
+
 
 class ConsensusOutput(BaseModel):
     timestamp: datetime
@@ -145,6 +148,7 @@ class ConsensusOutput(BaseModel):
 # ---------------------------------------------------------------------------
 # Signal
 # ---------------------------------------------------------------------------
+
 
 class SignalExplanationFactor(BaseModel):
     factor: str
@@ -175,6 +179,7 @@ class Signal(BaseModel):
 # Order
 # ---------------------------------------------------------------------------
 
+
 class OrderStatus(str, Enum):
     PENDING = "pending"
     SUBMITTED = "submitted"
@@ -187,30 +192,31 @@ class OrderStatus(str, Enum):
 
 class Order(BaseModel):
     id: str
-    exchange_order_id: Optional[str] = None
+    exchange_order_id: str | None = None
     idempotency_key: str
     signal_id: str
     symbol: str
     side: str
     order_type: str
     quantity: float
-    price: Optional[float] = None
+    price: float | None = None
     stop_loss: float
     take_profit: float
     status: OrderStatus
-    fill_price: Optional[float] = None
-    fill_quantity: Optional[float] = None
-    commission: Optional[float] = None
-    slippage: Optional[float] = None
+    fill_price: float | None = None
+    fill_quantity: float | None = None
+    commission: float | None = None
+    slippage: float | None = None
     created_at: datetime
     updated_at: datetime
     execution_mode: str = "paper"
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 # ---------------------------------------------------------------------------
 # Portfolio
 # ---------------------------------------------------------------------------
+
 
 class Position(BaseModel):
     symbol: str
@@ -241,12 +247,13 @@ class Portfolio(BaseModel):
 # Kill Switch State
 # ---------------------------------------------------------------------------
 
+
 class KillSwitchStateModel(BaseModel):
     active: bool
-    triggered_at: Optional[datetime] = None
-    triggered_by: Optional[str] = None
+    triggered_at: datetime | None = None
+    triggered_by: str | None = None
     daily_loss_current: float
     daily_loss_limit: float
     consecutive_losses: int
     max_consecutive_losses: int
-    reset_at: Optional[datetime] = None
+    reset_at: datetime | None = None
