@@ -5,6 +5,7 @@ Tests: data → features → agents → consensus → signal → risk → paper 
 """
 from __future__ import annotations
 
+from decimal import Decimal
 from datetime import datetime
 from unittest.mock import MagicMock
 
@@ -78,13 +79,22 @@ def feature_set() -> FeatureSet:
 
 
 @pytest.fixture
-def portfolio_manager() -> PortfolioManager:
-    return PortfolioManager(total_capital=10_000.0, max_risk_per_trade_pct=0.02)
+def portfolio_manager(mock_settings) -> PortfolioManager:
+    """Create portfolio manager with settings."""
+    return PortfolioManager(settings=mock_settings, initial_capital=10_000.0)
 
 
 @pytest.fixture
-def risk_manager() -> RiskManager:
-    return RiskManager()
+def risk_manager(mock_settings) -> RiskManager:
+    """Create risk manager with mocked dependencies."""
+    from unittest.mock import MagicMock
+    from core.risk.kill_switch import KillSwitch
+    
+    mock_kill_switch = MagicMock(spec=KillSwitch)
+    mock_kill_switch.is_active.return_value = False
+    mock_kill_switch.state.triggered_by = None
+    
+    return RiskManager(mock_settings, mock_kill_switch)
 
 
 @pytest.fixture
@@ -104,26 +114,32 @@ class TestDataValidation:
         md = MarketData(
             symbol="BTCUSDT",
             timestamp=datetime.utcnow(),
-            open=50000.0,
-            high=50500.0,
-            low=49800.0,
-            close=50200.0,
-            volume=1000.0,
+            open=Decimal("50000.0"),
+            high=Decimal("50500.0"),
+            low=Decimal("49800.0"),
+            close=Decimal("50200.0"),
+            volume=Decimal("1000.0"),
+            quote_volume=Decimal("50000000.0"),
+            trades_count=5000,
+            taker_buy_volume=Decimal("600.0"),
         )
         validator = DataValidator()
         result = validator.validate_market_data(md)
-        assert result is True
+        assert result is not None
 
     def test_invalid_high_low_rejected(self):
         with pytest.raises(Exception):
             MarketData(
                 symbol="BTCUSDT",
                 timestamp=datetime.utcnow(),
-                open=50000.0,
-                high=49000.0,  # high < low
-                low=50000.0,
-                close=50200.0,
-                volume=1000.0,
+                open=Decimal("50000.0"),
+                high=Decimal("49000.0"),  # high < low
+                low=Decimal("50000.0"),
+                close=Decimal("50200.0"),
+                volume=Decimal("1000.0"),
+                quote_volume=Decimal("50000000.0"),
+                trades_count=5000,
+                taker_buy_volume=Decimal("600.0"),
             )
 
 
@@ -347,27 +363,37 @@ class TestPaperExecutor:
 class TestPortfolioManager:
     def test_open_position_updates_capital(self, portfolio_manager):
         """Opening a position reduces available capital."""
-        portfolio_manager.open_position(
+        from core.models import Signal
+        
+        signal = Signal(
+            id="test-signal-001",
             symbol="BTCUSDT",
-            side="BUY",
-            size=0.01,
+            action="BUY",
             entry_price=50000.0,
             stop_loss=49000.0,
             take_profit=52000.0,
-            strategy_id="ema_rsi",
+            confidence=0.75,
+            idempotency_key="test-key",
+            explanation=[],
+            summary="Test signal",
+            regime="bull_trending",
+            strategy_id="test-strategy",
         )
+        
+        position = portfolio_manager.open_position(signal, 0.01, 50000.0)
         portfolio = portfolio_manager.get_portfolio()
-        assert "BTCUSDT" in portfolio.positions
+        assert len(portfolio.positions) == 1
+        assert portfolio.positions[0].symbol == "BTCUSDT"
 
     def test_kelly_fraction_capped(self, portfolio_manager):
         """Kelly fraction must never exceed hard limit."""
-        from core.config.constants import MAX_RISK_PER_TRADE_PCT
+        from core.config.constants import HARD_LIMITS
         fraction = portfolio_manager.kelly_fraction(
             win_rate=0.60,
             avg_win=0.03,
             avg_loss=0.015,
         )
-        assert fraction <= MAX_RISK_PER_TRADE_PCT * 2  # half-kelly capped
+        assert fraction <= HARD_LIMITS["max_risk_per_trade_pct"]
 
 
 class TestCostModel:

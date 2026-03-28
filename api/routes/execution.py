@@ -76,7 +76,11 @@ async def execute_signal(
         take_profit=req.take_profit,
         confidence=req.confidence,
         idempotency_key=req.idempotency_key or req.signal_id,
-        explanation=None,
+        explanation=[],
+        summary=f"API signal: {req.direction} {req.symbol}",
+        regime="bull_trending",  # Default regime for API signals
+        strategy_id="api_manual",
+        status="pending",
     )
 
     approved, reason = rm.validate_signal(signal, portfolio=None)
