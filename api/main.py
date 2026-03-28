@@ -17,18 +17,23 @@ from api.routes.auth import router as auth_router
 from api.routes.backtesting import router as backtesting_router
 from api.routes.execution import router as execution_router
 from api.routes.market import router as market_router
+from api.routes.marketplace import router as marketplace_router
 from api.routes.portfolio import router as portfolio_router
 from api.routes.risk import router as risk_router
 from api.routes.signals import router as signals_router
+from api.routes.simulation import router as simulation_router
 from api.routes.strategies import router as strategies_router
+from core.agents.fundamental_agent import FundamentalAgent
 from core.config.settings import get_settings
 from core.execution.order_tracker import OrderTracker
+from core.marketplace.strategy_marketplace import StrategyMarketplace
 from core.monitoring.alert_engine import AlertEngine
 from core.monitoring.performance_tracker import PerformanceTracker
 from core.monitoring.prometheus_metrics import start_metrics_server
 from core.observability.logger import configure_logging, get_logger
 from core.portfolio.portfolio_manager import PortfolioManager
 from core.risk.risk_manager import RiskManager
+from core.simulation.historical_simulator import HistoricalSimulator
 from core.strategies.strategy_registry import StrategyRegistry
 
 configure_logging()
@@ -51,9 +56,16 @@ async def lifespan(app: FastAPI):
     strategy_registry = StrategyRegistry()
     alert_engine = AlertEngine()
 
+    # ── Fase 5 singletons ──────────────────────────────────────────────────
+    marketplace = StrategyMarketplace()
+    simulator = HistoricalSimulator()
+    fundamental_agent = FundamentalAgent()
+
     # ── Inject into API route modules ──────────────────────────────────────
-    from api.routes import portfolio as portfolio_routes
     from api.routes import execution as execution_routes
+    from api.routes import marketplace as marketplace_routes
+    from api.routes import portfolio as portfolio_routes
+    from api.routes import simulation as simulation_routes
     from api.routes import strategies as strategies_routes
 
     portfolio_routes.set_portfolio_manager(portfolio_manager)
@@ -61,6 +73,9 @@ async def lifespan(app: FastAPI):
     execution_routes.set_order_tracker(order_tracker)
     execution_routes.set_risk_manager(risk_manager)
     strategies_routes.set_strategy_registry(strategy_registry)
+    marketplace_routes.set_marketplace(marketplace)
+    simulation_routes.set_simulator(simulator)
+    simulation_routes.set_strategy_registry(strategy_registry)
 
     # ── Store on app.state for access elsewhere ─────────────────────────────
     app.state.portfolio_manager = portfolio_manager
@@ -69,6 +84,19 @@ async def lifespan(app: FastAPI):
     app.state.risk_manager = risk_manager
     app.state.strategy_registry = strategy_registry
     app.state.alert_engine = alert_engine
+    app.state.marketplace = marketplace
+    app.state.simulator = simulator
+    app.state.fundamental_agent = fundamental_agent
+
+    # ── Start FundamentalAgent background refresh task ─────────────────────
+    import asyncio as _asyncio
+
+    async def _refresh_fundamental():
+        while True:
+            await fundamental_agent.refresh()
+            await _asyncio.sleep(1800)  # refresh every 30 min
+
+    _asyncio.create_task(_refresh_fundamental())
 
     # ── Start Prometheus metrics endpoint ───────────────────────────────────
     try:
@@ -119,6 +147,9 @@ app.include_router(backtesting_router)
 app.include_router(portfolio_router)
 app.include_router(execution_router)
 app.include_router(strategies_router)
+# Fase 5
+app.include_router(marketplace_router)
+app.include_router(simulation_router)
 
 
 @app.get("/health", tags=["system"])
