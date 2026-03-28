@@ -8,7 +8,6 @@ from hypothesis import strategies as st
 from unittest.mock import MagicMock
 
 from core.config.settings import Settings
-from core.risk.kill_switch import KillSwitch
 from core.risk.risk_manager import RiskManager
 
 
@@ -25,7 +24,8 @@ def make_risk_manager(
     settings.DAILY_LOSS_LIMIT_PCT = 0.05
     settings.MAX_CONSECUTIVE_LOSSES = 5
 
-    ks = MagicMock(spec=KillSwitch)
+    # Use MagicMock without spec so nested attributes (.state.*) are auto-created
+    ks = MagicMock()
     ks.is_active.return_value = kill_switch_active
     ks.state.triggered_by = "manual" if kill_switch_active else None
 
