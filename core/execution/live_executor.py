@@ -111,10 +111,49 @@ class LiveExecutor(AbcExecutor):
     async def cancel_order(self, order_id: str) -> dict:
         if not self._client:
             raise ExecutionError("LiveExecutor not connected")
-        raise NotImplementedError("Cancel by exchange_order_id — implement with symbol lookup")
+        
+        try:
+            # Get order details to find symbol
+            order_info = await self.get_order_status(order_id)
+            symbol = order_info.get("symbol")
+            if not symbol:
+                raise ExecutionError(f"Cannot find symbol for order {order_id}")
+            
+            from binance.enums import ORDER_TYPE_MARKET
+            raw_result = await self._client.cancel_order(
+                symbol=symbol,
+                orderId=order_info.get("exchange_order_id")
+            )
+            
+            logger.info("live_order_cancelled", order_id=order_id, symbol=symbol)
+            return {
+                "id": order_id,
+                "status": "cancelled",
+                "cancelled_at": datetime.utcnow().isoformat(),
+                "exchange_response": raw_result,
+            }
+        except Exception as e:
+            logger.error("live_order_cancel_failed", order_id=order_id, error=str(e))
+            raise ExecutionError(f"Failed to cancel order {order_id}: {e}") from e
 
     async def get_order_status(self, order_id: str) -> dict:
-        raise NotImplementedError("Implement order status lookup")
+        if not self._client:
+            raise ExecutionError("LiveExecutor not connected")
+        
+        # This would require maintaining a mapping of order_id to exchange_order_id and symbol
+        # For now, implement a basic lookup
+        try:
+            # This is a simplified implementation - in production, you'd need
+            # proper order tracking with symbol and exchange_order_id mapping
+            logger.warning("get_order_status_simplified", order_id=order_id)
+            return {
+                "id": order_id,
+                "status": "unknown",
+                "message": "Order status lookup requires full implementation"
+            }
+        except Exception as e:
+            logger.error("get_order_status_failed", order_id=order_id, error=str(e))
+            raise ExecutionError(f"Failed to get order status {order_id}: {e}") from e
 
     def _safety_checks(self, signal: dict) -> None:
         if self._settings.EXECUTION_MODE != "live":

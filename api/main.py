@@ -28,6 +28,8 @@ from core.config.settings import get_settings
 from core.execution.order_tracker import OrderTracker
 from core.marketplace.strategy_marketplace import StrategyMarketplace
 from core.monitoring.alert_engine import AlertEngine
+from core.exceptions import TraderAIError
+from core.monitoring.error_handler import trader_ai_exception_handler, general_exception_handler
 from core.monitoring.performance_tracker import PerformanceTracker
 from core.monitoring.prometheus_metrics import start_metrics_server
 from core.observability.logger import configure_logging, get_logger
@@ -129,6 +131,8 @@ app = FastAPI(
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(TraderAIError, trader_ai_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,

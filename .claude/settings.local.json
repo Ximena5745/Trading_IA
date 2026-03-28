@@ -13,7 +13,10 @@
       "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=short -q)",
       "Bash(python -m pytest tests/unit/ -v --tb=short -q)",
       "Bash(pip index:*)",
-      "Bash(python -m pytest tests/unit/ --tb=short -q)"
+      "Bash(python -m pytest tests/unit/ --tb=short -q)",
+      "Bash(python scripts/ci_backtest_gate.py)",
+      "Bash(python -m pytest tests/integration/ --tb=short -q)",
+      "Bash(python -c \"import sys; sys.stdout.reconfigure\\(encoding=''''utf-8''''\\); exec\\(open\\(''''scripts/ci_backtest_gate.py''''\\).read\\(\\)\\)\")"
     ]
   }
 }
