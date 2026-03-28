@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\features\indicators.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.05, 0.25, 0.75, 0.9, 100, 200, 'BBL_20_2.0', 'BBU_20_2.0', 'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9', 'atr_14', 'bb_lower', 'bb_upper', 'bb_width', 'bearish', 'bullish', 'close', 'ema_200', 'ema_21', 'ema_50', 'ema_9', 'extreme', 'high', 'low', 'macd_histogram', 'macd_line', 'macd_signal', 'medium', 'obv', 'open', 'rsi_14', 'rsi_7', 'sideways', 'timestamp', 'trend_direction', 'volatility_regime', 'volume', 'volume_ratio', 'volume_sma_20', 'vwap']

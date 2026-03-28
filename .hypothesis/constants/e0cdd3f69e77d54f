@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\risk\risk_manager.py
+# hypothesis_version: 6.151.9
+
+[0.0, 'available_capital', 'daily_pnl_pct', 'drawdown_current', 'entry_price', 'risk_exposure', 'risk_reward_ratio', 'signal_rejected', 'stop_loss', 'total_capital']

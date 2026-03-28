@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\config\constants.py
+# hypothesis_version: 6.151.9
+
+[0.0005, 0.001, 0.02, 0.1, 0.15, 0.2, 0.3, 0.6, 1.5, 2.0, 3.0, 200, 1000, '15m', '1d', '1h', '1m', '4h', '5m', 'BTCUSDT', 'ETHUSDT', 'max_daily_loss_pct', 'max_drawdown_pct']

@@ -1,0 +1,4 @@
+# file: C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\core\agents\regime_agent.py
+# hypothesis_version: 6.151.9
+
+[-1.0, -0.7, -0.2, 0.0, 0.05, 0.5, 0.6, 0.7, 0.85, 2.0, 100, 'BUY', 'NEUTRAL', 'SELL', 'atr_14', 'bb_width', 'bearish', 'bullish', 'extreme', 'high', 'macd_histogram', 'rb', 'regime_agent_loaded', 'regime_v1', 'rsi_14', 'v1.0.0', 'volume_ratio']

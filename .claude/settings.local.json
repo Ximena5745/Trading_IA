@@ -4,7 +4,14 @@
       "Bash(ruff check:*)",
       "Bash(pip install:*)",
       "Bash(EXECUTION_MODE=paper TRADING_ENABLED=false JWT_SECRET_KEY=ci-test-secret-key-minimum-32-chars-long BINANCE_API_KEY=\"\" BINANCE_API_SECRET=\"\" python -m pytest tests/unit/ -v --tb=short)",
-      "Bash(python -m pytest tests/unit/ -v --tb=short --no-header)"
+      "Bash(python -m pytest tests/unit/ -v --tb=short --no-header)",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,''C:/Users/ximen/OneDrive/Proyectos_DS/Trading IA''\\); from core.risk.risk_manager import RiskManager; print\\(''OK''\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,''C:/Users/ximen/OneDrive/Proyectos_DS/Trading IA''\\); from core.agents.regime_agent import RegimeAgent; print\\(''OK''\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,''C:/Users/ximen/OneDrive/Proyectos_DS/Trading IA''\\); from core.features.indicators import calculate_all; print\\(''OK''\\)\")",
+      "Bash(python -m pytest tests/unit/test_kill_switch.py tests/unit/test_risk_manager.py tests/unit/test_signal_engine.py tests/unit/test_feature_engine.py -v --tb=short)",
+      "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=long)",
+      "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=short -q)",
+      "Bash(python -m pytest tests/unit/ -v --tb=short -q)"
     ]
   }
 }
