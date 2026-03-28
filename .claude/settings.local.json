@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ruff check:*)"
+      "Bash(ruff check:*)",
+      "Bash(pip install:*)",
+      "Bash(EXECUTION_MODE=paper TRADING_ENABLED=false JWT_SECRET_KEY=ci-test-secret-key-minimum-32-chars-long BINANCE_API_KEY=\"\" BINANCE_API_SECRET=\"\" python -m pytest tests/unit/ -v --tb=short)",
+      "Bash(python -m pytest tests/unit/ -v --tb=short --no-header)"
     ]
   }
 }
