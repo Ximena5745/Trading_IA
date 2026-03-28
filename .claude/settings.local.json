@@ -11,7 +11,9 @@
       "Bash(python -m pytest tests/unit/test_kill_switch.py tests/unit/test_risk_manager.py tests/unit/test_signal_engine.py tests/unit/test_feature_engine.py -v --tb=short)",
       "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=long)",
       "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=short -q)",
-      "Bash(python -m pytest tests/unit/ -v --tb=short -q)"
+      "Bash(python -m pytest tests/unit/ -v --tb=short -q)",
+      "Bash(pip index:*)",
+      "Bash(python -m pytest tests/unit/ --tb=short -q)"
     ]
   }
 }
