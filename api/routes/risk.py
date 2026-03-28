@@ -3,6 +3,7 @@ Module: api/routes/risk.py
 Responsibility: Kill switch status and manual control endpoints
 Dependencies: require_admin, kill_switch
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -42,7 +43,9 @@ async def activate_kill_switch(admin: dict = Depends(require_admin)):
 @router.post("/kill-switch/reset")
 async def reset_kill_switch(admin: dict = Depends(require_admin)):
     if not _kill_switch.is_active():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Kill switch is not active")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Kill switch is not active"
+        )
     _kill_switch.reset(admin_token=admin["user_id"])
     return {"message": "Kill switch reset successfully"}
 

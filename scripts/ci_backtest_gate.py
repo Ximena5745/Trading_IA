@@ -4,24 +4,24 @@ Responsibility: CI/CD backtest quality gate — generates synthetic OHLCV data a
                 validates that the BacktestEngine + metrics pipeline work end-to-end.
 Usage: python scripts/ci_backtest_gate.py  (called by GitHub Actions)
 """
+
 from __future__ import annotations
 
-import sys
 import random
+import sys
 from datetime import datetime, timedelta
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 sys.path.insert(0, ".")
 
 from core.backtesting.engine import BacktestEngine
-from core.backtesting.metrics import compute_all
 
-REQUIRED_SHARPE = -5.0        # synthetic data — just verify pipeline runs
-REQUIRED_WIN_RATE = 0.20      # very low bar for CI: just check logic works
-MAX_ALLOWED_DRAWDOWN = 0.95   # 95% — any result is acceptable in CI
-MIN_TRADES = 1                # at least 1 trade must be generated
+REQUIRED_SHARPE = -5.0  # synthetic data — just verify pipeline runs
+REQUIRED_WIN_RATE = 0.20  # very low bar for CI: just check logic works
+MAX_ALLOWED_DRAWDOWN = 0.95  # 95% — any result is acceptable in CI
+MIN_TRADES = 1  # at least 1 trade must be generated
 
 
 def generate_synthetic_ohlcv(n: int = 1200) -> pd.DataFrame:
@@ -41,17 +41,19 @@ def generate_synthetic_ohlcv(n: int = 1200) -> pd.DataFrame:
     closes = prices_arr * (1 + np.random.normal(0, 0.002, n))
     volumes = 100.0 + np.abs(np.random.normal(0, 30, n))
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "BTCUSDT",
-        "open": opens,
-        "high": highs,
-        "low": lows,
-        "close": closes,
-        "volume": volumes,
-        "quote_volume": volumes * closes,
-        "taker_buy_volume": volumes * 0.55,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "BTCUSDT",
+            "open": opens,
+            "high": highs,
+            "low": lows,
+            "close": closes,
+            "volume": volumes,
+            "quote_volume": volumes * closes,
+            "taker_buy_volume": volumes * 0.55,
+        }
+    )
 
 
 def simple_ema_strategy(features) -> dict | None:
@@ -109,8 +111,12 @@ def run_gate() -> None:
     print()
     print("  OVERALL METRICS:")
     print(f"    Sharpe Ratio  : {sharpe:.3f}  (min {REQUIRED_SHARPE})")
-    print(f"    Win Rate      : {win_rate*100:.1f}%  (min {REQUIRED_WIN_RATE*100:.0f}%)")
-    print(f"    Max Drawdown  : {max_dd*100:.1f}%  (max {MAX_ALLOWED_DRAWDOWN*100:.0f}%)")
+    print(
+        f"    Win Rate      : {win_rate*100:.1f}%  (min {REQUIRED_WIN_RATE*100:.0f}%)"
+    )
+    print(
+        f"    Max Drawdown  : {max_dd*100:.1f}%  (max {MAX_ALLOWED_DRAWDOWN*100:.0f}%)"
+    )
     print(f"    Total Trades  : {total_trades}  (min {MIN_TRADES})")
     print(f"    Final Capital : {final_capital:.2f}")
     print()

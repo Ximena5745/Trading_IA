@@ -3,6 +3,7 @@ Module: app/pages/risk_monitor.py
 Responsibility: Kill switch status and risk limits monitor
 Dependencies: streamlit, requests
 """
+
 from __future__ import annotations
 
 import os
@@ -37,7 +38,9 @@ color = "🔴" if active else "🟢"
 st.subheader(f"{color} Kill Switch — {'ACTIVE' if active else 'INACTIVE'}")
 
 if active:
-    st.error(f"**Triggered by:** {ks.get('triggered_by', '—')}  |  **At:** {ks.get('triggered_at', '—')}")
+    st.error(
+        f"**Triggered by:** {ks.get('triggered_by', '—')}  |  **At:** {ks.get('triggered_at', '—')}"
+    )
     if st.button("🔓 Reset Kill Switch (Admin only)", type="primary"):
         resp = requests.post(f"{API_URL}/risk/kill-switch/reset", headers=HEADERS)
         if resp.status_code == 200:
@@ -73,8 +76,12 @@ except Exception:
 if limits_resp:
     st.subheader("⚙️ Risk Limits")
     cols = st.columns(3)
-    cols[0].metric("Max Risk / Trade", f"{limits_resp.get('MAX_RISK_PER_TRADE_PCT', 0):.1%}")
-    cols[1].metric("Max Portfolio Risk", f"{limits_resp.get('MAX_PORTFOLIO_RISK_PCT', 0):.1%}")
+    cols[0].metric(
+        "Max Risk / Trade", f"{limits_resp.get('MAX_RISK_PER_TRADE_PCT', 0):.1%}"
+    )
+    cols[1].metric(
+        "Max Portfolio Risk", f"{limits_resp.get('MAX_PORTFOLIO_RISK_PCT', 0):.1%}"
+    )
     cols[2].metric("Max Drawdown", f"{limits_resp.get('MAX_DRAWDOWN_PCT', 0):.1%}")
 
 st.caption("Auto-refreshes every 10 seconds. F5 to force reload.")

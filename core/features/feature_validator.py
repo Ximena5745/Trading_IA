@@ -3,6 +3,7 @@ Module: core/features/feature_validator.py
 Responsibility: Detect NaN, outliers and feature drift
 Dependencies: models, logger
 """
+
 from __future__ import annotations
 
 import math
@@ -29,14 +30,22 @@ class FeatureValidator:
         if len(history) < 20:
             return True
         for field in ("rsi_14", "volume_ratio", "bb_width"):
-            values = [getattr(f, field) for f in history if not math.isnan(getattr(f, field))]
+            values = [
+                getattr(f, field) for f in history if not math.isnan(getattr(f, field))
+            ]
             if not values:
                 continue
             mean = sum(values) / len(values)
             std = (sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5
             current = getattr(features, field)
             if std > 0 and abs(current - mean) / std > DRIFT_STD_THRESHOLD:
-                logger.warning("feature_drift_detected", field=field, current=current, mean=mean, std=std)
+                logger.warning(
+                    "feature_drift_detected",
+                    field=field,
+                    current=current,
+                    mean=mean,
+                    std=std,
+                )
                 return False
         return True
 
@@ -44,7 +53,9 @@ class FeatureValidator:
         for field in CRITICAL_FEATURES:
             val = getattr(features, field, None)
             if val is None or math.isnan(val):
-                raise FeatureCalculationError(f"NaN detected in critical feature: {field}")
+                raise FeatureCalculationError(
+                    f"NaN detected in critical feature: {field}"
+                )
 
     def _check_rsi_range(self, features: FeatureSet) -> None:
         for field in ("rsi_14", "rsi_7"):

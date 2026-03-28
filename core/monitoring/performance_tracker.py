@@ -3,6 +3,7 @@ Module: core/monitoring/performance_tracker.py
 Responsibility: Real-time P&L tracking per strategy
 Dependencies: models, logger
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -20,7 +21,9 @@ class PerformanceTracker:
     def record_trade(self, strategy_id: str, trade: dict) -> None:
         if strategy_id not in self._trades:
             self._trades[strategy_id] = []
-        self._trades[strategy_id].append({**trade, "recorded_at": datetime.utcnow().isoformat()})
+        self._trades[strategy_id].append(
+            {**trade, "recorded_at": datetime.utcnow().isoformat()}
+        )
         logger.info(
             "trade_recorded",
             strategy_id=strategy_id,
@@ -48,12 +51,14 @@ class PerformanceTracker:
         return [self.get_strategy_metrics(sid) for sid in self._trades]
 
     def take_snapshot(self, portfolio: dict) -> None:
-        self._snapshots.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "total_capital": portfolio.get("total_capital"),
-            "daily_pnl_pct": portfolio.get("daily_pnl_pct"),
-            "drawdown_current": portfolio.get("drawdown_current"),
-        })
+        self._snapshots.append(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "total_capital": portfolio.get("total_capital"),
+                "daily_pnl_pct": portfolio.get("daily_pnl_pct"),
+                "drawdown_current": portfolio.get("drawdown_current"),
+            }
+        )
 
     def get_snapshots(self, limit: int = 100) -> list[dict]:
         return self._snapshots[-limit:]

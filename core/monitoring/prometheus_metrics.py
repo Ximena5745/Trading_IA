@@ -3,6 +3,7 @@ Module: core/monitoring/prometheus_metrics.py
 Responsibility: Prometheus counters, histograms and gauges
 Dependencies: prometheus-client
 """
+
 from __future__ import annotations
 
 from prometheus_client import Counter, Gauge, Histogram, start_http_server
@@ -55,7 +56,9 @@ model_latency = Histogram(
 
 # Portfolio gauges
 portfolio_pnl = Gauge("trader_ai_portfolio_pnl", "Current portfolio P&L in USD")
-portfolio_drawdown = Gauge("trader_ai_portfolio_drawdown", "Current drawdown percentage")
+portfolio_drawdown = Gauge(
+    "trader_ai_portfolio_drawdown", "Current drawdown percentage"
+)
 portfolio_capital = Gauge("trader_ai_portfolio_capital", "Total portfolio capital")
 
 

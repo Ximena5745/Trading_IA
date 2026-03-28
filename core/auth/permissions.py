@@ -3,6 +3,7 @@ Module: core/auth/permissions.py
 Responsibility: Role-based access control
 Dependencies: none
 """
+
 from __future__ import annotations
 
 from enum import Enum

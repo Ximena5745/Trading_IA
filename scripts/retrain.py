@@ -3,6 +3,7 @@ Script: scripts/retrain.py
 Responsibility: CLI to manually trigger agent retraining from stored features
 Usage: python scripts/retrain.py --symbol BTCUSDT [--force]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -13,9 +14,9 @@ sys.path.insert(0, ".")
 
 from core.adaptation.retraining import AdaptationEngine
 from core.agents.technical_agent import TechnicalAgent
+from core.config.settings import get_settings
 from core.features.feature_store import FeatureStore
 from core.observability.logger import configure_logging, get_logger
-from core.config.settings import get_settings
 
 configure_logging()
 logger = get_logger("retrain")

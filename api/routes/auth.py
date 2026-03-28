@@ -3,8 +3,10 @@ Module: api/routes/auth.py
 Responsibility: Authentication endpoints — login, refresh, logout, me
 Dependencies: jwt_handler, dependencies
 """
+
 from __future__ import annotations
 
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
@@ -13,21 +15,18 @@ from core.auth.jwt_handler import JWTHandler
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-import bcrypt
-from typing import Dict, Any
-
-# Hash passwords with bcrypt
-_PASSWORDS: Dict[str, str] = {
-    "admin": bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()).decode(),
-    "trader": bcrypt.hashpw("trader123".encode(), bcrypt.gensalt()).decode(),
-    "viewer": bcrypt.hashpw("viewer123".encode(), bcrypt.gensalt()).decode(),
+_PASSWORDS: dict[str, str] = {
+    "admin": bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode(),
+    "trader": bcrypt.hashpw(b"trader123", bcrypt.gensalt()).decode(),
+    "viewer": bcrypt.hashpw(b"viewer123", bcrypt.gensalt()).decode(),
 }
 
-_ROLES: Dict[str, str] = {
+_ROLES: dict[str, str] = {
     "admin": "admin",
-    "trader": "trader", 
+    "trader": "trader",
     "viewer": "viewer",
 }
+
 
 def verify_password(username: str, password: str) -> bool:
     if username not in _PASSWORDS:
@@ -55,7 +54,9 @@ class RefreshRequest(BaseModel):
 async def login(body: LoginRequest, jwt: JWTHandler = Depends(get_jwt_handler)):
     user_role = _ROLES.get(body.username)
     if not user_role or not verify_password(body.username, body.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
     return TokenResponse(
         access_token=jwt.create_access_token(body.username, user_role),
         refresh_token=jwt.create_refresh_token(body.username),
@@ -68,7 +69,9 @@ async def refresh(body: RefreshRequest, jwt: JWTHandler = Depends(get_jwt_handle
     user_id = jwt.decode_refresh(body.refresh_token)
     user_role = _ROLES.get(user_id)
     if not user_role:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+        )
     return TokenResponse(
         access_token=jwt.create_access_token(user_id, user_role),
         refresh_token=jwt.create_refresh_token(user_id),

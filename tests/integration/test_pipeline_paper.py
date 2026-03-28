@@ -3,10 +3,11 @@ Integration tests: tests/integration/test_pipeline_paper.py
 Responsibility: End-to-end pipeline test in paper mode
 Tests: data → features → agents → consensus → signal → risk → paper execution
 """
+
 from __future__ import annotations
 
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
@@ -16,8 +17,9 @@ from core.agents.technical_agent import TechnicalAgent
 from core.backtesting.costs import CostModel
 from core.backtesting.metrics import compute_all
 from core.consensus.voting_engine import ConsensusEngine
-from core.execution.paper_executor import PaperExecutor
+from core.exceptions import DataValidationError
 from core.execution.order_tracker import OrderTracker
+from core.execution.paper_executor import PaperExecutor
 from core.ingestion.data_validator import DataValidator
 from core.models import (
     AgentOutput,
@@ -30,8 +32,8 @@ from core.portfolio.portfolio_manager import PortfolioManager
 from core.risk.risk_manager import RiskManager
 from core.signals.signal_engine import SignalEngine
 
-
 # ── Fixtures ───────────────────────────────────────────────────────────────
+
 
 def make_feature_set(
     rsi_14: float = 45.0,
@@ -88,12 +90,13 @@ def portfolio_manager(mock_settings) -> PortfolioManager:
 def risk_manager(mock_settings) -> RiskManager:
     """Create risk manager with mocked dependencies."""
     from unittest.mock import MagicMock
+
     from core.risk.kill_switch import KillSwitch
-    
+
     mock_kill_switch = MagicMock(spec=KillSwitch)
     mock_kill_switch.is_active.return_value = False
     mock_kill_switch.state.triggered_by = None
-    
+
     return RiskManager(mock_settings, mock_kill_switch)
 
 
@@ -108,6 +111,7 @@ def paper_executor(order_tracker) -> PaperExecutor:
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────
+
 
 class TestDataValidation:
     def test_valid_market_data_passes(self):
@@ -128,7 +132,7 @@ class TestDataValidation:
         assert result is not None
 
     def test_invalid_high_low_rejected(self):
-        with pytest.raises(Exception):
+        with pytest.raises(DataValidationError):
             MarketData(
                 symbol="BTCUSDT",
                 timestamp=datetime.utcnow(),
@@ -201,7 +205,12 @@ class TestConsensusEngine:
                 agent_id="microstructure",
                 direction="BUY",
                 confidence=0.65,
-                metadata={},
+                features_used=[],
+                shap_values={},
+                model_version="v1",
+                timestamp=datetime.utcnow(),
+                symbol="BTCUSDT",
+                score=0.5,
             ),
         )
         assert result.direction == "BUY"
@@ -221,14 +230,24 @@ class TestConsensusEngine:
                 agent_id="technical",
                 direction="BUY",
                 confidence=0.85,
-                metadata={},
+                features_used=[],
+                shap_values={},
+                model_version="v1",
+                timestamp=datetime.utcnow(),
+                symbol="BTCUSDT",
+                score=0.7,
             ),
             regime=regime_output,
             microstructure=AgentOutput(
                 agent_id="microstructure",
                 direction="BUY",
                 confidence=0.70,
-                metadata={},
+                features_used=[],
+                shap_values={},
+                model_version="v1",
+                timestamp=datetime.utcnow(),
+                symbol="BTCUSDT",
+                score=0.6,
             ),
         )
         assert result.direction == "NEUTRAL"
@@ -249,7 +268,9 @@ class TestSignalEngine:
         assert signal.action == "BUY"
         assert signal.stop_loss < signal.entry_price
         assert signal.take_profit > signal.entry_price
-        rr = (signal.take_profit - signal.entry_price) / (signal.entry_price - signal.stop_loss)
+        rr = (signal.take_profit - signal.entry_price) / (
+            signal.entry_price - signal.stop_loss
+        )
         assert rr >= 1.5
 
     def test_neutral_consensus_produces_no_signal(self, feature_set):
@@ -282,6 +303,7 @@ class TestRiskManager:
     def test_signal_approved_under_limits(self, risk_manager, feature_set):
         """Valid signal within risk limits should be approved."""
         from core.models import Signal
+
         signal = Signal(
             id="test-001",
             symbol="BTCUSDT",
@@ -300,6 +322,7 @@ class TestRiskManager:
     def test_kill_switch_active_rejects_all(self, risk_manager, feature_set):
         """Active kill switch must reject every signal."""
         from core.models import Signal
+
         risk_manager._kill_switch._is_active = True
 
         signal = Signal(
@@ -315,7 +338,11 @@ class TestRiskManager:
         )
         approved, reason = risk_manager.validate_signal(signal, portfolio=None)
         assert approved is False
-        assert "kill" in reason.lower() or "switch" in reason.lower() or "active" in reason.lower()
+        assert (
+            "kill" in reason.lower()
+            or "switch" in reason.lower()
+            or "active" in reason.lower()
+        )
 
 
 class TestPaperExecutor:
@@ -323,6 +350,7 @@ class TestPaperExecutor:
     async def test_paper_order_fills_with_slippage(self, paper_executor):
         """Paper executor fills orders with realistic slippage and commission."""
         from core.models import Signal
+
         signal = Signal(
             id="paper-001",
             symbol="BTCUSDT",
@@ -342,6 +370,7 @@ class TestPaperExecutor:
     async def test_paper_executor_idempotency(self, paper_executor):
         """Same idempotency key should not submit duplicate orders."""
         from core.models import Signal
+
         signal = Signal(
             id="paper-002",
             symbol="ETHUSDT",
@@ -364,7 +393,7 @@ class TestPortfolioManager:
     def test_open_position_updates_capital(self, portfolio_manager):
         """Opening a position reduces available capital."""
         from core.models import Signal
-        
+
         signal = Signal(
             id="test-signal-001",
             symbol="BTCUSDT",
@@ -379,8 +408,8 @@ class TestPortfolioManager:
             regime="bull_trending",
             strategy_id="test-strategy",
         )
-        
-        position = portfolio_manager.open_position(signal, 0.01, 50000.0)
+
+        portfolio_manager.open_position(signal, 0.01, 50000.0)
         portfolio = portfolio_manager.get_portfolio()
         assert len(portfolio.positions) == 1
         assert portfolio.positions[0].symbol == "BTCUSDT"
@@ -388,6 +417,7 @@ class TestPortfolioManager:
     def test_kelly_fraction_capped(self, portfolio_manager):
         """Kelly fraction must never exceed hard limit."""
         from core.config.constants import HARD_LIMITS
+
         fraction = portfolio_manager.kelly_fraction(
             win_rate=0.60,
             avg_win=0.03,

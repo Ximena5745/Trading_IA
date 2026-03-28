@@ -3,9 +3,8 @@ Module: core/strategies/builtin/mean_reversion.py
 Responsibility: Bollinger Bands mean reversion strategy
 Dependencies: base_strategy, models
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from core.config.constants import ATR_STOP_LOSS_MULTIPLIER
 from core.models import FeatureSet
@@ -35,7 +34,7 @@ class MeanReversionStrategy(AbcStrategy):
         self.rsi_overbought = rsi_overbought
         self.min_volume_ratio = min_volume_ratio
 
-    def should_enter(self, features: FeatureSet) -> Optional[dict]:
+    def should_enter(self, features: FeatureSet) -> dict | None:
         if features.volume_ratio < self.min_volume_ratio:
             return None
         if features.volatility_regime in ("extreme",):
@@ -47,7 +46,12 @@ class MeanReversionStrategy(AbcStrategy):
             tp = features.vwap  # target: revert to VWAP
             if tp <= entry:
                 return None
-            return {"action": "BUY", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "BUY",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         if self._is_sell(features):
             entry = features.close
@@ -55,7 +59,12 @@ class MeanReversionStrategy(AbcStrategy):
             tp = features.vwap  # target: revert to VWAP
             if tp >= entry:
                 return None
-            return {"action": "SELL", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "SELL",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         return None
 

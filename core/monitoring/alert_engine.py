@@ -3,6 +3,7 @@ Module: core/monitoring/alert_engine.py
 Responsibility: Dispatch alerts to Telegram and webhooks
 Dependencies: telegram_bot, logger
 """
+
 from __future__ import annotations
 
 from core.models import Signal
@@ -16,7 +17,12 @@ class AlertEngine:
         self._telegram = telegram_bot
 
     async def on_signal(self, signal: Signal) -> None:
-        logger.info("alert_signal", symbol=signal.symbol, action=signal.action, confidence=signal.confidence)
+        logger.info(
+            "alert_signal",
+            symbol=signal.symbol,
+            action=signal.action,
+            confidence=signal.confidence,
+        )
         if self._telegram:
             await self._telegram.send_signal_alert(signal)
 

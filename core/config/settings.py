@@ -3,9 +3,10 @@ Module: core/config/settings.py
 Responsibility: Application settings with Pydantic validation
 Dependencies: pydantic-settings
 """
+
 from __future__ import annotations
 
-from pydantic import validator, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 

@@ -3,6 +3,7 @@ Module: core/strategies/strategy_registry.py
 Responsibility: Dynamic registration and lifecycle management of strategies
 Dependencies: base_strategy, builtin strategies, logger
 """
+
 from __future__ import annotations
 
 from core.exceptions import StrategyNotFoundError
@@ -25,7 +26,9 @@ class StrategyRegistry:
 
     def register(self, strategy: AbcStrategy) -> None:
         self._strategies[strategy.strategy_id] = strategy
-        logger.info("strategy_registered", strategy_id=strategy.strategy_id, name=strategy.name)
+        logger.info(
+            "strategy_registered", strategy_id=strategy.strategy_id, name=strategy.name
+        )
 
     def get(self, strategy_id: str) -> AbcStrategy:
         strategy = self._strategies.get(strategy_id)
@@ -38,7 +41,8 @@ class StrategyRegistry:
 
     def list_active(self) -> list[AbcStrategy]:
         return [
-            s for s in self._strategies.values()
+            s
+            for s in self._strategies.values()
             if s.to_dict().get("status") == "active"
         ]
 

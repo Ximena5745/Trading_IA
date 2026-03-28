@@ -3,11 +3,11 @@ Module: core/agents/fundamental_agent.py
 Responsibility: Fundamental signals — Fear & Greed index + on-chain data (Fase 5)
 Dependencies: base_agent, httpx, logger
 """
+
 from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Optional
 
 from core.agents.base_agent import AbcAgent
 from core.models import AgentOutput, FeatureSet
@@ -50,11 +50,11 @@ class FundamentalAgent(AbcAgent):
     model_version = "v1_fear_greed"
 
     def __init__(self):
-        self._fear_greed: Optional[int] = None
+        self._fear_greed: int | None = None
         self._fear_greed_label: str = "Unknown"
-        self._btc_dominance: Optional[float] = None
-        self._market_cap_change_24h: Optional[float] = None
-        self._last_fetch: Optional[datetime] = None
+        self._btc_dominance: float | None = None
+        self._market_cap_change_24h: float | None = None
+        self._last_fetch: datetime | None = None
         self._fetch_lock = asyncio.Lock()
 
     # ── AbcAgent interface ─────────────────────────────────────────────────
@@ -97,9 +97,17 @@ class FundamentalAgent(AbcAgent):
             timestamp=features.timestamp,
             symbol=features.symbol,
             direction=direction,
-            score=confidence if direction == "BUY" else -confidence if direction == "SELL" else 0.0,
+            score=(
+                confidence
+                if direction == "BUY"
+                else -confidence if direction == "SELL" else 0.0
+            ),
             confidence=confidence,
-            features_used=["fear_greed_index", "btc_dominance", "market_cap_change_24h"],
+            features_used=[
+                "fear_greed_index",
+                "btc_dominance",
+                "market_cap_change_24h",
+            ],
             shap_values={
                 "fear_greed_index": round(confidence * 0.7, 3),
                 "btc_dominance": round(confidence * 0.2, 3),
@@ -134,6 +142,7 @@ class FundamentalAgent(AbcAgent):
     async def _fetch_fear_greed(self) -> None:
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=8.0) as client:
                 resp = await client.get(FEAR_GREED_URL)
                 resp.raise_for_status()
@@ -147,6 +156,7 @@ class FundamentalAgent(AbcAgent):
     async def _fetch_coingecko_global(self) -> None:
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=8.0) as client:
                 resp = await client.get(COINGECKO_GLOBAL_URL)
                 resp.raise_for_status()
@@ -166,11 +176,18 @@ class FundamentalAgent(AbcAgent):
             return "NEUTRAL", 0.0
 
         if fg <= EXTREME_FEAR_THRESHOLD:
-            base_conf = 0.70 + (EXTREME_FEAR_THRESHOLD - fg) / EXTREME_FEAR_THRESHOLD * 0.20
+            base_conf = (
+                0.70 + (EXTREME_FEAR_THRESHOLD - fg) / EXTREME_FEAR_THRESHOLD * 0.20
+            )
             return "BUY", min(round(base_conf, 2), 0.90)
 
         if fg >= EXTREME_GREED_THRESHOLD:
-            base_conf = 0.70 + (fg - EXTREME_GREED_THRESHOLD) / (100 - EXTREME_GREED_THRESHOLD) * 0.20
+            base_conf = (
+                0.70
+                + (fg - EXTREME_GREED_THRESHOLD)
+                / (100 - EXTREME_GREED_THRESHOLD)
+                * 0.20
+            )
             return "SELL", min(round(base_conf, 2), 0.90)
 
         if fg < FEAR_THRESHOLD:
@@ -184,16 +201,18 @@ class FundamentalAgent(AbcAgent):
     def _cache_expired(self) -> bool:
         if self._last_fetch is None:
             return True
-        return (datetime.utcnow() - self._last_fetch).total_seconds() > CACHE_TTL_SECONDS
+        return (
+            datetime.utcnow() - self._last_fetch
+        ).total_seconds() > CACHE_TTL_SECONDS
 
-    def _data_age_seconds(self) -> Optional[float]:
+    def _data_age_seconds(self) -> float | None:
         if self._last_fetch is None:
             return None
         return (datetime.utcnow() - self._last_fetch).total_seconds()
 
     # ── Public accessors ───────────────────────────────────────────────────
 
-    def get_fear_greed(self) -> Optional[int]:
+    def get_fear_greed(self) -> int | None:
         return self._fear_greed
 
     def get_fear_greed_label(self) -> str:

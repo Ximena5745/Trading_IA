@@ -3,14 +3,18 @@ Module: core/signals/signal_engine.py
 Responsibility: Aggregate consensus into actionable signal with XAI explanation
 Dependencies: xai_module, models, constants, logger
 """
+
 from __future__ import annotations
 
 import hashlib
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
-from core.config.constants import ATR_STOP_LOSS_MULTIPLIER, ATR_TAKE_PROFIT_MULTIPLIER, HARD_LIMITS
+from core.config.constants import (
+    ATR_STOP_LOSS_MULTIPLIER,
+    ATR_TAKE_PROFIT_MULTIPLIER,
+    HARD_LIMITS,
+)
 from core.exceptions import AgentPredictionError
 from core.models import ConsensusOutput, FeatureSet, MarketRegime, Signal
 from core.observability.logger import get_logger
@@ -28,9 +32,13 @@ class SignalEngine:
         consensus: ConsensusOutput,
         features: FeatureSet,
         strategy_id: str = "default_v1",
-    ) -> Optional[Signal]:
+    ) -> Signal | None:
         if consensus.final_direction == "NEUTRAL":
-            logger.debug("signal_not_generated", reason="NEUTRAL consensus", symbol=features.symbol)
+            logger.debug(
+                "signal_not_generated",
+                reason="NEUTRAL consensus",
+                symbol=features.symbol,
+            )
             return None
 
         try:
@@ -54,8 +62,12 @@ class SignalEngine:
             confidence = round(
                 (abs(consensus.weighted_score) + consensus.agents_agreement) / 2, 4
             )
-            summary = self._xai.generate_summary(explanation, direction, confidence, features.symbol)
-            idempotency_key = self._make_key(features.symbol, features.timestamp, direction)
+            summary = self._xai.generate_summary(
+                explanation, direction, confidence, features.symbol
+            )
+            idempotency_key = self._make_key(
+                features.symbol, features.timestamp, direction
+            )
 
             signal = Signal(
                 id=str(uuid4()),
@@ -70,7 +82,8 @@ class SignalEngine:
                 confidence=confidence,
                 explanation=explanation,
                 summary=summary,
-                regime=consensus.agent_outputs[0].agent_id and self._extract_regime(consensus),
+                regime=consensus.agent_outputs[0].agent_id
+                and self._extract_regime(consensus),
                 strategy_id=strategy_id,
                 status="pending",
             )
@@ -89,7 +102,9 @@ class SignalEngine:
         except Exception as e:
             raise AgentPredictionError(f"SignalEngine failed: {e}") from e
 
-    def _compute_sl_tp(self, entry: float, atr: float, direction: str) -> tuple[float, float]:
+    def _compute_sl_tp(
+        self, entry: float, atr: float, direction: str
+    ) -> tuple[float, float]:
         if direction == "BUY":
             sl = entry - ATR_STOP_LOSS_MULTIPLIER * atr
             tp = entry + ATR_TAKE_PROFIT_MULTIPLIER * atr

@@ -3,14 +3,15 @@ Module: api/routes/portfolio.py
 Responsibility: Portfolio state, positions, history, and performance endpoints
 Dependencies: portfolio_manager, performance_tracker, auth dependencies
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
 from api.dependencies import get_current_user, require_trader
+from core.monitoring.performance_tracker import PerformanceTracker
 from core.observability.logger import get_logger
 from core.portfolio.portfolio_manager import PortfolioManager
-from core.monitoring.performance_tracker import PerformanceTracker
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])

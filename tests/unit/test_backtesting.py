@@ -1,15 +1,13 @@
 """
 Tests for backtesting components.
 """
+
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock
-from datetime import datetime, timedelta
 import numpy as np
 
-from core.backtesting.metrics import compute_all
 from core.backtesting.costs import CostModel
+from core.backtesting.metrics import compute_all
 
 
 class TestBacktestMetrics:
@@ -43,7 +41,7 @@ class TestBacktestMetrics:
         """Test metrics with mixed winning and losing trades."""
         pnls = [10.0, -5.0, 15.0, -3.0, 8.0, -2.0, 12.0]
         metrics = compute_all(pnls)
-        
+
         assert 0 < metrics["win_rate"] < 1
         assert metrics["total_trades"] == len(pnls)
         assert metrics["total_pnl"] == sum(pnls)
@@ -54,7 +52,7 @@ class TestBacktestMetrics:
         """Test tracking of consecutive losses."""
         pnls = [5.0, -3.0, -2.0, -4.0, 8.0, -1.0, -2.0, -3.0]
         metrics = compute_all(pnls)
-        
+
         assert metrics["max_consecutive_losses"] == 3
         assert metrics["max_consecutive_wins"] == 1
 
@@ -62,18 +60,20 @@ class TestBacktestMetrics:
         """Test profit factor calculation."""
         pnls = [20.0, 15.0, -5.0, -8.0, 25.0, -3.0]
         metrics = compute_all(pnls)
-        
+
         total_wins = sum(p for p in pnls if p > 0)
         total_losses = abs(sum(p for p in pnls if p < 0))
-        expected_profit_factor = total_wins / total_losses if total_losses > 0 else float('inf')
-        
+        expected_profit_factor = (
+            total_wins / total_losses if total_losses > 0 else float("inf")
+        )
+
         assert abs(metrics["profit_factor"] - expected_profit_factor) < 0.01
 
     def test_volatility_calculation(self):
         """Test volatility (standard deviation) calculation."""
         pnls = [10.0, 15.0, 8.0, 12.0, 9.0]
         metrics = compute_all(pnls)
-        
+
         expected_vol = np.std(pnls)
         assert abs(metrics["volatility"] - expected_vol) < 0.01
 
@@ -81,7 +81,7 @@ class TestBacktestMetrics:
         """Test Calmar ratio calculation."""
         pnls = [10.0, 15.0, 8.0, -5.0, 12.0, 20.0, 18.0]
         metrics = compute_all(pnls)
-        
+
         # Calmar ratio = total_return / max_drawdown
         if metrics["max_drawdown"] > 0:
             expected_calmar = metrics["total_pnl"] / metrics["max_drawdown"]
@@ -110,7 +110,7 @@ class TestCostModel:
     def test_cost_calculation_accuracy(self):
         """Test cost calculation with known values."""
         model = CostModel()
-        
+
         # For a $50,000 trade with 0.01 size = $500 notional
         # Commission: 0.1% of $500 = $0.5
         # Slippage: 0.05% of $500 = $0.25
@@ -118,10 +118,10 @@ class TestCostModel:
         gross_pnl = 10.0
         entry_price = 50000.0
         size = 0.01
-        
+
         net = model.apply(gross_pnl, entry_price, size)
         expected_net = gross_pnl - (50000.0 * 0.01 * 0.0015)  # 0.15% total costs
-        
+
         assert abs(net - expected_net) < 0.01
 
     def test_negative_pnl_with_costs(self):
@@ -130,7 +130,7 @@ class TestCostModel:
         gross_pnl = -10.0
         entry_price = 50000.0
         size = 0.01
-        
+
         net = model.apply(gross_pnl, entry_price, size)
         assert net < gross_pnl  # More negative after costs
 
@@ -139,13 +139,13 @@ class TestCostModel:
         model = CostModel()
         gross_pnl = 100.0
         entry_price = 50000.0
-        
+
         # Small trade
         net_small = model.apply(gross_pnl, entry_price, 0.01)
-        
+
         # Large trade (10x size)
         net_large = model.apply(gross_pnl, entry_price, 0.1)
-        
+
         # Large trade should have proportionally more costs
         assert net_large < net_small
 
@@ -155,7 +155,7 @@ class TestCostModel:
         gross_pnl = 100.0
         entry_price = 50000.0
         size = 0.0
-        
+
         net = model.apply(gross_pnl, entry_price, size)
         # Zero size should result in zero costs
         assert net == gross_pnl

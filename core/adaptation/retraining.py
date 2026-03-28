@@ -3,11 +3,11 @@ Module: core/adaptation/retraining.py
 Responsibility: AdaptationEngine — trigger and orchestrate agent retraining
 Dependencies: technical_agent, regime_watcher, feature_store, logger
 """
+
 from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Optional
 
 from core.adaptation.regime_watcher import RegimeWatcher
 from core.agents.technical_agent import TechnicalAgent
@@ -26,12 +26,12 @@ class AdaptationEngine:
         self,
         technical_agent: TechnicalAgent,
         feature_store: FeatureStore,
-        regime_watcher: Optional[RegimeWatcher] = None,
+        regime_watcher: RegimeWatcher | None = None,
     ):
         self._agent = technical_agent
         self._feature_store = feature_store
         self._regime_watcher = regime_watcher or RegimeWatcher()
-        self._last_retrain_at: Optional[datetime] = None
+        self._last_retrain_at: datetime | None = None
         self._retrain_count: int = 0
         self._is_retraining: bool = False
 
@@ -44,7 +44,9 @@ class AdaptationEngine:
                 symbol=regime.symbol,
                 new_regime=regime.regime,
             )
-            return await self.maybe_retrain(symbol=regime.symbol, reason="regime_change")
+            return await self.maybe_retrain(
+                symbol=regime.symbol, reason="regime_change"
+            )
         return False
 
     async def maybe_retrain(self, symbol: str, reason: str = "manual") -> bool:
@@ -104,7 +106,7 @@ class AdaptationEngine:
         elapsed = (datetime.utcnow() - self._last_retrain_at).total_seconds()
         return elapsed >= RETRAIN_COOLDOWN_SECONDS
 
-    def _seconds_since_last_retrain(self) -> Optional[float]:
+    def _seconds_since_last_retrain(self) -> float | None:
         if self._last_retrain_at is None:
             return None
         return (datetime.utcnow() - self._last_retrain_at).total_seconds()
@@ -113,7 +115,9 @@ class AdaptationEngine:
         return {
             "is_retraining": self._is_retraining,
             "retrain_count": self._retrain_count,
-            "last_retrain_at": self._last_retrain_at.isoformat() if self._last_retrain_at else None,
+            "last_retrain_at": (
+                self._last_retrain_at.isoformat() if self._last_retrain_at else None
+            ),
             "cooldown_seconds": RETRAIN_COOLDOWN_SECONDS,
             "seconds_since_last_retrain": self._seconds_since_last_retrain(),
             "current_regime": self._regime_watcher.get_current_regime(),

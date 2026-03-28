@@ -3,20 +3,21 @@ Module: core/marketplace/models.py
 Responsibility: Pydantic models for the strategy marketplace
 Dependencies: pydantic
 """
+
 from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 
 class ListingStatus(str, Enum):
-    PENDING = "pending"       # awaiting review
-    ACTIVE = "active"         # live in marketplace
-    SUSPENDED = "suspended"   # temporarily hidden
-    REJECTED = "rejected"     # failed review
+    PENDING = "pending"  # awaiting review
+    ACTIVE = "active"  # live in marketplace
+    SUSPENDED = "suspended"  # temporarily hidden
+    REJECTED = "rejected"  # failed review
 
 
 class SubscriptionTier(str, Enum):
@@ -39,19 +40,19 @@ class StrategyListing(BaseModel):
     status: ListingStatus = ListingStatus.PENDING
 
     # Performance snapshot (updated periodically)
-    backtest_sharpe: Optional[float] = None
-    backtest_win_rate: Optional[float] = None
-    backtest_max_drawdown: Optional[float] = None
-    backtest_profit_factor: Optional[float] = None
-    live_sharpe: Optional[float] = None
-    live_win_rate: Optional[float] = None
+    backtest_sharpe: float | None = None
+    backtest_win_rate: float | None = None
+    backtest_max_drawdown: float | None = None
+    backtest_profit_factor: float | None = None
+    live_sharpe: float | None = None
+    live_win_rate: float | None = None
     subscriber_count: int = 0
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Strategy JSON config (stored but only exposed to subscribers)
-    strategy_config: Optional[dict[str, Any]] = None
+    strategy_config: dict[str, Any] | None = None
 
     @field_validator("price_usd_monthly")
     @classmethod
@@ -90,7 +91,7 @@ class Subscription(BaseModel):
     tier: SubscriptionTier
     active: bool = True
     subscribed_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
 
 class MarketplaceStats(BaseModel):
@@ -99,6 +100,6 @@ class MarketplaceStats(BaseModel):
     total_listings: int = 0
     active_listings: int = 0
     total_subscribers: int = 0
-    top_strategy_id: Optional[str] = None
-    avg_sharpe: Optional[float] = None
+    top_strategy_id: str | None = None
+    avg_sharpe: float | None = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)

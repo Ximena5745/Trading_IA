@@ -1,26 +1,31 @@
 """
 Enhanced test configuration with better fixtures and utilities.
 """
+
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, Any
+from unittest.mock import AsyncMock, MagicMock
 
-from core.config.settings import Settings
-from core.models import (
-    MarketData, FeatureSet, AgentOutput, Signal, 
-    Portfolio, Position, Order, MarketRegime
-)
-from core.agents.technical_agent import TechnicalAgent
+import pytest
+
 from core.agents.fundamental_agent import FundamentalAgent
-from core.risk.risk_manager import RiskManager
-from core.risk.kill_switch import KillSwitch
-from core.portfolio.portfolio_manager import PortfolioManager
-from core.execution.paper_executor import PaperExecutor
+from core.agents.technical_agent import TechnicalAgent
+from core.config.settings import Settings
 from core.execution.order_tracker import OrderTracker
+from core.execution.paper_executor import PaperExecutor
+from core.models import (
+    AgentOutput,
+    MarketData,
+    MarketRegime,
+    Portfolio,
+    Position,
+    Signal,
+)
+from core.portfolio.portfolio_manager import PortfolioManager
+from core.risk.kill_switch import KillSwitch
+from core.risk.risk_manager import RiskManager
 
 
 @pytest.fixture
@@ -184,7 +189,11 @@ def portfolio_manager(mock_settings) -> PortfolioManager:
     """Portfolio manager fixture for testing."""
     return PortfolioManager(
         settings=mock_settings,
-        initial_capital=mock_settings.INITIAL_CAPITAL if hasattr(mock_settings, 'INITIAL_CAPITAL') else 10000.0
+        initial_capital=(
+            mock_settings.INITIAL_CAPITAL
+            if hasattr(mock_settings, "INITIAL_CAPITAL")
+            else 10000.0
+        ),
     )
 
 
@@ -203,7 +212,9 @@ def paper_executor(order_tracker) -> PaperExecutor:
 @pytest.fixture
 def technical_agent() -> TechnicalAgent:
     """Technical agent fixture for testing."""
-    return TechnicalAgent(model_path="test_model.pkl")  # Non-existent path for rule-based mode
+    return TechnicalAgent(
+        model_path="test_model.pkl"
+    )  # Non-existent path for rule-based mode
 
 
 @pytest.fixture
@@ -214,19 +225,19 @@ def fundamental_agent() -> FundamentalAgent:
 
 class AsyncContextManagerMock:
     """Mock for async context managers."""
-    
+
     def __init__(self, return_value=None, side_effect=None):
         self.return_value = return_value
         self.side_effect = side_effect
         self.enter_called = False
         self.exit_called = False
-    
+
     async def __aenter__(self):
         self.enter_called = True
         if self.side_effect:
             raise self.side_effect
         return self.return_value
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.exit_called = True
         return False
@@ -243,62 +254,70 @@ def mock_http_client():
     return client
 
 
-def create_mock_market_data_batch(count: int, base_price: float = 50000.0) -> list[MarketData]:
+def create_mock_market_data_batch(
+    count: int, base_price: float = 50000.0
+) -> list[MarketData]:
     """Create a batch of market data for testing."""
     data = []
     base_time = datetime.utcnow()
-    
+
     for i in range(count):
-        price_variation = (i - count/2) * 10  # Small price variations
-        data.append(MarketData(
-            timestamp=base_time.replace(minute=i % 60, second=i % 60),
-            symbol="BTCUSDT",
-            open=Decimal(str(base_price + price_variation)),
-            high=Decimal(str(base_price + price_variation + 100)),
-            low=Decimal(str(base_price + price_variation - 100)),
-            close=Decimal(str(base_price + price_variation + 50)),
-            volume=Decimal("1000.0"),
-            quote_volume=Decimal("50000000.0"),
-            trades_count=5000,
-            taker_buy_volume=Decimal("600.0"),
-            source="binance",
-            feature_version="v1",
-        ))
-    
+        price_variation = (i - count / 2) * 10  # Small price variations
+        data.append(
+            MarketData(
+                timestamp=base_time.replace(minute=i % 60, second=i % 60),
+                symbol="BTCUSDT",
+                open=Decimal(str(base_price + price_variation)),
+                high=Decimal(str(base_price + price_variation + 100)),
+                low=Decimal(str(base_price + price_variation - 100)),
+                close=Decimal(str(base_price + price_variation + 50)),
+                volume=Decimal("1000.0"),
+                quote_volume=Decimal("50000000.0"),
+                trades_count=5000,
+                taker_buy_volume=Decimal("600.0"),
+                source="binance",
+                feature_version="v1",
+            )
+        )
+
     return data
 
 
-def create_mock_feature_set_batch(count: int, trend: str = "bullish") -> list[FeatureSet]:
+def create_mock_feature_set_batch(
+    count: int, trend: str = "bullish"
+) -> list[FeatureSet]:
     """Create a batch of feature sets for testing."""
     features = []
     base_time = datetime.utcnow()
-    
+
     for i in range(count):
         rsi = 45 + (10 if trend == "bullish" else -10) + (i % 10)
-        features.append(FeatureSet(
-            timestamp=base_time.replace(minute=i % 60, second=i % 60),
-            symbol="BTCUSDT",
-            version="v1",
-            rsi_14=rsi,
-            rsi_7=rsi - 5,
-            macd_line=100.0 + i,
-            macd_signal=50.0 + i/2,
-            macd_histogram=50.0 + i/2,
-            ema_9=50100.0 + i,
-            ema_21=50000.0 + i,
-            ema_50=49500.0 + i,
-            ema_200=48000.0 + i,
-            trend_direction=trend,
-            atr_14=300.0,
-            bb_upper=51000.0 + i,
-            bb_lower=49000.0 + i,
-            bb_width=2000.0,
-            volatility_regime="medium",
-            vwap=50000.0 + i,
-            volume_sma_20=800.0,
-            volume_ratio=1.25 + (i % 5) * 0.1,
-            obv=1000000.0,
-            close=50200.0 + i,
-        ))
-    
+        features.append(
+            FeatureSet(
+                timestamp=base_time.replace(minute=i % 60, second=i % 60),
+                symbol="BTCUSDT",
+                version="v1",
+                rsi_14=rsi,
+                rsi_7=rsi - 5,
+                macd_line=100.0 + i,
+                macd_signal=50.0 + i / 2,
+                macd_histogram=50.0 + i / 2,
+                ema_9=50100.0 + i,
+                ema_21=50000.0 + i,
+                ema_50=49500.0 + i,
+                ema_200=48000.0 + i,
+                trend_direction=trend,
+                atr_14=300.0,
+                bb_upper=51000.0 + i,
+                bb_lower=49000.0 + i,
+                bb_width=2000.0,
+                volatility_regime="medium",
+                vwap=50000.0 + i,
+                volume_sma_20=800.0,
+                volume_ratio=1.25 + (i % 5) * 0.1,
+                obv=1000000.0,
+                close=50200.0 + i,
+            )
+        )
+
     return features

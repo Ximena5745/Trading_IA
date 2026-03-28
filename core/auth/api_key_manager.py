@@ -3,6 +3,7 @@ Module: core/auth/api_key_manager.py
 Responsibility: Secure storage and retrieval of exchange API keys
 Dependencies: settings
 """
+
 from __future__ import annotations
 
 from core.config.settings import Settings

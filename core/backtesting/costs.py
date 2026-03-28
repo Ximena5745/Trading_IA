@@ -3,6 +3,7 @@ Module: core/backtesting/costs.py
 Responsibility: Apply realistic trading costs to backtest trades
 Dependencies: constants
 """
+
 from __future__ import annotations
 
 from core.config.constants import PAPER_COMMISSION_PCT, PAPER_SLIPPAGE_PCT

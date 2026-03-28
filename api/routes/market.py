@@ -3,6 +3,7 @@ Module: api/routes/market.py
 Responsibility: Market data endpoints
 Dependencies: require_trader, feature_store, binance_client
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -32,7 +33,10 @@ async def get_market_data(
 ):
     symbol = symbol.upper()
     if symbol not in settings.SUPPORTED_SYMBOLS:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Symbol {symbol} not supported")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Symbol {symbol} not supported",
+        )
     data = _market_data_cache.get(symbol, [])
     return {"symbol": symbol, "count": len(data), "data": data[-limit:]}
 
@@ -44,10 +48,15 @@ async def get_features(
 ):
     symbol = symbol.upper()
     if symbol not in settings.SUPPORTED_SYMBOLS:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Symbol {symbol} not supported")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Symbol {symbol} not supported",
+        )
     features = _features_cache.get(symbol)
     if not features:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No features available yet")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No features available yet"
+        )
     return features
 
 
@@ -59,7 +68,9 @@ async def get_regime(
     symbol = symbol.upper()
     regime = _regime_cache.get(symbol)
     if not regime:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No regime data available yet")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No regime data available yet"
+        )
     return regime
 
 

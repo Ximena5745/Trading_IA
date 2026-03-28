@@ -3,10 +3,10 @@ Module: core/strategies/base_strategy.py
 Responsibility: Abstract interface for all trading strategies
 Dependencies: models
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from core.models import FeatureSet
 
@@ -17,7 +17,7 @@ class AbcStrategy(ABC):
     version: str
 
     @abstractmethod
-    def should_enter(self, features: FeatureSet) -> Optional[dict]:
+    def should_enter(self, features: FeatureSet) -> dict | None:
         """Return entry signal dict or None if no entry."""
         ...
 

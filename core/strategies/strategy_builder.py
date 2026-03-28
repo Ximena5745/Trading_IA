@@ -3,9 +3,8 @@ Module: core/strategies/strategy_builder.py
 Responsibility: Build strategy logic from configuration (no-code)
 Dependencies: base_strategy, models
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from core.config.constants import ATR_STOP_LOSS_MULTIPLIER, ATR_TAKE_PROFIT_MULTIPLIER
 from core.models import FeatureSet
@@ -29,7 +28,7 @@ class BuiltStrategy(AbcStrategy):
         self._exit_conditions = config.get("exit_conditions", [])
         self._config = config
 
-    def should_enter(self, features: FeatureSet) -> Optional[dict]:
+    def should_enter(self, features: FeatureSet) -> dict | None:
         if not self._evaluate_conditions(self._entry_conditions, features):
             return None
         entry = features.close
@@ -41,7 +40,12 @@ class BuiltStrategy(AbcStrategy):
         else:
             sl = entry + ATR_STOP_LOSS_MULTIPLIER * atr
             tp = entry - ATR_TAKE_PROFIT_MULTIPLIER * atr
-        return {"action": action, "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+        return {
+            "action": action,
+            "entry_price": entry,
+            "stop_loss": sl,
+            "take_profit": tp,
+        }
 
     def should_exit(self, features: FeatureSet, position: dict) -> bool:
         return self._evaluate_conditions(self._exit_conditions, features)
@@ -49,7 +53,9 @@ class BuiltStrategy(AbcStrategy):
     def to_dict(self) -> dict:
         return {**super().to_dict(), **self._config}
 
-    def _evaluate_conditions(self, conditions: list[dict], features: FeatureSet) -> bool:
+    def _evaluate_conditions(
+        self, conditions: list[dict], features: FeatureSet
+    ) -> bool:
         if not conditions:
             return False
         for cond in conditions:

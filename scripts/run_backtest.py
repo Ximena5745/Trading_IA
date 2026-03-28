@@ -3,6 +3,7 @@ Script: scripts/run_backtest.py
 Responsibility: CLI to run walk-forward backtest and print results
 Usage: python scripts/run_backtest.py --symbol BTCUSDT --interval 1h --days 365
 """
+
 from __future__ import annotations
 
 import argparse
@@ -12,13 +13,14 @@ import sys
 
 sys.path.insert(0, ".")
 
+from datetime import datetime, timedelta
+
 from core.backtesting.engine import BacktestEngine
 from core.backtesting.metrics import compute_all
+from core.config.settings import get_settings
 from core.features.feature_engineering import FeatureEngine
 from core.ingestion.binance_client import BinanceClient
 from core.observability.logger import configure_logging, get_logger
-from core.config.settings import get_settings
-from datetime import datetime, timedelta
 
 configure_logging()
 logger = get_logger("run_backtest")
@@ -88,7 +90,12 @@ async def run(symbol: str, interval: str, days: int, output: str | None) -> None
 
         if output:
             with open(output, "w") as f:
-                json.dump({"symbol": symbol, "interval": interval, "windows": results}, f, indent=2, default=str)
+                json.dump(
+                    {"symbol": symbol, "interval": interval, "windows": results},
+                    f,
+                    indent=2,
+                    default=str,
+                )
             print(f"\n💾 Results saved to {output}")
 
     finally:

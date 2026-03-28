@@ -3,6 +3,7 @@ Module: core/backtesting/metrics.py
 Responsibility: Calculate all backtest performance metrics
 Dependencies: numpy, pandas
 """
+
 from __future__ import annotations
 
 import math
@@ -10,7 +11,9 @@ import math
 import numpy as np
 
 
-def sharpe_ratio(returns: list[float], risk_free: float = 0.0, periods: int = 252) -> float:
+def sharpe_ratio(
+    returns: list[float], risk_free: float = 0.0, periods: int = 252
+) -> float:
     if len(returns) < 2:
         return 0.0
     arr = np.array(returns)
@@ -19,14 +22,20 @@ def sharpe_ratio(returns: list[float], risk_free: float = 0.0, periods: int = 25
     return float(np.mean(excess) / std * math.sqrt(periods)) if std > 0 else 0.0
 
 
-def sortino_ratio(returns: list[float], risk_free: float = 0.0, periods: int = 252) -> float:
+def sortino_ratio(
+    returns: list[float], risk_free: float = 0.0, periods: int = 252
+) -> float:
     if len(returns) < 2:
         return 0.0
     arr = np.array(returns)
     excess = arr - risk_free / periods
     downside = arr[arr < 0]
     downside_std = np.std(downside, ddof=1) if len(downside) > 1 else 0.0
-    return float(np.mean(excess) / downside_std * math.sqrt(periods)) if downside_std > 0 else 0.0
+    return (
+        float(np.mean(excess) / downside_std * math.sqrt(periods))
+        if downside_std > 0
+        else 0.0
+    )
 
 
 def max_drawdown(equity_curve: list[float]) -> float:
@@ -62,7 +71,11 @@ def expectancy(trades: list[dict]) -> float:
 
 
 def compute_all(trades: list[dict], equity_curve: list[float]) -> dict:
-    returns = [t.get("net_pnl", 0) / equity_curve[i] for i, t in enumerate(trades) if equity_curve]
+    returns = [
+        t.get("net_pnl", 0) / equity_curve[i]
+        for i, t in enumerate(trades)
+        if equity_curve
+    ]
     annual_return = sum(returns) if returns else 0.0
     dd = max_drawdown(equity_curve)
 

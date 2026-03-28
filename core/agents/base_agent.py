@@ -3,6 +3,7 @@ Module: core/agents/base_agent.py
 Responsibility: Abstract interface for all AI agents
 Dependencies: models
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

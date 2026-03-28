@@ -3,6 +3,7 @@ Module: core/execution/base_executor.py
 Responsibility: Abstract interface for all executors (paper and live)
 Dependencies: none
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

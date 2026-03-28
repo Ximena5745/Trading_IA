@@ -3,6 +3,7 @@ Module: core/consensus/voting_engine.py
 Responsibility: Weighted voting across agents with regime gate
 Dependencies: conflict_logger, models, logger
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -69,7 +70,8 @@ class ConsensusEngine:
         if abs(weighted_score) >= MIN_CONSENSUS_SCORE:
             dominant = "BUY" if weighted_score > 0 else "SELL"
             agreeing = sum(
-                1 for o in agent_outputs
+                1
+                for o in agent_outputs
                 if (dominant == "BUY" and o.score > 0)
                 or (dominant == "SELL" and o.score < 0)
             )

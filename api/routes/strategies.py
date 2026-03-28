@@ -3,6 +3,7 @@ Module: api/routes/strategies.py
 Responsibility: Strategy CRUD, status management, and custom builder
 Dependencies: strategy_registry, strategy_builder, auth dependencies
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -100,7 +101,11 @@ async def update_strategy_status(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/custom", dependencies=[Depends(require_admin)], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/custom",
+    dependencies=[Depends(require_admin)],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_custom_strategy(
     body: CustomStrategyRequest,
     user=Depends(get_current_user),

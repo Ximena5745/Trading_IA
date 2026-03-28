@@ -3,9 +3,11 @@ Module: core/observability/logger.py
 Responsibility: Structured JSON logging with structlog
 Dependencies: structlog
 """
+
 from __future__ import annotations
 
 import logging
+
 import structlog
 
 

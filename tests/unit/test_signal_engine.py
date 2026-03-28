@@ -1,31 +1,50 @@
 """
 Tests for SignalEngine, ConsensusEngine, and XAIModule.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
 
-
 from core.agents.regime_agent import RegimeAgent
 from core.consensus.voting_engine import ConsensusEngine
-from core.models import AgentOutput, ConsensusOutput, FeatureSet, MarketRegime, RegimeOutput
+from core.models import (
+    AgentOutput,
+    ConsensusOutput,
+    FeatureSet,
+    MarketRegime,
+    RegimeOutput,
+)
 from core.signals.signal_engine import SignalEngine
 from core.signals.xai_module import XAIModule
 
 
-def make_features(rsi: float = 28.0, trend: str = "bullish", close: float = 50000.0) -> FeatureSet:
+def make_features(
+    rsi: float = 28.0, trend: str = "bullish", close: float = 50000.0
+) -> FeatureSet:
     return FeatureSet(
         timestamp=datetime(2024, 6, 1),
         symbol="BTCUSDT",
         version="v1",
-        rsi_14=rsi, rsi_7=rsi - 3,
-        macd_line=100.0, macd_signal=80.0, macd_histogram=20.0,
-        ema_9=49900, ema_21=49500, ema_50=48000, ema_200=45000,
+        rsi_14=rsi,
+        rsi_7=rsi - 3,
+        macd_line=100.0,
+        macd_signal=80.0,
+        macd_histogram=20.0,
+        ema_9=49900,
+        ema_21=49500,
+        ema_50=48000,
+        ema_200=45000,
         trend_direction=trend,
         atr_14=1000.0,
-        bb_upper=52000, bb_lower=48000, bb_width=0.08,
+        bb_upper=52000,
+        bb_lower=48000,
+        bb_width=0.08,
         volatility_regime="medium",
-        vwap=49800, volume_sma_20=500, volume_ratio=1.8, obv=100000,
+        vwap=49800,
+        volume_sma_20=500,
+        volume_ratio=1.8,
+        obv=100000,
         close=close,
     )
 
@@ -134,9 +153,14 @@ class TestSignalEngine:
         engine = SignalEngine()
         outputs = [make_agent_output("technical_v1", "BUY", 0.7, 0.8)]
         consensus = ConsensusOutput(
-            timestamp=datetime(2024, 6, 1), symbol="BTCUSDT",
-            final_direction="BUY", weighted_score=0.7, agents_agreement=1.0,
-            blocked_by_regime=False, agent_outputs=outputs, conflicts=[],
+            timestamp=datetime(2024, 6, 1),
+            symbol="BTCUSDT",
+            final_direction="BUY",
+            weighted_score=0.7,
+            agents_agreement=1.0,
+            blocked_by_regime=False,
+            agent_outputs=outputs,
+            conflicts=[],
         )
         signal = engine.generate(consensus, make_features())
         assert signal.stop_loss < signal.entry_price
@@ -160,9 +184,14 @@ class TestXAIModule:
         xai = XAIModule()
         outputs = [make_agent_output("technical_v1", "BUY", 0.65, 0.75)]
         consensus = ConsensusOutput(
-            timestamp=datetime(2024, 6, 1), symbol="BTCUSDT",
-            final_direction="BUY", weighted_score=0.65, agents_agreement=1.0,
-            blocked_by_regime=False, agent_outputs=outputs, conflicts=[],
+            timestamp=datetime(2024, 6, 1),
+            symbol="BTCUSDT",
+            final_direction="BUY",
+            weighted_score=0.65,
+            agents_agreement=1.0,
+            blocked_by_regime=False,
+            agent_outputs=outputs,
+            conflicts=[],
         )
         factors = xai.build_explanation(consensus)
         assert len(factors) > 0
@@ -174,9 +203,14 @@ class TestXAIModule:
         xai = XAIModule()
         outputs = [make_agent_output()]
         consensus = ConsensusOutput(
-            timestamp=datetime(2024, 6, 1), symbol="BTCUSDT",
-            final_direction="BUY", weighted_score=0.65, agents_agreement=1.0,
-            blocked_by_regime=False, agent_outputs=outputs, conflicts=[],
+            timestamp=datetime(2024, 6, 1),
+            symbol="BTCUSDT",
+            final_direction="BUY",
+            weighted_score=0.65,
+            agents_agreement=1.0,
+            blocked_by_regime=False,
+            agent_outputs=outputs,
+            conflicts=[],
         )
         factors = xai.build_explanation(consensus)
         summary = xai.generate_summary(factors, "BUY", 0.75, "BTCUSDT")

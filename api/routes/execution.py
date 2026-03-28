@@ -3,9 +3,8 @@ Module: api/routes/execution.py
 Responsibility: Order execution, cancellation and order tracking endpoints
 Dependencies: executor, order_tracker, risk_manager, auth dependencies
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -54,10 +53,12 @@ class ExecuteRequest(BaseModel):
     stop_loss: float
     take_profit: float
     confidence: float
-    idempotency_key: Optional[str] = None
+    idempotency_key: str | None = None
 
 
-@router.post("", dependencies=[Depends(require_trader)], status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "", dependencies=[Depends(require_trader)], status_code=status.HTTP_202_ACCEPTED
+)
 async def execute_signal(
     req: ExecuteRequest,
     user=Depends(get_current_user),
@@ -112,7 +113,7 @@ async def execute_signal(
 
 
 @router.get("/orders")
-async def get_orders(symbol: Optional[str] = None, user=Depends(get_current_user)):
+async def get_orders(symbol: str | None = None, user=Depends(get_current_user)):
     """Return open orders, optionally filtered by symbol."""
     ot = _get_ot()
     orders = ot.get_open_orders(symbol=symbol)
