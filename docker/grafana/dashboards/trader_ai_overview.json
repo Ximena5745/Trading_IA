@@ -1,0 +1,140 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+  ],
+  "annotations": { "list": [] },
+  "description": "TRADER AI — system overview: signals, execution, portfolio, risk",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Portfolio P&L (USD)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "trader_ai_portfolio_pnl", "legendFormat": "P&L", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }] }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Drawdown (%)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "trader_ai_portfolio_drawdown * 100", "legendFormat": "Drawdown %", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 15 }] }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Total Capital (USD)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "trader_ai_portfolio_capital", "legendFormat": "Capital", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "id": 4,
+      "title": "Kill Switch Activations",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(trader_ai_kill_switch_activations_total)", "legendFormat": "Activations", "refId": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Signals Generated (rate/min)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "rate(trader_ai_signals_generated_total[1m])", "legendFormat": "{{symbol}} {{direction}}", "refId": "A" },
+        { "expr": "rate(trader_ai_signals_blocked_total[1m])", "legendFormat": "Blocked ({{reason}})", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10 } } }
+    },
+    {
+      "id": 6,
+      "title": "Execution Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, rate(trader_ai_execution_latency_ms_bucket[5m]))", "legendFormat": "p50", "refId": "A" },
+        { "expr": "histogram_quantile(0.90, rate(trader_ai_execution_latency_ms_bucket[5m]))", "legendFormat": "p90", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, rate(trader_ai_execution_latency_ms_bucket[5m]))", "legendFormat": "p99", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } } }
+    },
+    {
+      "id": 7,
+      "title": "Model Inference Latency by Agent (p90, ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "histogram_quantile(0.90, rate(trader_ai_model_prediction_latency_ms_bucket[5m])) by (agent_id)", "legendFormat": "{{agent_id}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 8,
+      "title": "WebSocket Reconnections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        { "expr": "rate(trader_ai_websocket_reconnections_total[5m])", "legendFormat": "{{symbol}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 9,
+      "title": "Orders Submitted (by symbol / side / mode)",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        { "expr": "sum by (symbol, side, mode) (trader_ai_orders_submitted_total)", "legendFormat": "{{symbol}} {{side}} {{mode}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "id": 10,
+      "title": "Portfolio Capital Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        { "expr": "trader_ai_portfolio_capital", "legendFormat": "Capital (USD)", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "custom": { "fillOpacity": 15, "drawStyle": "line" } } }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["trader-ai", "overview"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "TRADER AI — Overview",
+  "uid": "trader-ai-overview",
+  "version": 1
+}
