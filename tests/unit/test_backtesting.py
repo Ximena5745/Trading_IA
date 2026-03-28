@@ -14,36 +14,46 @@ class TestBacktestMetrics:
     def test_sharpe_positive_returns(self):
         """Sharpe ratio should be positive for consistent gains."""
         pnls = [10.0, 15.0, 8.0, 12.0, 9.0, 11.0, 14.0, 10.0]
-        metrics = compute_all(pnls)
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
         assert metrics["sharpe_ratio"] > 0
         assert metrics["win_rate"] == 1.0
 
     def test_max_drawdown_all_positive(self):
         """Max drawdown is 0 when all trades are profitable."""
         pnls = [5.0, 10.0, 8.0, 12.0]
-        metrics = compute_all(pnls)
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
         assert metrics["max_drawdown"] == 0.0
 
     def test_empty_pnl_returns_zeros(self):
         """compute_all handles empty list without error."""
-        metrics = compute_all([])
+        trades = []
+        equity_curve = [1000.0]
+        metrics = compute_all(trades, equity_curve)
         assert metrics["sharpe_ratio"] == 0.0
         assert metrics["win_rate"] == 0.0
 
     def test_negative_returns_sharpe(self):
         """Sharpe ratio should be negative for consistent losses."""
         pnls = [-5.0, -10.0, -8.0, -12.0]
-        metrics = compute_all(pnls)
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
         assert metrics["sharpe_ratio"] < 0
         assert metrics["win_rate"] == 0.0
 
     def test_mixed_returns_metrics(self):
         """Test metrics with mixed winning and losing trades."""
         pnls = [10.0, -5.0, 15.0, -3.0, 8.0, -2.0, 12.0]
-        metrics = compute_all(pnls)
-
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
+        
         assert 0 < metrics["win_rate"] < 1
-        assert metrics["total_trades"] == len(pnls)
+        assert metrics["total_trades"] == len(trades)
         assert metrics["total_pnl"] == sum(pnls)
         assert metrics["avg_win"] > 0
         assert metrics["avg_loss"] < 0
@@ -51,37 +61,43 @@ class TestBacktestMetrics:
     def test_consecutive_losses_tracking(self):
         """Test tracking of consecutive losses."""
         pnls = [5.0, -3.0, -2.0, -4.0, 8.0, -1.0, -2.0, -3.0]
-        metrics = compute_all(pnls)
-
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
+        
         assert metrics["max_consecutive_losses"] == 3
         assert metrics["max_consecutive_wins"] == 1
 
     def test_profit_factor_calculation(self):
         """Test profit factor calculation."""
         pnls = [20.0, 15.0, -5.0, -8.0, 25.0, -3.0]
-        metrics = compute_all(pnls)
-
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
+        
         total_wins = sum(p for p in pnls if p > 0)
         total_losses = abs(sum(p for p in pnls if p < 0))
-        expected_profit_factor = (
-            total_wins / total_losses if total_losses > 0 else float("inf")
-        )
-
+        expected_profit_factor = total_wins / total_losses if total_losses > 0 else float('inf')
+        
         assert abs(metrics["profit_factor"] - expected_profit_factor) < 0.01
 
     def test_volatility_calculation(self):
         """Test volatility (standard deviation) calculation."""
         pnls = [10.0, 15.0, 8.0, 12.0, 9.0]
-        metrics = compute_all(pnls)
-
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
+        
         expected_vol = np.std(pnls)
         assert abs(metrics["volatility"] - expected_vol) < 0.01
 
     def test_calmar_ratio(self):
         """Test Calmar ratio calculation."""
         pnls = [10.0, 15.0, 8.0, -5.0, 12.0, 20.0, 18.0]
-        metrics = compute_all(pnls)
-
+        trades = [{"net_pnl": pnl} for pnl in pnls]
+        equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
+        metrics = compute_all(trades, equity_curve)
+        
         # Calmar ratio = total_return / max_drawdown
         if metrics["max_drawdown"] > 0:
             expected_calmar = metrics["total_pnl"] / metrics["max_drawdown"]
