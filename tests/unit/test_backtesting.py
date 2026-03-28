@@ -51,7 +51,7 @@ class TestBacktestMetrics:
         trades = [{"net_pnl": pnl} for pnl in pnls]
         equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
         metrics = compute_all(trades, equity_curve)
-        
+
         assert 0 < metrics["win_rate"] < 1
         assert metrics["total_trades"] == len(trades)
         assert metrics["total_pnl"] == sum(pnls)
@@ -64,7 +64,7 @@ class TestBacktestMetrics:
         trades = [{"net_pnl": pnl} for pnl in pnls]
         equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
         metrics = compute_all(trades, equity_curve)
-        
+
         assert metrics["max_consecutive_losses"] == 3
         assert metrics["max_consecutive_wins"] == 1
 
@@ -74,11 +74,11 @@ class TestBacktestMetrics:
         trades = [{"net_pnl": pnl} for pnl in pnls]
         equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
         metrics = compute_all(trades, equity_curve)
-        
+
         total_wins = sum(p for p in pnls if p > 0)
         total_losses = abs(sum(p for p in pnls if p < 0))
         expected_profit_factor = total_wins / total_losses if total_losses > 0 else float('inf')
-        
+
         assert abs(metrics["profit_factor"] - expected_profit_factor) < 0.01
 
     def test_volatility_calculation(self):
@@ -87,7 +87,7 @@ class TestBacktestMetrics:
         trades = [{"net_pnl": pnl} for pnl in pnls]
         equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
         metrics = compute_all(trades, equity_curve)
-        
+
         expected_vol = np.std(pnls)
         assert abs(metrics["volatility"] - expected_vol) < 0.01
 
@@ -97,7 +97,7 @@ class TestBacktestMetrics:
         trades = [{"net_pnl": pnl} for pnl in pnls]
         equity_curve = [1000 + sum(pnls[:i+1]) for i in range(len(pnls))]
         metrics = compute_all(trades, equity_curve)
-        
+
         # Calmar ratio = total_return / max_drawdown
         if metrics["max_drawdown"] > 0:
             expected_calmar = metrics["total_pnl"] / metrics["max_drawdown"]
