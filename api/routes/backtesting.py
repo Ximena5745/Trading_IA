@@ -8,7 +8,6 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel

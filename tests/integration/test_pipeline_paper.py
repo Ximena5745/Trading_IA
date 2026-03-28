@@ -5,11 +5,9 @@ Tests: data → features → agents → consensus → signal → risk → paper 
 """
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pandas as pd
 import pytest
 
 from core.agents.regime_agent import RegimeAgent
@@ -19,7 +17,6 @@ from core.backtesting.metrics import compute_all
 from core.consensus.voting_engine import ConsensusEngine
 from core.execution.paper_executor import PaperExecutor
 from core.execution.order_tracker import OrderTracker
-from core.features.feature_engineering import FeatureEngine
 from core.ingestion.data_validator import DataValidator
 from core.models import (
     AgentOutput,
@@ -29,7 +26,6 @@ from core.models import (
     RegimeOutput,
 )
 from core.portfolio.portfolio_manager import PortfolioManager
-from core.risk.kill_switch import KillSwitch
 from core.risk.risk_manager import RiskManager
 from core.signals.signal_engine import SignalEngine
 
@@ -351,7 +347,6 @@ class TestPaperExecutor:
 class TestPortfolioManager:
     def test_open_position_updates_capital(self, portfolio_manager):
         """Opening a position reduces available capital."""
-        initial_capital = portfolio_manager.get_portfolio().total_capital
         portfolio_manager.open_position(
             symbol="BTCUSDT",
             side="BUY",

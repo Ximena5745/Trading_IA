@@ -5,7 +5,6 @@ Dependencies: require_trader, models
 """
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

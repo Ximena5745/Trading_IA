@@ -6,7 +6,6 @@ Dependencies: models, logger
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from core.observability.logger import get_logger
 

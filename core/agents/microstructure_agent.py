@@ -5,7 +5,6 @@ Dependencies: base_agent, models, logger
 """
 from __future__ import annotations
 
-from datetime import datetime
 
 from core.agents.base_agent import AbcAgent
 from core.exceptions import AgentPredictionError

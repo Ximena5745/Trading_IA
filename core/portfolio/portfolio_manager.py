@@ -124,7 +124,6 @@ class PortfolioManager:
         )
 
     def _update_metrics(self) -> None:
-        unrealized = sum(pos.unrealized_pnl for pos in self._portfolio.positions)
         self._portfolio.total_capital = (
             self._portfolio.available_capital
             + sum(pos.current_price * pos.quantity for pos in self._portfolio.positions)

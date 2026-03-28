@@ -5,10 +5,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
 
 from core.agents.regime_agent import RegimeAgent
-from core.agents.technical_agent import TechnicalAgent
 from core.consensus.voting_engine import ConsensusEngine
 from core.models import AgentOutput, ConsensusOutput, FeatureSet, MarketRegime, RegimeOutput
 from core.signals.signal_engine import SignalEngine

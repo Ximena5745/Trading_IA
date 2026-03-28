@@ -64,7 +64,7 @@ async def execute_signal(
 ):
     """Submit a signal for execution after risk validation."""
     rm = _get_rm()
-    ot = _get_ot()
+    _get_ot()  # validate tracker is initialized
 
     # Build a minimal Signal for risk validation
     signal = Signal(

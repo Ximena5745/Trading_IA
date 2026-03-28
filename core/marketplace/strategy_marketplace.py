@@ -99,22 +99,22 @@ class StrategyMarketplace:
         limit: int = 50,
     ) -> list[dict]:
         active = [
-            l for l in self._listings.values()
-            if l.status == ListingStatus.ACTIVE
+            listing for listing in self._listings.values()
+            if listing.status == ListingStatus.ACTIVE
         ]
         if tag:
-            active = [l for l in active if tag.lower() in [t.lower() for t in l.tags]]
+            active = [listing for listing in active if tag.lower() in [t.lower() for t in listing.tags]]
         if tier:
-            active = [l for l in active if l.tier == tier]
+            active = [listing for listing in active if listing.tier == tier]
 
         sort_key = {
-            "subscriber_count": lambda l: l.subscriber_count,
-            "sharpe": lambda l: l.backtest_sharpe or 0.0,
-            "win_rate": lambda l: l.backtest_win_rate or 0.0,
-        }.get(sort_by, lambda l: l.subscriber_count)
+            "subscriber_count": lambda lst: lst.subscriber_count,
+            "sharpe": lambda lst: lst.backtest_sharpe or 0.0,
+            "win_rate": lambda lst: lst.backtest_win_rate or 0.0,
+        }.get(sort_by, lambda lst: lst.subscriber_count)
 
         active.sort(key=sort_key, reverse=True)
-        return [l.public_view() for l in active[:limit]]
+        return [listing.public_view() for listing in active[:limit]]
 
     def get_listing(self, listing_id: str, requester_id: Optional[str] = None) -> dict:
         listing = self._get_or_raise(listing_id)
@@ -212,14 +212,14 @@ class StrategyMarketplace:
     # ── Stats ──────────────────────────────────────────────────────────────
 
     def get_stats(self) -> MarketplaceStats:
-        active = [l for l in self._listings.values() if l.status == ListingStatus.ACTIVE]
-        sharpe_values = [l.backtest_sharpe for l in active if l.backtest_sharpe is not None]
-        top = max(active, key=lambda l: l.subscriber_count, default=None)
+        active = [lst for lst in self._listings.values() if lst.status == ListingStatus.ACTIVE]
+        sharpe_values = [lst.backtest_sharpe for lst in active if lst.backtest_sharpe is not None]
+        top = max(active, key=lambda lst: lst.subscriber_count, default=None)
 
         return MarketplaceStats(
             total_listings=len(self._listings),
             active_listings=len(active),
-            total_subscribers=sum(l.subscriber_count for l in active),
+            total_subscribers=sum(lst.subscriber_count for lst in active),
             top_strategy_id=top.strategy_id if top else None,
             avg_sharpe=round(sum(sharpe_values) / len(sharpe_values), 3) if sharpe_values else None,
         )

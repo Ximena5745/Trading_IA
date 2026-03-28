@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from core.config.constants import HARD_LIMITS
 from core.config.settings import Settings
-from core.exceptions import KillSwitchActiveError, RiskLimitExceededError
 from core.observability.logger import get_logger
 from core.risk.kill_switch import KillSwitch
 from core.risk.position_sizer import PositionSizer

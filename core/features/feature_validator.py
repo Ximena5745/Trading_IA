@@ -6,7 +6,6 @@ Dependencies: models, logger
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 from core.exceptions import FeatureCalculationError
 from core.models import FeatureSet

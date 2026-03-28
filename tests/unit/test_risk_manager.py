@@ -3,7 +3,6 @@ Tests for RiskManager — property-based with Hypothesis.
 """
 from __future__ import annotations
 
-import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 from unittest.mock import MagicMock

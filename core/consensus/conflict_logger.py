@@ -26,7 +26,7 @@ class ConflictLogger:
             dirs = {a.direction for a in high_conf}
             if len(dirs) > 1:
                 conflicts.append(
-                    f"High-confidence conflict: "
+                    "High-confidence conflict: "
                     + ", ".join(f"{a.agent_id}={a.direction}" for a in high_conf)
                 )
 
