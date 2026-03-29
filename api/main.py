@@ -32,6 +32,7 @@ from core.monitoring.performance_tracker import PerformanceTracker
 from core.monitoring.prometheus_metrics import start_metrics_server
 from core.observability.logger import configure_logging, get_logger
 from core.portfolio.portfolio_manager import PortfolioManager
+from core.risk.kill_switch import KillSwitch
 from core.risk.risk_manager import RiskManager
 from core.simulation.historical_simulator import HistoricalSimulator
 from core.strategies.strategy_registry import StrategyRegistry
@@ -47,12 +48,13 @@ limiter = Limiter(key_func=get_remote_address)
 async def lifespan(app: FastAPI):
     # ── Initialize core singletons ──────────────────────────────────────────
     portfolio_manager = PortfolioManager(
-        total_capital=settings.INITIAL_CAPITAL,
-        max_risk_per_trade_pct=settings.MAX_RISK_PER_TRADE_PCT,
+        settings=settings,
+        initial_capital=10_000.0,
     )
     performance_tracker = PerformanceTracker()
     order_tracker = OrderTracker()
-    risk_manager = RiskManager()
+    kill_switch = KillSwitch(settings)
+    risk_manager = RiskManager(settings=settings, kill_switch=kill_switch)
     strategy_registry = StrategyRegistry()
     alert_engine = AlertEngine()
 
