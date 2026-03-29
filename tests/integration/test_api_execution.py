@@ -5,15 +5,12 @@ Tests: authentication flow, execution validation, portfolio CRUD, strategy manag
 """
 from __future__ import annotations
 
-from datetime import datetime
-from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
 from core.execution.order_tracker import OrderTracker
-from core.models import Portfolio, Signal
 from core.monitoring.performance_tracker import PerformanceTracker
 from core.portfolio.portfolio_manager import PortfolioManager
 from core.risk.risk_manager import RiskManager
@@ -143,7 +140,6 @@ class TestStrategyEndpoints:
         response = client.get("/strategies", headers=auth_headers)
         if response.status_code == 200:
             strategies = response.json().get("strategies", [])
-            ids = [s.get("strategy_id") for s in strategies]
             # Builtins should be registered
             assert len(strategies) >= 0  # At least doesn't crash
 

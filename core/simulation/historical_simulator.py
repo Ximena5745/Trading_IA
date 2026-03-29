@@ -12,7 +12,6 @@ from typing import Optional
 
 from core.backtesting.costs import CostModel
 from core.backtesting.metrics import compute_all
-from core.features.feature_engineering import FeatureEngine
 from core.models import FeatureSet
 from core.observability.logger import get_logger
 from core.strategies.base_strategy import AbcStrategy

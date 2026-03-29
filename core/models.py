@@ -9,7 +9,6 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Optional
-from uuid import uuid4
 
 from pydantic import BaseModel, validator
 

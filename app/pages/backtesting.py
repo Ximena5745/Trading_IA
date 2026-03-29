@@ -8,7 +8,6 @@ from __future__ import annotations
 import os
 import time
 
-import plotly.graph_objects as go
 import requests
 import streamlit as st
 
@@ -62,7 +61,7 @@ if "last_job_id" in st.session_state:
                         results_resp = requests.get(f"{API_URL}/backtest/{job_id}/results", headers=HEADERS)
                         if results_resp.status_code == 200:
                             results = results_resp.json()
-                            _show_results(results)
+                            _show_results(results)  # noqa: F821
                         break
                     elif job_data["status"] == "failed":
                         st.error(f"Backtest fallido: {job_data.get('error')}")

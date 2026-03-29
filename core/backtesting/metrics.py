@@ -8,7 +8,6 @@ from __future__ import annotations
 import math
 
 import numpy as np
-import pandas as pd
 
 
 def sharpe_ratio(returns: list[float], risk_free: float = 0.0, periods: int = 252) -> float:

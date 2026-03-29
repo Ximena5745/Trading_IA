@@ -80,8 +80,6 @@ def render_equity_curve(equity_curve: list[dict]) -> None:
     df = pd.DataFrame(equity_curve)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-    in_pos = df[df.get("in_position", pd.Series([False] * len(df))) == True]
-
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(

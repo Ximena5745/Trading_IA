@@ -6,7 +6,6 @@ Dependencies: historical_simulator, strategy_registry, auth dependencies
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
@@ -65,7 +64,6 @@ class SimulationRequest(BaseModel):
 
 def _run_simulation_job(job_id: str, request: SimulationRequest) -> None:
     from core.features.feature_store import FeatureStore
-    from core.exceptions import StrategyNotFoundError
 
     _jobs[job_id]["status"] = "running"
 

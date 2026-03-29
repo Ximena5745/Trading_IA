@@ -8,7 +8,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from core.models import FeatureSet, Signal
+from core.models import FeatureSet
 
 
 class AbcStrategy(ABC):

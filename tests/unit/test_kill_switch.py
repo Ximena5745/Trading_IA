@@ -4,8 +4,7 @@ Every circuit breaker must trigger without exception when its threshold is cross
 """
 from __future__ import annotations
 
-import pytest
-from hypothesis import given, settings as h_settings
+from hypothesis import given
 from hypothesis import strategies as st
 from unittest.mock import MagicMock
 

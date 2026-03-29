@@ -5,7 +5,6 @@ Dependencies: python-telegram-bot, models, logger
 """
 from __future__ import annotations
 
-from typing import Optional
 
 from core.models import Signal
 from core.observability.logger import get_logger
