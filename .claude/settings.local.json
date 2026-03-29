@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m ruff check . --fix)",
+      "Bash(sed -n '60,75p' api/routes/execution.py)",
+      "Bash(sed -n '60,70p' app/pages/backtesting.py)",
+      "Bash(sed -n '80,88p' app/pages/simulator.py)",
+      "Bash(sed -n '124,132p' core/portfolio/portfolio_manager.py)",
+      "Bash(sed -n '140,148p' tests/integration/test_api_execution.py)",
+      "Bash(sed -n '348,356p' tests/integration/test_pipeline_paper.py)",
+      "Bash(python -m ruff check .)",
+      "Bash(python scripts/ci_backtest_gate.py)"
+    ]
+  }
+}
