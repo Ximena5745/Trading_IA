@@ -19,7 +19,7 @@ lightgbm==4.3.0
 xgboost==2.0.3
 scikit-learn>=1.4,<2.0
 shap==0.44.1
-pandas-ta==0.3.14b0
+# pandas-ta not available for Python 3.11+ on PyPI; indicators use manual fallback
 optuna==3.5.0
 hmmlearn==0.3.0
 
