@@ -184,7 +184,7 @@ class TestRiskEndpoints:
         assert response.status_code in (200, 401, 403)
         if response.status_code == 200:
             body = response.json()
-            assert "kill_switch_active" in body or "is_active" in body or "active" in body
+            assert "kill_switch" in body or "kill_switch_active" in body or "is_active" in body
 
     def test_risk_limits_accessible(self, client, auth_headers):
         response = client.get("/risk/limits", headers=auth_headers)

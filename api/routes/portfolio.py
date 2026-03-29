@@ -57,7 +57,7 @@ async def get_positions(user=Depends(get_current_user)):
     pm = _get_pm()
     portfolio = pm.get_portfolio()
     return {
-        "positions": [p.model_dump() for p in portfolio.positions.values()],
+        "positions": [p.model_dump() for p in portfolio.positions],
         "total": len(portfolio.positions),
     }
 

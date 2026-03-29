@@ -110,7 +110,9 @@ async def execute_signal(
 async def get_orders(symbol: Optional[str] = None, user=Depends(get_current_user)):
     """Return open orders, optionally filtered by symbol."""
     ot = _get_ot()
-    orders = ot.get_open_orders(symbol=symbol)
+    orders = ot.get_open_orders()
+    if symbol:
+        orders = [o for o in orders if o.get("symbol") == symbol]
     return {
         "orders": [o.model_dump() if hasattr(o, "model_dump") else o for o in orders],
         "total": len(orders),
@@ -121,8 +123,9 @@ async def get_orders(symbol: Optional[str] = None, user=Depends(get_current_user
 async def get_order(order_id: str, user=Depends(get_current_user)):
     """Return a specific order by ID."""
     ot = _get_ot()
-    order = ot.get_order(order_id)
-    if not order:
+    try:
+        order = ot.get(order_id)
+    except KeyError:
         raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
     return order.model_dump() if hasattr(order, "model_dump") else order
 
@@ -131,8 +134,9 @@ async def get_order(order_id: str, user=Depends(get_current_user)):
 async def cancel_order(order_id: str, user=Depends(get_current_user)):
     """Cancel a pending order."""
     ot = _get_ot()
-    order = ot.get_order(order_id)
-    if not order:
+    try:
+        ot.get(order_id)
+    except KeyError:
         raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
 
     ot.update_status(order_id, "cancelled")
