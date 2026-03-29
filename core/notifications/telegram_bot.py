@@ -47,6 +47,20 @@ class TelegramBot:
         msg = f"⚠️ WebSocket reconectando — {symbol} (intento {attempt})"
         await self._send(msg)
 
+    async def send_critical_error_alert(self, error_type: str, details: str) -> None:
+        msg = (
+            f"🔥 *ERROR CRÍTICO — {error_type}*\n"
+            f"`{details[:500]}`"
+        )
+        await self._send(msg, priority=True)
+
+    async def send_system_restart_alert(self, version: str, execution_mode: str) -> None:
+        msg = (
+            f"🔄 *Sistema reiniciado*\n"
+            f"Versión: `{version}` | Modo: `{execution_mode}`"
+        )
+        await self._send(msg)
+
     async def _send(self, text: str, priority: bool = False) -> None:
         try:
             await self._bot.send_message(

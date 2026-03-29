@@ -52,6 +52,10 @@ class RegimeAgent(AbcAgent):
         try:
             regime_output = self.classify_regime(features)
             score = self._regime_to_score(regime_output.regime)
+
+            # FASE E — LOW_LIQUIDITY: log warning, do NOT block (decision v2.4)
+            self._check_low_liquidity(features.symbol)
+
             return AgentOutput(
                 agent_id=self.agent_id,
                 timestamp=features.timestamp,
@@ -65,6 +69,21 @@ class RegimeAgent(AbcAgent):
             )
         except Exception as e:
             raise AgentPredictionError(f"RegimeAgent prediction failed: {e}") from e
+
+    def _check_low_liquidity(self, symbol: str) -> None:
+        """Log warning if Asian session only (LOW_LIQUIDITY) — does NOT block."""
+        try:
+            from core.ingestion.market_calendar import get_calendar
+            calendar = get_calendar()
+            if calendar.is_low_liquidity(symbol):
+                logger.warning(
+                    "LOW_LIQUIDITY",
+                    symbol=symbol,
+                    session="asian",
+                    note="signals allowed per decision v2.4 — monitor spread widening",
+                )
+        except Exception:
+            pass   # calendar not available in crypto-only mode
 
     def classify_regime(self, features: FeatureSet) -> RegimeOutput:
         if self._model is not None:

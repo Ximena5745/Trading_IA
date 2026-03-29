@@ -88,6 +88,31 @@ class FundamentalAgent(AbcAgent):
     def is_ready(self) -> bool:
         return self._last_fetch is not None
 
+    def is_blocked_by_event(self, symbol: str) -> bool:
+        """
+        ForexFactory bloqueante para Forex/Índices/Commodities (decision v2.4).
+        Retorna True si hay un evento de alto impacto ±30 min para alguna
+        de las divisas que afectan al símbolo.
+        Siempre False para crypto (Fear & Greed es filtro, no bloqueante).
+        """
+        from core.models import AssetClass, detect_asset_class
+        if detect_asset_class(symbol) == AssetClass.CRYPTO:
+            return False
+        try:
+            from core.ingestion.market_calendar import get_calendar
+            calendar = get_calendar()
+            for currency in calendar.affected_currencies(symbol):
+                if calendar.is_high_impact_event_window(currency):
+                    logger.info(
+                        "fundamental_event_block",
+                        symbol=symbol,
+                        blocking_currency=currency,
+                    )
+                    return True
+        except Exception as exc:
+            logger.warning("fundamental_event_check_failed", symbol=symbol, error=str(exc))
+        return False
+
     def predict(self, features: FeatureSet) -> AgentOutput:
         """Generate a fundamental signal using cached data.
 

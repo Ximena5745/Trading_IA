@@ -28,6 +28,10 @@ class BuiltStrategy(AbcStrategy):
         self._entry_conditions = config.get("entry_conditions", [])
         self._exit_conditions = config.get("exit_conditions", [])
         self._config = config
+        # FASE E — optional multi-timeframe confirmation filter (decision v2.4)
+        # If set, RegimeAgent must confirm trend on this TF before signal is valid.
+        # None = disabled (default) — strategy works exactly as before.
+        self.confirmation_timeframe: Optional[str] = config.get("confirmation_timeframe", None)
 
     def should_enter(self, features: FeatureSet) -> Optional[dict]:
         if not self._evaluate_conditions(self._entry_conditions, features):
@@ -82,3 +86,12 @@ class StrategyBuilder:
         for cond in config["entry_conditions"]:
             if cond.get("operator") not in OPERATORS:
                 raise ValueError(f"Unknown operator: {cond.get('operator')}")
+
+        # Validate optional confirmation_timeframe
+        tf = config.get("confirmation_timeframe")
+        if tf is not None:
+            from core.config.constants import SUPPORTED_TIMEFRAMES
+            if tf not in SUPPORTED_TIMEFRAMES:
+                raise ValueError(
+                    f"confirmation_timeframe '{tf}' not valid. Supported: {SUPPORTED_TIMEFRAMES}"
+                )

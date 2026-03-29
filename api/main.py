@@ -27,7 +27,9 @@ from core.agents.fundamental_agent import FundamentalAgent
 from core.config.settings import get_settings
 from core.execution.order_tracker import OrderTracker
 from core.marketplace.strategy_marketplace import StrategyMarketplace
+from core.db.session import close_pool, init_pool
 from core.monitoring.alert_engine import AlertEngine
+from core.notifications.telegram_bot import TelegramBot
 from core.monitoring.performance_tracker import PerformanceTracker
 from core.monitoring.prometheus_metrics import start_metrics_server
 from core.observability.logger import configure_logging, get_logger
@@ -56,7 +58,11 @@ async def lifespan(app: FastAPI):
     kill_switch = KillSwitch(settings)
     risk_manager = RiskManager(settings=settings, kill_switch=kill_switch)
     strategy_registry = StrategyRegistry()
-    alert_engine = AlertEngine()
+    telegram_bot = TelegramBot(
+        token=settings.TELEGRAM_BOT_TOKEN,
+        chat_id=settings.TELEGRAM_CHAT_ID,
+    )
+    alert_engine = AlertEngine(telegram_bot=telegram_bot)
 
     # ── Fase 5 singletons ──────────────────────────────────────────────────
     marketplace = StrategyMarketplace()
@@ -117,8 +123,44 @@ async def lifespan(app: FastAPI):
     if settings.EXECUTION_MODE == "live" and not settings.TRADING_ENABLED:
         logger.warning("live_mode_but_trading_disabled")
 
+    import asyncio as _asyncio2
+    _asyncio2.create_task(
+        alert_engine.on_system_restart("2.0.0", settings.EXECUTION_MODE)
+    )
+
+    # ── Start pipeline scheduler ────────────────────────────────────────────
+    _scheduler = None
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from apscheduler.triggers.cron import CronTrigger
+        from scripts.run_pipeline import SCHEDULE, _build_components, _pipeline_cycle
+
+        await init_pool(settings.DATABASE_URL)
+        _pipeline_components = await _build_components(settings)
+
+        _scheduler = AsyncIOScheduler(timezone="UTC")
+        for symbol, minute_offset in SCHEDULE:
+            _scheduler.add_job(
+                _pipeline_cycle,
+                trigger=CronTrigger(minute=minute_offset, timezone="UTC"),
+                args=[symbol, _pipeline_components],
+                id=f"pipeline_{symbol}",
+                max_instances=1,
+                coalesce=True,
+                misfire_grace_time=120,
+            )
+        _scheduler.start()
+        logger.info("pipeline_scheduler_started", jobs=len(SCHEDULE))
+    except ImportError:
+        logger.warning("apscheduler_not_installed", hint="pip install apscheduler")
+    except Exception as exc:
+        logger.error("pipeline_scheduler_failed", error=str(exc))
+
     yield
 
+    if _scheduler and _scheduler.running:
+        _scheduler.shutdown(wait=False)
+    await close_pool()
     logger.info("trader_ai_shutdown")
 
 

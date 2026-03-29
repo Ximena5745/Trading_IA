@@ -26,7 +26,7 @@ services:
     environment:
       POSTGRES_DB: trader_ai
       POSTGRES_USER: trader
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-trader}
     volumes:
       - timescale_data:/var/lib/postgresql/data
     healthcheck:

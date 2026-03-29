@@ -24,6 +24,72 @@ class AssetClass(str, Enum):
     COMMODITIES = "commodities"
 
 
+class InstrumentConfig:
+    """
+    Per-instrument configuration for position sizing and cost modeling.
+    Use mt5_symbol for the exact name in the IC Markets terminal.
+    Verified IC Markets symbols — section 1.2 of PROYECTO.md v2.4.
+    """
+    __slots__ = (
+        "symbol", "mt5_symbol", "asset_class", "pip_value",
+        "lot_size", "min_lots", "lot_step", "spread_pips",
+        "swap_long", "swap_short", "point",
+    )
+
+    def __init__(
+        self,
+        symbol: str,
+        mt5_symbol: str,
+        asset_class: "AssetClass",
+        pip_value: float,    # USD value of 1 pip per standard lot
+        lot_size: float,     # contract size (e.g. 100_000 for forex majors)
+        min_lots: float = 0.01,
+        lot_step: float = 0.01,
+        spread_pips: float = 0.0,
+        swap_long: float = 0.0,   # populated at runtime via MT5Client.get_symbol_info()
+        swap_short: float = 0.0,
+        point: float = 0.00001,
+    ):
+        self.symbol = symbol
+        self.mt5_symbol = mt5_symbol
+        self.asset_class = asset_class
+        self.pip_value = pip_value
+        self.lot_size = lot_size
+        self.min_lots = min_lots
+        self.lot_step = lot_step
+        self.spread_pips = spread_pips
+        self.swap_long = swap_long
+        self.swap_short = swap_short
+        self.point = point
+
+
+# ── Instrument catalogue — IC Markets verified (PROYECTO.md §1.2) ──────────
+# swap_long/swap_short are set to 0.0 here; MT5Client.get_symbol_info()
+# refreshes them at runtime from the live broker feed.
+INSTRUMENT_CONFIGS: dict[str, InstrumentConfig] = {
+    # Forex majors — pip = 0.0001, lot = 100,000 units, pip_value ≈ $10/lot
+    "EURUSD": InstrumentConfig("EURUSD", "EURUSD", AssetClass.FOREX, pip_value=10.0,  lot_size=100_000, spread_pips=0.6),
+    "GBPUSD": InstrumentConfig("GBPUSD", "GBPUSD", AssetClass.FOREX, pip_value=10.0,  lot_size=100_000, spread_pips=0.9),
+    "AUDUSD": InstrumentConfig("AUDUSD", "AUDUSD", AssetClass.FOREX, pip_value=10.0,  lot_size=100_000, spread_pips=0.8),
+    "USDJPY": InstrumentConfig("USDJPY", "USDJPY", AssetClass.FOREX, pip_value=9.09,  lot_size=100_000, spread_pips=0.7, point=0.001),
+    "USDCHF": InstrumentConfig("USDCHF", "USDCHF", AssetClass.FOREX, pip_value=10.94, lot_size=100_000, spread_pips=0.8),
+    "USDCAD": InstrumentConfig("USDCAD", "USDCAD", AssetClass.FOREX, pip_value=7.47,  lot_size=100_000, spread_pips=0.8),
+    # Commodity
+    "XAUUSD": InstrumentConfig("XAUUSD", "XAUUSD", AssetClass.COMMODITIES, pip_value=1.0,  lot_size=100, spread_pips=0.25, point=0.01),
+    # Indices CFD — point value varies; spread in index points
+    "US500":  InstrumentConfig("US500",  "US500",  AssetClass.INDICES, pip_value=1.0,  lot_size=1,   spread_pips=0.4,  point=0.1),
+    "US30":   InstrumentConfig("US30",   "US30",   AssetClass.INDICES, pip_value=1.0,  lot_size=1,   spread_pips=2.0,  point=1.0),
+    "UK100":  InstrumentConfig("UK100",  "UK100",  AssetClass.INDICES, pip_value=1.0,  lot_size=1,   spread_pips=1.0,  point=1.0),
+    # Crypto CFD via MT5
+    "BTCUSD": InstrumentConfig("BTCUSD", "BTCUSD", AssetClass.CRYPTO, pip_value=1.0,  lot_size=1,   spread_pips=15.0, point=1.0),
+}
+
+
+def get_instrument(symbol: str) -> Optional["InstrumentConfig"]:
+    """Return InstrumentConfig for a symbol, or None for Binance-native crypto."""
+    return INSTRUMENT_CONFIGS.get(symbol.upper())
+
+
 def detect_asset_class(symbol: str) -> AssetClass:
     """Infer asset class from symbol name heuristics."""
     s = symbol.upper()

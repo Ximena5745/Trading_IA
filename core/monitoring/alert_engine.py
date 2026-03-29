@@ -32,3 +32,13 @@ class AlertEngine:
 
     async def on_model_retrained(self, agent_id: str, new_version: str) -> None:
         logger.info("alert_model_retrained", agent_id=agent_id, new_version=new_version)
+
+    async def on_critical_error(self, error_type: str, details: str) -> None:
+        logger.critical("alert_critical_error", error_type=error_type, details=details)
+        if self._telegram:
+            await self._telegram.send_critical_error_alert(error_type, details)
+
+    async def on_system_restart(self, version: str, execution_mode: str) -> None:
+        logger.info("alert_system_restart", version=version, execution_mode=execution_mode)
+        if self._telegram:
+            await self._telegram.send_system_restart_alert(version, execution_mode)

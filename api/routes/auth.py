@@ -1,7 +1,9 @@
 """
 Module: api/routes/auth.py
-Responsibility: Authentication endpoints -- login, refresh, logout, me
-Dependencies: jwt_handler, dependencies
+Responsibility: Authentication endpoints — login, refresh, logout, me.
+  Users are stored in PostgreSQL (users table) with bcrypt hashed passwords.
+  No hardcoded credentials.
+Dependencies: jwt_handler, user_repository, dependencies
 """
 from __future__ import annotations
 
@@ -10,18 +12,13 @@ from pydantic import BaseModel
 
 from api.dependencies import get_current_user, get_jwt_handler
 from core.auth.jwt_handler import JWTHandler
+from core.db.user_repository import get_user_by_email, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-_USERS = {
-    "admin": {"password": "admin123", "role": "admin"},
-    "trader": {"password": "trader123", "role": "trader"},
-    "viewer": {"password": "viewer123", "role": "viewer"},
-}
-
 
 class LoginRequest(BaseModel):
-    username: str
+    username: str   # treated as email
     password: str
 
 
@@ -38,25 +35,28 @@ class RefreshRequest(BaseModel):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, jwt: JWTHandler = Depends(get_jwt_handler)):
-    user = _USERS.get(body.username)
-    if not user or user["password"] != body.password:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    user = await get_user_by_email(body.username)
+    if user is None or not user.is_active or not verify_password(body.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
     return TokenResponse(
-        access_token=jwt.create_access_token(body.username, user["role"]),
-        refresh_token=jwt.create_refresh_token(body.username),
+        access_token=jwt.create_access_token(user.email, user.role),
+        refresh_token=jwt.create_refresh_token(user.email),
         expires_in=3600,
     )
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(body: RefreshRequest, jwt: JWTHandler = Depends(get_jwt_handler)):
-    user_id = jwt.decode_refresh(body.refresh_token)
-    user = _USERS.get(user_id)
-    if not user:
+    email = jwt.decode_refresh(body.refresh_token)
+    user = await get_user_by_email(email)
+    if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return TokenResponse(
-        access_token=jwt.create_access_token(user_id, user["role"]),
-        refresh_token=jwt.create_refresh_token(user_id),
+        access_token=jwt.create_access_token(user.email, user.role),
+        refresh_token=jwt.create_refresh_token(user.email),
         expires_in=3600,
     )
 

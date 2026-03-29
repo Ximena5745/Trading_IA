@@ -99,3 +99,57 @@ CREATE TABLE IF NOT EXISTS strategies (
     created_at      TIMESTAMPTZ     DEFAULT NOW(),
     updated_at      TIMESTAMPTZ     DEFAULT NOW()
 );
+
+-- Users (authentication — replaces hardcoded _USERS dict in auth.py)
+CREATE TABLE IF NOT EXISTS users (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    email           VARCHAR(255)    UNIQUE NOT NULL,
+    hashed_password VARCHAR(255)    NOT NULL,
+    role            VARCHAR(20)     NOT NULL DEFAULT 'viewer', -- admin | trader | viewer
+    is_active       BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMPTZ     DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ     DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+
+-- Portfolio snapshots (hourly state of portfolio for history + dashboard)
+CREATE TABLE IF NOT EXISTS portfolio_snapshots (
+    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    captured_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    capital_total       NUMERIC(20, 2) NOT NULL,
+    capital_available   NUMERIC(20, 2) NOT NULL,
+    unrealized_pnl      NUMERIC(20, 2) NOT NULL DEFAULT 0,
+    realized_pnl        NUMERIC(20, 2) NOT NULL DEFAULT 0,
+    daily_pnl           NUMERIC(20, 2) NOT NULL DEFAULT 0,
+    daily_pnl_pct       FLOAT        NOT NULL DEFAULT 0,
+    total_pnl_pct       FLOAT        NOT NULL DEFAULT 0,
+    max_drawdown_pct    FLOAT        NOT NULL DEFAULT 0,
+    open_positions      INTEGER      NOT NULL DEFAULT 0,
+    positions           JSONB,
+    base_currency       VARCHAR(10)  NOT NULL DEFAULT 'USD'
+);
+SELECT create_hypertable('portfolio_snapshots', 'captured_at', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_portfolio_snapshots_ts ON portfolio_snapshots (captured_at DESC);
+SELECT add_retention_policy('portfolio_snapshots', INTERVAL '1 year', if_not_exists => TRUE);
+
+-- Backtest results
+CREATE TABLE IF NOT EXISTS backtest_results (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    strategy_id     VARCHAR(50)     REFERENCES strategies(id),
+    symbol          VARCHAR(20)     NOT NULL,
+    timeframe       VARCHAR(10)     NOT NULL,
+    start_date      TIMESTAMPTZ     NOT NULL,
+    end_date        TIMESTAMPTZ     NOT NULL,
+    sharpe_ratio    FLOAT,
+    sortino_ratio   FLOAT,
+    calmar_ratio    FLOAT,
+    max_drawdown_pct FLOAT,
+    win_rate        FLOAT,
+    total_return_pct FLOAT,
+    total_trades    INTEGER,
+    profit_factor   FLOAT,
+    metrics         JSONB,          -- full metrics dict from BacktestEngine
+    passed_quality_gate BOOLEAN     DEFAULT FALSE,
+    created_at      TIMESTAMPTZ     DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_backtest_results_strategy ON backtest_results (strategy_id, created_at DESC);

@@ -26,9 +26,21 @@ hmmlearn==0.3.0
 # Binance
 python-binance==1.0.19
 
+# MetaTrader 5 (FASE E — Windows only)
+MetaTrader5==5.0.5640
+
 # Observability
 structlog==24.1.0
 prometheus-client==0.20.0
 
 # Alerts
 python-telegram-bot==21.0.1
+
+# Auth
+passlib[bcrypt]==1.7.4
+
+# Scheduler
+apscheduler==3.10.4
+
+# HTTP client (FundamentalAgent)
+httpx==0.27.0

@@ -67,6 +67,14 @@ class Settings(BaseSettings):
         "XAUUSD", "USOIL",
     ]
 
+    # ── MetaTrader 5 (FASE E) ────────────────────────────────────────────────
+    MT5_SERVER:   str = "ICMarketsSC-Demo04"
+    MT5_LOGIN:    int = 0
+    MT5_PASSWORD: str = ""
+
+    # ── Portfolio ───────────────────────────────────────────────────────────
+    PORTFOLIO_BASE_CURRENCY: str = "USD"  # always USD — decision v2.4
+
     # ── Alerts ──────────────────────────────────────────────────────────────
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
