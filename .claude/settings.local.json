@@ -9,7 +9,8 @@
       "Bash(sed -n '140,148p' tests/integration/test_api_execution.py)",
       "Bash(sed -n '348,356p' tests/integration/test_pipeline_paper.py)",
       "Bash(python -m ruff check .)",
-      "Bash(python scripts/ci_backtest_gate.py)"
+      "Bash(python scripts/ci_backtest_gate.py)",
+      "Bash(grep \"scikit\" requirements*.txt)"
     ]
   }
 }
