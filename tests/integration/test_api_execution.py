@@ -6,15 +6,29 @@ Tests: authentication flow, execution validation, portfolio CRUD, strategy manag
 from __future__ import annotations
 
 
+from unittest.mock import MagicMock
+
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
+from core.config.settings import Settings
 from core.execution.order_tracker import OrderTracker
 from core.monitoring.performance_tracker import PerformanceTracker
 from core.portfolio.portfolio_manager import PortfolioManager
+from core.risk.kill_switch import KillSwitch
 from core.risk.risk_manager import RiskManager
 from core.strategies.strategy_registry import StrategyRegistry
+
+
+def _make_settings() -> Settings:
+    s = MagicMock(spec=Settings)
+    s.MAX_RISK_PER_TRADE_PCT = 0.01
+    s.MAX_PORTFOLIO_RISK_PCT = 0.10
+    s.MAX_DRAWDOWN_PCT = 0.15
+    s.DAILY_LOSS_LIMIT_PCT = 0.05
+    s.MAX_CONSECUTIVE_LOSSES = 5
+    return s
 
 
 # ── App-level fixtures ─────────────────────────────────────────────────────
@@ -24,13 +38,15 @@ def client():
     """TestClient with initialized app state."""
     with TestClient(app) as c:
         # Inject minimal state so routes work
+        _settings = _make_settings()
         app.state.portfolio_manager = PortfolioManager(
-            total_capital=10_000.0,
-            max_risk_per_trade_pct=0.02,
+            settings=_settings,
+            initial_capital=10_000.0,
         )
         app.state.performance_tracker = PerformanceTracker()
         app.state.order_tracker = OrderTracker()
-        app.state.risk_manager = RiskManager()
+        _ks = KillSwitch(_settings)
+        app.state.risk_manager = RiskManager(settings=_settings, kill_switch=_ks)
         app.state.strategy_registry = StrategyRegistry()
 
         import api.routes.portfolio as portfolio_routes
