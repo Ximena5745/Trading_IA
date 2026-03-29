@@ -14,7 +14,15 @@
       "Bash(python -m ruff check tests/unit/test_risk_manager.py)",
       "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=short)",
       "Bash(python -m pytest tests/unit/ -v --tb=short)",
-      "Bash(python -m pytest tests/integration/test_api_execution.py --collect-only)"
+      "Bash(python -m pytest tests/integration/test_api_execution.py --collect-only)",
+      "Bash(python -m pytest tests/integration/ -v --tb=short)",
+      "Bash(python -c \"import httpx; print\\(httpx.__version__\\)\")",
+      "Bash(python -m pytest tests/integration/test_pipeline_paper.py::TestRiskManager::test_signal_approved_under_limits -v --tb=long)",
+      "Bash(python -m pytest tests/integration/test_pipeline_paper.py::TestRiskManager -v --tb=long)",
+      "Bash(sed -n '35,80p' core/execution/paper_executor.py)",
+      "Bash(sed -n '60,100p' core/backtesting/costs.py)",
+      "Bash(sed -n '60,90p' core/backtesting/metrics.py)",
+      "Bash(python -m pytest tests/integration/test_pipeline_paper.py -v --tb=short)"
     ]
   }
 }
