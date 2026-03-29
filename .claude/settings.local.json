@@ -10,7 +10,11 @@
       "Bash(sed -n '348,356p' tests/integration/test_pipeline_paper.py)",
       "Bash(python -m ruff check .)",
       "Bash(python scripts/ci_backtest_gate.py)",
-      "Bash(grep \"scikit\" requirements*.txt)"
+      "Bash(grep \"scikit\" requirements*.txt)",
+      "Bash(python -m ruff check tests/unit/test_risk_manager.py)",
+      "Bash(python -m pytest tests/unit/test_risk_manager.py -v --tb=short)",
+      "Bash(python -m pytest tests/unit/ -v --tb=short)",
+      "Bash(python -m pytest tests/integration/test_api_execution.py --collect-only)"
     ]
   }
 }
