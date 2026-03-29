@@ -17,9 +17,21 @@ HEADERS = {"Authorization": f"Bearer {API_TOKEN}"}
 
 st.title("⚡ Signals — Señales con Explicación XAI")
 
+_ALL_SYMBOLS = [
+    "Todos",
+    # Crypto
+    "BTCUSDT", "ETHUSDT", "SOLUSDT",
+    # Forex
+    "EURUSD", "GBPUSD", "USDJPY",
+    # Indices
+    "SPX500", "NAS100", "DE40",
+    # Commodities
+    "XAUUSD", "USOIL",
+]
+
 col1, col2, col3 = st.columns([2, 2, 1])
 with col1:
-    symbol_filter = st.selectbox("Símbolo", ["Todos", "BTCUSDT", "ETHUSDT"])
+    symbol_filter = st.selectbox("Símbolo", _ALL_SYMBOLS)
 with col2:
     status_filter = st.selectbox("Estado", ["Todos", "pending", "executed", "cancelled"])
 with col3:

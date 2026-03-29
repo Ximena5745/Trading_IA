@@ -89,7 +89,16 @@ class EmaRsiStrategy(AbcStrategy):
                 "min_volume_ratio": self.min_volume_ratio,
             },
             "timeframe": "1h",
-            "symbols": ["BTCUSDT", "ETHUSDT"],
+            "symbols": [
+                # Crypto
+                "BTCUSDT", "ETHUSDT",
+                # Forex
+                "EURUSD", "GBPUSD", "USDJPY",
+                # Indices
+                "SPX500", "NAS100",
+                # Commodities
+                "XAUUSD", "USOIL",
+            ],
             "max_capital_pct": 0.20,
             "risk_per_trade_pct": 0.01,
             "status": "active",

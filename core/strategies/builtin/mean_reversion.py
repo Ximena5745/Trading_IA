@@ -90,7 +90,14 @@ class MeanReversionStrategy(AbcStrategy):
                 "min_volume_ratio": self.min_volume_ratio,
             },
             "timeframe": "1h",
-            "symbols": ["BTCUSDT", "ETHUSDT"],
+            "symbols": [
+                # Crypto — high volatility suits mean reversion
+                "BTCUSDT", "ETHUSDT",
+                # Commodities — strong mean-reverting behaviour
+                "XAUUSD", "XAGUSD", "USOIL",
+                # Forex — range-bound pairs
+                "EURUSD", "GBPUSD", "USDCHF",
+            ],
             "max_capital_pct": 0.15,
             "risk_per_trade_pct": 0.01,
             "status": "active",

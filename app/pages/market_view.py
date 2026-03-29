@@ -18,10 +18,19 @@ API_TOKEN = st.session_state.get("token", "")
 
 st.title("📊 Market View")
 
-# --- Symbol & Timeframe selector ---
-col1, col2, col3 = st.columns([2, 2, 1])
+# --- Asset class & symbol selector ---
+_SYMBOLS_BY_CLASS = {
+    "Crypto":       ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"],
+    "Forex":        ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD"],
+    "Indices":      ["SPX500", "NAS100", "US30", "DE40", "UK100", "JP225"],
+    "Commodities":  ["XAUUSD", "XAGUSD", "USOIL", "UKOIL", "NATGAS"],
+}
+
+col0, col1, col2, col3 = st.columns([2, 2, 2, 1])
+with col0:
+    asset_class = st.selectbox("Asset Class", list(_SYMBOLS_BY_CLASS.keys()))
 with col1:
-    symbol = st.selectbox("Symbol", ["BTCUSDT", "ETHUSDT"])
+    symbol = st.selectbox("Symbol", _SYMBOLS_BY_CLASS[asset_class])
 with col2:
     timeframe = st.selectbox("Timeframe", ["1m", "5m", "15m", "1h", "4h", "1d"], index=3)
 with col3:

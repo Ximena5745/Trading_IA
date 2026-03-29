@@ -14,6 +14,40 @@ from pydantic import BaseModel, validator
 
 
 # ---------------------------------------------------------------------------
+# Asset Class
+# ---------------------------------------------------------------------------
+
+class AssetClass(str, Enum):
+    CRYPTO      = "crypto"
+    FOREX       = "forex"
+    INDICES     = "indices"
+    COMMODITIES = "commodities"
+
+
+def detect_asset_class(symbol: str) -> AssetClass:
+    """Infer asset class from symbol name heuristics."""
+    s = symbol.upper()
+    # Crypto: ends in USDT, USDC, BTC, ETH, BNB
+    if s.endswith(("USDT", "USDC", "BUSD", "BTC", "ETH", "BNB")):
+        return AssetClass.CRYPTO
+    # Precious metals
+    if s.startswith(("XAU", "XAG", "XPT", "XPD")):
+        return AssetClass.COMMODITIES
+    # Energy & agricultural commodities
+    if s in ("USOIL", "UKOIL", "NATGAS", "WHEAT", "CORN", "SOYB"):
+        return AssetClass.COMMODITIES
+    # Equity indices
+    if s in ("SPX500", "NAS100", "US30", "DE40", "UK100", "JP225",
+             "AUS200", "HK50", "FR40"):
+        return AssetClass.INDICES
+    # Forex: 6-char currency pairs (EURUSD, GBPUSD, etc.)
+    if len(s) == 6 and s.isalpha():
+        return AssetClass.FOREX
+    # Default fallback
+    return AssetClass.CRYPTO
+
+
+# ---------------------------------------------------------------------------
 # Market Data
 # ---------------------------------------------------------------------------
 
@@ -25,10 +59,13 @@ class MarketData(BaseModel):
     low: Decimal
     close: Decimal
     volume: Decimal
-    quote_volume: Decimal
-    trades_count: int
-    taker_buy_volume: Decimal
-    source: str = "binance"
+    # Crypto-specific fields — optional so forex/indices/commodities work too
+    quote_volume: Optional[Decimal] = None
+    trades_count: Optional[int] = None
+    taker_buy_volume: Optional[Decimal] = None
+    # Metadata
+    source: str = "unknown"          # e.g. "binance", "oanda", "alpha_vantage"
+    asset_class: Optional[str] = None  # populated by the adapter
     feature_version: str = "v1"
 
     @validator("high")
@@ -52,6 +89,7 @@ class FeatureSet(BaseModel):
     timestamp: datetime
     symbol: str
     version: str = "v1"
+    asset_class: str = "crypto"   # inferred by FeatureEngine if not set
 
     # Momentum
     rsi_14: float
@@ -80,7 +118,7 @@ class FeatureSet(BaseModel):
     volume_ratio: float
     obv: float
 
-    # Microstructure (optional)
+    # Microstructure (crypto-specific — optional for other asset classes)
     bid_ask_spread: Optional[float] = None
     order_book_imbalance: Optional[float] = None
 
@@ -93,11 +131,11 @@ class FeatureSet(BaseModel):
 # ---------------------------------------------------------------------------
 
 class MarketRegime(str, Enum):
-    BULL_TRENDING = "bull_trending"
-    BEAR_TRENDING = "bear_trending"
-    SIDEWAYS_LOW_VOL = "sideways_low_vol"
+    BULL_TRENDING     = "bull_trending"
+    BEAR_TRENDING     = "bear_trending"
+    SIDEWAYS_LOW_VOL  = "sideways_low_vol"
     SIDEWAYS_HIGH_VOL = "sideways_high_vol"
-    VOLATILE_CRASH = "volatile_crash"
+    VOLATILE_CRASH    = "volatile_crash"
 
 
 class RegimeOutput(BaseModel):
@@ -157,6 +195,7 @@ class Signal(BaseModel):
     idempotency_key: str
     timestamp: datetime
     symbol: str
+    asset_class: str = "crypto"
     action: str  # "BUY" | "SELL" | "HOLD"
     entry_price: float
     stop_loss: float
@@ -175,13 +214,13 @@ class Signal(BaseModel):
 # ---------------------------------------------------------------------------
 
 class OrderStatus(str, Enum):
-    PENDING = "pending"
+    PENDING   = "pending"
     SUBMITTED = "submitted"
-    PARTIAL = "partial"
-    FILLED = "filled"
+    PARTIAL   = "partial"
+    FILLED    = "filled"
     CANCELLED = "cancelled"
-    REJECTED = "rejected"
-    EXPIRED = "expired"
+    REJECTED  = "rejected"
+    EXPIRED   = "expired"
 
 
 class Order(BaseModel):
@@ -190,6 +229,7 @@ class Order(BaseModel):
     idempotency_key: str
     signal_id: str
     symbol: str
+    asset_class: str = "crypto"
     side: str
     order_type: str
     quantity: float
@@ -213,6 +253,7 @@ class Order(BaseModel):
 
 class Position(BaseModel):
     symbol: str
+    asset_class: str = "crypto"
     quantity: float
     entry_price: float
     current_price: float

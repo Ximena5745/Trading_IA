@@ -17,7 +17,62 @@ HARD_LIMITS = {
 
 SUPPORTED_TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h", "1d"]
 
-SUPPORTED_SYMBOLS = ["BTCUSDT", "ETHUSDT"]
+# ── Multi-asset symbol catalogue ────────────────────────────────────────────
+# Symbols are grouped by asset class.
+# Exchange adapters are responsible for translating these to native formats.
+
+ASSET_CLASS_SYMBOLS: dict[str, list[str]] = {
+    "crypto": [
+        "BTCUSDT",   # Bitcoin
+        "ETHUSDT",   # Ethereum
+        "SOLUSDT",   # Solana
+        "BNBUSDT",   # BNB
+    ],
+    "forex": [
+        "EURUSD",    # Euro / US Dollar
+        "GBPUSD",    # Pound / US Dollar
+        "USDJPY",    # US Dollar / Japanese Yen
+        "USDCHF",    # US Dollar / Swiss Franc
+        "AUDUSD",    # Australian Dollar / US Dollar
+        "USDCAD",    # US Dollar / Canadian Dollar
+    ],
+    "indices": [
+        "SPX500",    # S&P 500
+        "NAS100",    # Nasdaq 100
+        "US30",      # Dow Jones
+        "DE40",      # DAX (Germany)
+        "UK100",     # FTSE 100 (UK)
+        "JP225",     # Nikkei 225 (Japan)
+    ],
+    "commodities": [
+        "XAUUSD",    # Gold / US Dollar
+        "XAGUSD",    # Silver / US Dollar
+        "USOIL",     # WTI Crude Oil
+        "UKOIL",     # Brent Crude Oil
+        "NATGAS",    # Natural Gas
+        "WHEAT",     # Wheat
+    ],
+}
+
+# Flat list for backward compatibility
+SUPPORTED_SYMBOLS: list[str] = [
+    sym for syms in ASSET_CLASS_SYMBOLS.values() for sym in syms
+]
+
+# Lookup: symbol → asset class
+SYMBOL_ASSET_CLASS: dict[str, str] = {
+    sym: cls
+    for cls, syms in ASSET_CLASS_SYMBOLS.items()
+    for sym in syms
+}
+
+# Default symbols shown in the dashboard (one per class)
+DEFAULT_SYMBOLS_BY_CLASS: dict[str, str] = {
+    "crypto":      "BTCUSDT",
+    "forex":       "EURUSD",
+    "indices":     "SPX500",
+    "commodities": "XAUUSD",
+}
 
 # Minimum candles required for feature calculation
 MIN_CANDLES_EMA200 = 200

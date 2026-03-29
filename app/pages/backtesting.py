@@ -21,7 +21,16 @@ with st.form("backtest_form"):
     col1, col2 = st.columns(2)
     with col1:
         strategy_id = st.text_input("Strategy ID", value="ema_rsi_v1")
-        symbol = st.selectbox("Símbolo", ["BTCUSDT", "ETHUSDT"])
+        symbol = st.selectbox("Símbolo", [
+            # Crypto
+            "BTCUSDT", "ETHUSDT", "SOLUSDT",
+            # Forex
+            "EURUSD", "GBPUSD", "USDJPY",
+            # Indices
+            "SPX500", "NAS100", "DE40",
+            # Commodities
+            "XAUUSD", "USOIL",
+        ])
     with col2:
         from_date = st.date_input("Desde")
         to_date = st.date_input("Hasta")
