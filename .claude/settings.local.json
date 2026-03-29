@@ -22,7 +22,11 @@
       "Bash(sed -n '35,80p' core/execution/paper_executor.py)",
       "Bash(sed -n '60,100p' core/backtesting/costs.py)",
       "Bash(sed -n '60,90p' core/backtesting/metrics.py)",
-      "Bash(python -m pytest tests/integration/test_pipeline_paper.py -v --tb=short)"
+      "Bash(python -m pytest tests/integration/test_pipeline_paper.py -v --tb=short)",
+      "Bash(python -m pytest tests/integration/test_pipeline_paper.py::TestDataValidation::test_valid_market_data_passes tests/integration/test_pipeline_paper.py::TestPortfolioManager::test_kelly_fraction_capped -v --tb=short)",
+      "Bash(python -m pytest tests/integration/test_api_execution.py -x --tb=short)",
+      "Bash(python -m ruff check tests/integration/test_api_execution.py)",
+      "Bash(python -m pytest tests/unit/ tests/integration/test_pipeline_paper.py -v --tb=short)"
     ]
   }
 }
