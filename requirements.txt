@@ -17,10 +17,9 @@ numpy==1.26.4
 # ML
 lightgbm==4.3.0
 xgboost==2.0.3
-scikit-learn==1.4.1
+scikit-learn>=1.4,<2.0
 shap==0.44.1
-pandas-ta==0.3.14b
-vectorbt==0.26.1
+pandas-ta==0.3.14b0
 optuna==3.5.0
 hmmlearn==0.3.0
 
