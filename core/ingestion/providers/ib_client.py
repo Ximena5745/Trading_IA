@@ -22,20 +22,16 @@ Connection:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
-from decimal import Decimal
+from datetime import datetime
 from typing import Optional
 
 from ib_insync import (
     IB,
     Forex,
     Index,
-    Commodity,
     Stock,
-    Future,
     ContFuture,
     Contract,
-    BarData,
     Order,
     OrderStatus,
 )

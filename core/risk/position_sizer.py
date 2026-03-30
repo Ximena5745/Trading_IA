@@ -14,7 +14,7 @@ from typing import Optional
 
 from core.config.constants import HARD_LIMITS
 from core.config.settings import Settings
-from core.models import AssetClass, InstrumentConfig, detect_asset_class, get_instrument
+from core.models import AssetClass, InstrumentConfig, detect_asset_class
 from core.observability.logger import get_logger
 
 logger = get_logger(__name__)

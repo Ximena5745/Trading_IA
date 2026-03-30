@@ -20,8 +20,6 @@ Usage:
 from __future__ import annotations
 
 import gzip
-import os
-import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from core.config.settings import Settings
 from core.models import AssetClass, InstrumentConfig

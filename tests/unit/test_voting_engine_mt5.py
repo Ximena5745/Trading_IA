@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
 
 from core.consensus.voting_engine import (
     AGENT_WEIGHTS_CRYPTO,

@@ -33,12 +33,12 @@ async def seed(email: str, password: str) -> None:
             print(f"⚠️  Usuario '{email}' ya existe. No se creó uno nuevo.")
             return
         user = await create_user(email=email, plain_password=password, role="admin")
-        print(f"\n✅ Admin creado:")
+        print("\n✅ Admin creado:")
         print(f"   ID    : {user.id}")
         print(f"   Email : {user.email}")
         print(f"   Role  : {user.role}")
-        print(f"\n   Guarda estas credenciales en un lugar seguro.")
-        print(f"   El password NO se puede recuperar — solo resetear.")
+        print("\n   Guarda estas credenciales en un lugar seguro.")
+        print("   El password NO se puede recuperar — solo resetear.")
     finally:
         await close_pool()
 

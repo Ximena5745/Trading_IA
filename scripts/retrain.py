@@ -89,7 +89,7 @@ def retrain(asset_class: str, timeframe: str, symbols: list[str]) -> None:
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     model_path = MODEL_PATHS[asset_class]
 
-    print(f"\n🤖 TRADER AI — Retraining TechnicalAgent")
+    print("\n🤖 TRADER AI — Retraining TechnicalAgent")
     print(f"   Asset class : {asset_class}")
     print(f"   Timeframe   : {timeframe}")
     print(f"   Symbols     : {symbols}")
@@ -130,7 +130,7 @@ def retrain(asset_class: str, timeframe: str, symbols: list[str]) -> None:
         sys.exit(1)
 
     print(f"\n✅ Model saved to {model_path}")
-    print(f"   Run the pipeline to verify it generates signals correctly.")
+    print("   Run the pipeline to verify it generates signals correctly.")
 
 
 def main() -> None:

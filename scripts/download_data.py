@@ -19,7 +19,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -228,7 +228,7 @@ def main() -> None:
         print(f"❌ Invalid timeframe '{args.timeframe}'. Valid: {list(TIMEFRAME_MS)}")
         sys.exit(1)
 
-    print(f"📥 TRADER AI — Download Data")
+    print("📥 TRADER AI — Download Data")
     print(f"   Symbol    : {args.symbol}")
     print(f"   Timeframe : {args.timeframe}")
     print(f"   Years     : {args.years}")
