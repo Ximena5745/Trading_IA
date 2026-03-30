@@ -29,17 +29,19 @@ def make_ohlcv(n: int = 300, symbol: str = "BTCUSDT") -> pd.DataFrame:
 
     timestamps = [datetime(2024, 1, 1) + timedelta(hours=i) for i in range(n)]
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": symbol,
-        "open": open_,
-        "high": high,
-        "low": low,
-        "close": close,
-        "volume": volume,
-        "quote_volume": volume * close,
-        "taker_buy_volume": volume * 0.5,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": symbol,
+            "open": open_,
+            "high": high,
+            "low": low,
+            "close": close,
+            "volume": volume,
+            "quote_volume": volume * close,
+            "taker_buy_volume": volume * 0.5,
+        }
+    )
 
 
 class TestIndicators:
@@ -47,11 +49,25 @@ class TestIndicators:
         df = make_ohlcv(300)
         result = calculate_all(df)
         expected = [
-            "rsi_14", "rsi_7", "ema_9", "ema_21", "ema_50", "ema_200",
-            "macd_line", "macd_signal", "macd_histogram",
-            "atr_14", "bb_upper", "bb_lower", "bb_width",
-            "vwap", "volume_sma_20", "volume_ratio", "obv",
-            "trend_direction", "volatility_regime",
+            "rsi_14",
+            "rsi_7",
+            "ema_9",
+            "ema_21",
+            "ema_50",
+            "ema_200",
+            "macd_line",
+            "macd_signal",
+            "macd_histogram",
+            "atr_14",
+            "bb_upper",
+            "bb_lower",
+            "bb_width",
+            "vwap",
+            "volume_sma_20",
+            "volume_ratio",
+            "obv",
+            "trend_direction",
+            "volatility_regime",
         ]
         for col in expected:
             assert col in result.columns, f"Missing column: {col}"

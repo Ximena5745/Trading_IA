@@ -51,7 +51,9 @@ def render_strategy_card(strategy: dict) -> None:
     with st.container(border=True):
         col1, col2, col3 = st.columns([3, 1, 2])
         with col1:
-            st.markdown(f"**{icon} {strategy.get('name', strategy.get('strategy_id'))}**")
+            st.markdown(
+                f"**{icon} {strategy.get('name', strategy.get('strategy_id'))}**"
+            )
             st.caption(strategy.get("description", ""))
         with col2:
             st.markdown(f"`{status}`")
@@ -101,6 +103,7 @@ def render_custom_builder() -> None:
 
     if submitted:
         import json
+
         try:
             conditions = json.loads(conditions_raw)
             exit_conditions = json.loads(exit_raw)

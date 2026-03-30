@@ -39,7 +39,9 @@ class BacktestEngine:
         initial_capital: float = 10000.0,
     ) -> dict:
         if len(df) < MIN_CANDLES_BACKTEST:
-            raise BacktestError(f"Need at least {MIN_CANDLES_BACKTEST} candles, got {len(df)}")
+            raise BacktestError(
+                f"Need at least {MIN_CANDLES_BACKTEST} candles, got {len(df)}"
+            )
 
         all_trades: list[dict] = []
         equity_curve: list[float] = [initial_capital]
@@ -47,7 +49,9 @@ class BacktestEngine:
         capital = initial_capital
 
         windows = list(self._rolling_windows(df, train_size, test_size, step_size))
-        logger.info("backtest_started", windows=len(windows), symbol=df["symbol"].iloc[0])
+        logger.info(
+            "backtest_started", windows=len(windows), symbol=df["symbol"].iloc[0]
+        )
 
         for i, (train_df, test_df) in enumerate(windows):
             window_trades = self._simulate_period(test_df, strategy_fn, capital)
@@ -58,8 +62,13 @@ class BacktestEngine:
             all_trades.extend(window_trades)
 
             if window_trades:
-                w_metrics = compute_all(window_trades, [initial_capital] + [t.get("net_pnl", 0) for t in window_trades])
-                window_results.append({"window": i, "trades": len(window_trades), **w_metrics})
+                w_metrics = compute_all(
+                    window_trades,
+                    [initial_capital] + [t.get("net_pnl", 0) for t in window_trades],
+                )
+                window_results.append(
+                    {"window": i, "trades": len(window_trades), **w_metrics}
+                )
 
         aggregate = compute_all(all_trades, equity_curve)
         aggregate["windows"] = window_results
@@ -79,7 +88,9 @@ class BacktestEngine:
             and metrics.get("profit_factor", 0) >= 1.3
         )
 
-    def _simulate_period(self, test_df: pd.DataFrame, strategy_fn, capital: float) -> list[dict]:
+    def _simulate_period(
+        self, test_df: pd.DataFrame, strategy_fn, capital: float
+    ) -> list[dict]:
         trades = []
         try:
             features_list = self._feature_engine.calculate_batch(test_df)
@@ -94,15 +105,17 @@ class BacktestEngine:
                 hit = self._check_exit(position, close)
                 if hit:
                     gross_pnl = self._calc_pnl(position, close)
-                    trades.append({
-                        "entry_price": position["entry"],
-                        "exit_price": close,
-                        "side": position["side"],
-                        "quantity": position["qty"],
-                        "value": position["entry"] * position["qty"],
-                        "gross_pnl": gross_pnl,
-                        "net_pnl": gross_pnl,
-                    })
+                    trades.append(
+                        {
+                            "entry_price": position["entry"],
+                            "exit_price": close,
+                            "side": position["side"],
+                            "quantity": position["qty"],
+                            "value": position["entry"] * position["qty"],
+                            "gross_pnl": gross_pnl,
+                            "net_pnl": gross_pnl,
+                        }
+                    )
                     position = None
                     continue
 
@@ -136,8 +149,8 @@ class BacktestEngine:
     def _rolling_windows(df, train_size, test_size, step_size):
         start = train_size
         while start + test_size <= len(df):
-            train = df.iloc[start - train_size:start]
-            test = df.iloc[start:start + test_size]
+            train = df.iloc[start - train_size : start]
+            test = df.iloc[start : start + test_size]
             yield train, test
             start += step_size
 

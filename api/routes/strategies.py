@@ -100,7 +100,11 @@ async def update_strategy_status(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/custom", dependencies=[Depends(require_admin)], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/custom",
+    dependencies=[Depends(require_admin)],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_custom_strategy(
     body: CustomStrategyRequest,
     user=Depends(get_current_user),

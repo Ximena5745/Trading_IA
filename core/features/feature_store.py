@@ -31,14 +31,18 @@ class FeatureStore:
     async def save(self, features: FeatureSet) -> None:
         self._local_cache[features.symbol] = features
         if self._redis:
-            key = FEATURE_STORE_KEY.format(symbol=features.symbol, version=features.version)
+            key = FEATURE_STORE_KEY.format(
+                symbol=features.symbol, version=features.version
+            )
             await self._redis.set(key, features.model_dump_json(), ex=3600)
             history_key = FEATURE_HISTORY_KEY.format(symbol=features.symbol)
             await self._redis.lpush(history_key, features.model_dump_json())
             await self._redis.ltrim(history_key, 0, MAX_HISTORY - 1)
         logger.debug("features_saved", symbol=features.symbol, version=features.version)
 
-    async def get_latest(self, symbol: str, version: str = "v1") -> Optional[FeatureSet]:
+    async def get_latest(
+        self, symbol: str, version: str = "v1"
+    ) -> Optional[FeatureSet]:
         if symbol in self._local_cache:
             return self._local_cache[symbol]
         if self._redis:

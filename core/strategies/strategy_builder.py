@@ -31,7 +31,9 @@ class BuiltStrategy(AbcStrategy):
         # FASE E — optional multi-timeframe confirmation filter (decision v2.4)
         # If set, RegimeAgent must confirm trend on this TF before signal is valid.
         # None = disabled (default) — strategy works exactly as before.
-        self.confirmation_timeframe: Optional[str] = config.get("confirmation_timeframe", None)
+        self.confirmation_timeframe: Optional[str] = config.get(
+            "confirmation_timeframe", None
+        )
 
     def should_enter(self, features: FeatureSet) -> Optional[dict]:
         if not self._evaluate_conditions(self._entry_conditions, features):
@@ -45,7 +47,12 @@ class BuiltStrategy(AbcStrategy):
         else:
             sl = entry + ATR_STOP_LOSS_MULTIPLIER * atr
             tp = entry - ATR_TAKE_PROFIT_MULTIPLIER * atr
-        return {"action": action, "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+        return {
+            "action": action,
+            "entry_price": entry,
+            "stop_loss": sl,
+            "take_profit": tp,
+        }
 
     def should_exit(self, features: FeatureSet, position: dict) -> bool:
         return self._evaluate_conditions(self._exit_conditions, features)
@@ -53,7 +60,9 @@ class BuiltStrategy(AbcStrategy):
     def to_dict(self) -> dict:
         return {**super().to_dict(), **self._config}
 
-    def _evaluate_conditions(self, conditions: list[dict], features: FeatureSet) -> bool:
+    def _evaluate_conditions(
+        self, conditions: list[dict], features: FeatureSet
+    ) -> bool:
         if not conditions:
             return False
         for cond in conditions:
@@ -91,6 +100,7 @@ class StrategyBuilder:
         tf = config.get("confirmation_timeframe")
         if tf is not None:
             from core.config.constants import SUPPORTED_TIMEFRAMES
+
             if tf not in SUPPORTED_TIMEFRAMES:
                 raise ValueError(
                     f"confirmation_timeframe '{tf}' not valid. Supported: {SUPPORTED_TIMEFRAMES}"

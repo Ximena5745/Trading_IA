@@ -53,8 +53,13 @@ class TestSpreadCost:
     def test_xauusd_spread_cost(self):
         """XAUUSD 0.25 pip spread, pip_value=1.0, 0.1 lots → 0.025 USD."""
         model = CostModel()
-        inst = make_instrument("XAUUSD", asset_class=AssetClass.COMMODITIES,
-                               spread_pips=0.25, pip_value=1.0, lot_size=100)
+        inst = make_instrument(
+            "XAUUSD",
+            asset_class=AssetClass.COMMODITIES,
+            spread_pips=0.25,
+            pip_value=1.0,
+            lot_size=100,
+        )
         cost = model.get_spread_cost("XAUUSD", lots=0.1, instrument=inst)
         assert abs(cost - 0.025) < 1e-4
 
@@ -72,29 +77,39 @@ class TestSwapCost:
         """BUY side uses swap_long rate."""
         model = CostModel()
         inst = make_instrument("EURUSD", swap_long=-0.5, swap_short=-0.3)
-        cost = model.get_swap_cost("EURUSD", nights=1, side="BUY", lots=1.0, instrument=inst)
+        cost = model.get_swap_cost(
+            "EURUSD", nights=1, side="BUY", lots=1.0, instrument=inst
+        )
         assert abs(cost - 0.5) < 1e-6
 
     def test_sell_uses_swap_short(self):
         """SELL side uses swap_short rate."""
         model = CostModel()
         inst = make_instrument("EURUSD", swap_long=-0.5, swap_short=-0.3)
-        cost = model.get_swap_cost("EURUSD", nights=1, side="SELL", lots=1.0, instrument=inst)
+        cost = model.get_swap_cost(
+            "EURUSD", nights=1, side="SELL", lots=1.0, instrument=inst
+        )
         assert abs(cost - 0.3) < 1e-6
 
     def test_swap_scales_with_nights(self):
         """Holding 3 nights triples the swap cost."""
         model = CostModel()
         inst = make_instrument("GBPUSD", swap_long=-1.0, swap_short=-0.8)
-        cost_1 = model.get_swap_cost("GBPUSD", nights=1, side="BUY", lots=1.0, instrument=inst)
-        cost_3 = model.get_swap_cost("GBPUSD", nights=3, side="BUY", lots=1.0, instrument=inst)
+        cost_1 = model.get_swap_cost(
+            "GBPUSD", nights=1, side="BUY", lots=1.0, instrument=inst
+        )
+        cost_3 = model.get_swap_cost(
+            "GBPUSD", nights=3, side="BUY", lots=1.0, instrument=inst
+        )
         assert abs(cost_3 - 3 * cost_1) < 1e-6
 
     def test_zero_nights_returns_zero(self):
         """Same-day close → no swap."""
         model = CostModel()
         inst = make_instrument("EURUSD", swap_long=-1.0)
-        cost = model.get_swap_cost("EURUSD", nights=0, side="BUY", lots=1.0, instrument=inst)
+        cost = model.get_swap_cost(
+            "EURUSD", nights=0, side="BUY", lots=1.0, instrument=inst
+        )
         assert cost == 0.0
 
     def test_swap_is_always_positive(self):
@@ -102,7 +117,9 @@ class TestSwapCost:
         model = CostModel()
         inst = make_instrument("EURUSD", swap_long=-0.5, swap_short=-0.3)
         for side in ("BUY", "SELL"):
-            cost = model.get_swap_cost("EURUSD", nights=2, side=side, lots=0.5, instrument=inst)
+            cost = model.get_swap_cost(
+                "EURUSD", nights=2, side=side, lots=0.5, instrument=inst
+            )
             assert cost >= 0.0
 
     def test_unknown_symbol_returns_zero(self):

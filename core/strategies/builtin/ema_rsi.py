@@ -47,20 +47,33 @@ class EmaRsiStrategy(AbcStrategy):
             entry = features.close
             sl = entry - ATR_STOP_LOSS_MULTIPLIER * features.atr_14
             tp = entry + ATR_TAKE_PROFIT_MULTIPLIER * features.atr_14
-            return {"action": "BUY", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "BUY",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         if self._is_sell(features):
             entry = features.close
             sl = entry + ATR_STOP_LOSS_MULTIPLIER * features.atr_14
             tp = entry - ATR_TAKE_PROFIT_MULTIPLIER * features.atr_14
-            return {"action": "SELL", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "SELL",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         return None
 
     def should_exit(self, features: FeatureSet, position: dict) -> bool:
         side = position.get("side", "BUY")
         if side == "BUY":
-            return features.rsi_14 > self.rsi_overbought or features.ema_9 < features.ema_21
+            return (
+                features.rsi_14 > self.rsi_overbought
+                or features.ema_9 < features.ema_21
+            )
         return features.rsi_14 < self.rsi_oversold or features.ema_9 > features.ema_21
 
     def _is_buy(self, f: FeatureSet) -> bool:
@@ -91,13 +104,18 @@ class EmaRsiStrategy(AbcStrategy):
             "timeframe": "1h",
             "symbols": [
                 # Crypto
-                "BTCUSDT", "ETHUSDT",
+                "BTCUSDT",
+                "ETHUSDT",
                 # Forex
-                "EURUSD", "GBPUSD", "USDJPY",
+                "EURUSD",
+                "GBPUSD",
+                "USDJPY",
                 # Indices
-                "SPX500", "NAS100",
+                "SPX500",
+                "NAS100",
                 # Commodities
-                "XAUUSD", "USOIL",
+                "XAUUSD",
+                "USOIL",
             ],
             "max_capital_pct": 0.20,
             "risk_per_trade_pct": 0.01,

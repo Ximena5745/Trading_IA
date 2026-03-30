@@ -120,10 +120,7 @@ class HistoricalSimulator:
         )
 
         # Filter features to date range
-        in_range = [
-            f for f in features
-            if config.start <= f.timestamp <= config.end
-        ]
+        in_range = [f for f in features if config.start <= f.timestamp <= config.end]
 
         if len(in_range) < 50:
             logger.warning("simulation_insufficient_data", available=len(in_range))
@@ -159,18 +156,20 @@ class HistoricalSimulator:
                         size=position["size"],
                     )
                     capital += net_pnl
-                    trades.append({
-                        "entry_ts": position["entry_ts"],
-                        "exit_ts": fs.timestamp.isoformat(),
-                        "symbol": config.symbol,
-                        "side": position["side"],
-                        "entry_price": position["entry_price"],
-                        "exit_price": exit_price,
-                        "size": position["size"],
-                        "raw_pnl": round(raw_pnl, 4),
-                        "net_pnl": round(net_pnl, 4),
-                        "bars_held": i - position["bar_idx"],
-                    })
+                    trades.append(
+                        {
+                            "entry_ts": position["entry_ts"],
+                            "exit_ts": fs.timestamp.isoformat(),
+                            "symbol": config.symbol,
+                            "side": position["side"],
+                            "entry_price": position["entry_price"],
+                            "exit_price": exit_price,
+                            "size": position["size"],
+                            "raw_pnl": round(raw_pnl, 4),
+                            "net_pnl": round(net_pnl, 4),
+                            "bars_held": i - position["bar_idx"],
+                        }
+                    )
                     position = None
 
             # Check entry (if flat)
@@ -178,7 +177,9 @@ class HistoricalSimulator:
                 entry_signal = strategy.should_enter(fs)
                 if entry_signal:
                     risk_amount = capital * config.risk_per_trade_pct
-                    stop_dist = abs(fs.close - entry_signal.get("stop_loss", fs.close * 0.98))
+                    stop_dist = abs(
+                        fs.close - entry_signal.get("stop_loss", fs.close * 0.98)
+                    )
                     size = (risk_amount / stop_dist) if stop_dist > 0 else 0.01
                     position = {
                         "side": entry_signal.get("direction", "BUY"),
@@ -190,18 +191,32 @@ class HistoricalSimulator:
                         "bar_idx": i,
                     }
 
-            equity_curve.append({
-                "timestamp": fs.timestamp.isoformat(),
-                "capital": round(capital, 2),
-                "in_position": position is not None,
-            })
+            equity_curve.append(
+                {
+                    "timestamp": fs.timestamp.isoformat(),
+                    "capital": round(capital, 2),
+                    "in_position": position is not None,
+                }
+            )
 
         # ── Metrics ────────────────────────────────────────────────────────
         pnls = [t["net_pnl"] for t in trades]
-        metrics = compute_all(pnls) if pnls else {k: 0.0 for k in [
-            "sharpe_ratio", "sortino_ratio", "max_drawdown", "calmar_ratio",
-            "win_rate", "profit_factor", "expectancy",
-        ]}
+        metrics = (
+            compute_all(pnls)
+            if pnls
+            else {
+                k: 0.0
+                for k in [
+                    "sharpe_ratio",
+                    "sortino_ratio",
+                    "max_drawdown",
+                    "calmar_ratio",
+                    "win_rate",
+                    "profit_factor",
+                    "expectancy",
+                ]
+            }
+        )
         metrics["total_return_pct"] = round(
             (capital - config.initial_capital) / config.initial_capital * 100, 2
         )
@@ -231,7 +246,5 @@ class HistoricalSimulator:
         return self._results.get(simulation_id)
 
     def list_results(self, limit: int = 20) -> list[dict]:
-        results = sorted(
-            self._results.values(), key=lambda r: r.run_at, reverse=True
-        )
+        results = sorted(self._results.values(), key=lambda r: r.run_at, reverse=True)
         return [r.to_dict() for r in results[:limit]]

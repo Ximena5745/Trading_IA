@@ -37,7 +37,8 @@ async def list_signals(
 async def get_latest_signal(symbol: str, _: dict = Depends(require_trader)):
     symbol = symbol.upper()
     active = [
-        s for s in _signals.values()
+        s
+        for s in _signals.values()
         if s["symbol"] == symbol and s["status"] == "pending"
     ]
     if not active:
@@ -49,7 +50,9 @@ async def get_latest_signal(symbol: str, _: dict = Depends(require_trader)):
 async def get_signal(signal_id: str, _: dict = Depends(require_trader)):
     signal = _signals.get(signal_id)
     if not signal:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Signal not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Signal not found"
+        )
     return signal
 
 

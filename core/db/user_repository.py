@@ -20,13 +20,14 @@ class UserRecord:
     id: str
     email: str
     hashed_password: str
-    role: str          # admin | trader | viewer
+    role: str  # admin | trader | viewer
     is_active: bool
 
 
 def _bcrypt():
     """Lazy import to avoid hard dependency at module load time."""
     from passlib.context import CryptContext
+
     return CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -56,7 +57,9 @@ async def get_user_by_email(email: str) -> Optional[UserRecord]:
         return None
 
 
-async def create_user(email: str, plain_password: str, role: str = "viewer") -> UserRecord:
+async def create_user(
+    email: str, plain_password: str, role: str = "viewer"
+) -> UserRecord:
     sql = """
         INSERT INTO users (email, hashed_password, role, is_active)
         VALUES ($1, $2, $3, true)

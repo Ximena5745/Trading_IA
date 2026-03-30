@@ -88,7 +88,12 @@ async def run(symbol: str, interval: str, days: int, output: str | None) -> None
 
         if output:
             with open(output, "w") as f:
-                json.dump({"symbol": symbol, "interval": interval, "windows": results}, f, indent=2, default=str)
+                json.dump(
+                    {"symbol": symbol, "interval": interval, "windows": results},
+                    f,
+                    indent=2,
+                    default=str,
+                )
             print(f"\n💾 Results saved to {output}")
 
     finally:

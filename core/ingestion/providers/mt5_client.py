@@ -40,7 +40,9 @@ from core.observability.logger import get_logger
 logger = get_logger(__name__)
 
 # MT5 timeframe mapping
-MT5_TIMEFRAME_MAP: dict[str, int] = {}  # populated lazily on first import of MetaTrader5
+MT5_TIMEFRAME_MAP: dict[
+    str, int
+] = {}  # populated lazily on first import of MetaTrader5
 
 # Maximum retries on connection failure
 MAX_CONNECT_RETRIES = 5
@@ -50,6 +52,7 @@ def _get_mt5():
     """Lazy import so the module loads on non-Windows without crashing."""
     try:
         import MetaTrader5 as mt5
+
         return mt5
     except ImportError:
         raise RuntimeError(
@@ -61,14 +64,14 @@ def _get_mt5():
 def _build_timeframe_map() -> dict[str, int]:
     mt5 = _get_mt5()
     return {
-        "1m":  mt5.TIMEFRAME_M1,
-        "5m":  mt5.TIMEFRAME_M5,
+        "1m": mt5.TIMEFRAME_M1,
+        "5m": mt5.TIMEFRAME_M5,
         "15m": mt5.TIMEFRAME_M15,
         "30m": mt5.TIMEFRAME_M30,
-        "1h":  mt5.TIMEFRAME_H1,
-        "4h":  mt5.TIMEFRAME_H4,
-        "1d":  mt5.TIMEFRAME_D1,
-        "1w":  mt5.TIMEFRAME_W1,
+        "1h": mt5.TIMEFRAME_H1,
+        "4h": mt5.TIMEFRAME_H4,
+        "1d": mt5.TIMEFRAME_D1,
+        "1w": mt5.TIMEFRAME_W1,
     }
 
 
@@ -107,8 +110,12 @@ class MT5Client(ExchangeAdapter):
 
         for attempt in range(1, MAX_CONNECT_RETRIES + 1):
             if not mt5.initialize():
-                logger.warning("mt5_init_failed", attempt=attempt, error=mt5.last_error())
-                import time; time.sleep(2 ** attempt)
+                logger.warning(
+                    "mt5_init_failed", attempt=attempt, error=mt5.last_error()
+                )
+                import time
+
+                time.sleep(2**attempt)
                 continue
 
             authorized = mt5.login(
@@ -134,7 +141,9 @@ class MT5Client(ExchangeAdapter):
             )
             return
 
-        raise RuntimeError(f"MT5 connection failed after {MAX_CONNECT_RETRIES} attempts")
+        raise RuntimeError(
+            f"MT5 connection failed after {MAX_CONNECT_RETRIES} attempts"
+        )
 
     async def disconnect(self) -> None:
         if self._connected:
@@ -157,20 +166,28 @@ class MT5Client(ExchangeAdapter):
             None, self._get_klines_sync, symbol, interval, limit
         )
 
-    def _get_klines_sync(self, symbol: str, interval: str, limit: int) -> list[MarketData]:
+    def _get_klines_sync(
+        self, symbol: str, interval: str, limit: int
+    ) -> list[MarketData]:
         mt5 = _get_mt5()
         tf = self._timeframe_map.get(interval)
         if tf is None:
-            raise ValueError(f"Unsupported MT5 interval: {interval}. Supported: {list(self._timeframe_map)}")
+            raise ValueError(
+                f"Unsupported MT5 interval: {interval}. Supported: {list(self._timeframe_map)}"
+            )
 
         rates = mt5.copy_rates_from_pos(symbol, tf, 0, limit)
         if rates is None or len(rates) == 0:
             error = mt5.last_error()
-            logger.warning("mt5_no_rates", symbol=symbol, interval=interval, error=error)
+            logger.warning(
+                "mt5_no_rates", symbol=symbol, interval=interval, error=error
+            )
             return []
 
         candles = [self._parse_rate(symbol, r) for r in rates]
-        logger.info("mt5_klines_fetched", symbol=symbol, interval=interval, count=len(candles))
+        logger.info(
+            "mt5_klines_fetched", symbol=symbol, interval=interval, count=len(candles)
+        )
         return candles
 
     @staticmethod
@@ -213,19 +230,19 @@ class MT5Client(ExchangeAdapter):
         if info is None:
             return None
         return {
-            "symbol":       info.name,
-            "description":  info.description,
+            "symbol": info.name,
+            "description": info.description,
             "trade_contract_size": info.trade_contract_size,
-            "point":        info.point,           # smallest price change
-            "digits":       info.digits,
-            "lot_size":     info.trade_contract_size,
-            "lot_step":     info.volume_step,
-            "min_lots":     info.volume_min,
-            "max_lots":     info.volume_max,
-            "swap_long":    info.swap_long,       # swap per lot per night (long)
-            "swap_short":   info.swap_short,      # swap per lot per night (short)
+            "point": info.point,  # smallest price change
+            "digits": info.digits,
+            "lot_size": info.trade_contract_size,
+            "lot_step": info.volume_step,
+            "min_lots": info.volume_min,
+            "max_lots": info.volume_max,
+            "swap_long": info.swap_long,  # swap per lot per night (long)
+            "swap_short": info.swap_short,  # swap per lot per night (short)
             "currency_profit": info.currency_profit,
-            "spread":       info.spread,          # in points
+            "spread": info.spread,  # in points
         }
 
     async def place_order(
@@ -263,16 +280,16 @@ class MT5Client(ExchangeAdapter):
         price = tick.ask if side == "BUY" else tick.bid
 
         request = {
-            "action":    action,
-            "symbol":    symbol,
-            "volume":    round(volume, 2),
-            "type":      order_type,
-            "price":     price,
-            "sl":        sl,
-            "tp":        tp,
+            "action": action,
+            "symbol": symbol,
+            "volume": round(volume, 2),
+            "type": order_type,
+            "price": price,
+            "sl": sl,
+            "tp": tp,
             "deviation": 10,
-            "magic":     202400,      # magic number to identify TRADER AI orders
-            "comment":   comment[:31] if comment else "TRADER_AI",
+            "magic": 202400,  # magic number to identify TRADER AI orders
+            "comment": comment[:31] if comment else "TRADER_AI",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -287,16 +304,19 @@ class MT5Client(ExchangeAdapter):
 
         logger.info(
             "mt5_order_placed",
-            symbol=symbol, side=side, volume=volume,
-            price=price, order_id=result.order,
+            symbol=symbol,
+            side=side,
+            volume=volume,
+            price=price,
+            order_id=result.order,
         )
         return {
             "exchange_order_id": str(result.order),
-            "symbol":     symbol,
-            "side":       side,
-            "volume":     volume,
+            "symbol": symbol,
+            "side": side,
+            "volume": volume,
             "fill_price": result.price,
-            "retcode":    result.retcode,
+            "retcode": result.retcode,
         }
 
     # ── Order book (MT5 does not expose L2) ─────────────────────────────────
@@ -327,9 +347,9 @@ class MT5Client(ExchangeAdapter):
         if info is None:
             return {}
         return {
-            "balance":  info.balance,
-            "equity":   info.equity,
-            "margin":   info.margin,
+            "balance": info.balance,
+            "equity": info.equity,
+            "margin": info.margin,
             "free_margin": info.margin_free,
             "currency": info.currency,
             "leverage": info.leverage,

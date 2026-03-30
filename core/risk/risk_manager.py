@@ -41,7 +41,9 @@ class RiskManager:
 
         rr = signal.get("risk_reward_ratio", 0.0)
         if rr < HARD_LIMITS["min_risk_reward_ratio"]:
-            reason = f"R:R ratio too low ({rr:.2f} < {HARD_LIMITS['min_risk_reward_ratio']})"
+            reason = (
+                f"R:R ratio too low ({rr:.2f} < {HARD_LIMITS['min_risk_reward_ratio']})"
+            )
             logger.warning("signal_rejected", reason=reason)
             return False, reason
 
@@ -51,13 +53,13 @@ class RiskManager:
         self,
         signal: dict,
         portfolio: dict,
-        instrument=None,   # Optional[InstrumentConfig] — routes forex/CFD sizing
+        instrument=None,  # Optional[InstrumentConfig] — routes forex/CFD sizing
     ) -> float:
         available = portfolio.get("available_capital", 0.0)
-        total     = portfolio.get("total_capital", 0.0)
-        entry     = signal.get("entry_price", 0.0)
-        sl        = signal.get("stop_loss", 0.0)
-        symbol    = signal.get("symbol", "")
+        total = portfolio.get("total_capital", 0.0)
+        entry = signal.get("entry_price", 0.0)
+        sl = signal.get("stop_loss", 0.0)
+        symbol = signal.get("symbol", "")
 
         return self._sizer.calculate(
             symbol=symbol,

@@ -34,7 +34,8 @@ class Rebalancer:
         """
         MIN_SHARPE = 0.5
         eligible = {
-            sid: m for sid, m in strategy_metrics.items()
+            sid: m
+            for sid, m in strategy_metrics.items()
             if m.get("sharpe_ratio", 0) >= MIN_SHARPE and m.get("status") == "active"
         }
         if not eligible:
@@ -44,9 +45,17 @@ class Rebalancer:
         total_sharpe = sum(m["sharpe_ratio"] for m in eligible.values())
         allocations = {}
         for sid, m in eligible.items():
-            weight = m["sharpe_ratio"] / total_sharpe if total_sharpe > 0 else 1 / len(eligible)
+            weight = (
+                m["sharpe_ratio"] / total_sharpe
+                if total_sharpe > 0
+                else 1 / len(eligible)
+            )
             allocations[sid] = round(total_capital * weight * 0.90, 2)  # 90% deployed
 
         self._last_rebalance = datetime.utcnow()
-        logger.info("portfolio_rebalanced", strategies=list(allocations.keys()), total=total_capital)
+        logger.info(
+            "portfolio_rebalanced",
+            strategies=list(allocations.keys()),
+            total=total_capital,
+        )
         return allocations

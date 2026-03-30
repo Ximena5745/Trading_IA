@@ -44,7 +44,9 @@ class AdaptationEngine:
                 symbol=regime.symbol,
                 new_regime=regime.regime,
             )
-            return await self.maybe_retrain(symbol=regime.symbol, reason="regime_change")
+            return await self.maybe_retrain(
+                symbol=regime.symbol, reason="regime_change"
+            )
         return False
 
     async def maybe_retrain(self, symbol: str, reason: str = "manual") -> bool:
@@ -113,7 +115,9 @@ class AdaptationEngine:
         return {
             "is_retraining": self._is_retraining,
             "retrain_count": self._retrain_count,
-            "last_retrain_at": self._last_retrain_at.isoformat() if self._last_retrain_at else None,
+            "last_retrain_at": self._last_retrain_at.isoformat()
+            if self._last_retrain_at
+            else None,
             "cooldown_seconds": RETRAIN_COOLDOWN_SECONDS,
             "seconds_since_last_retrain": self._seconds_since_last_retrain(),
             "current_regime": self._regime_watcher.get_current_regime(),

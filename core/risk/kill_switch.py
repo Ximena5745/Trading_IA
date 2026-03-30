@@ -16,7 +16,9 @@ logger = get_logger(__name__)
 
 
 class KillSwitchState:
-    def __init__(self, daily_loss_limit: float, max_consecutive_losses: int, max_drawdown: float):
+    def __init__(
+        self, daily_loss_limit: float, max_consecutive_losses: int, max_drawdown: float
+    ):
         self.active: bool = False
         self.triggered_at: Optional[datetime] = None
         self.triggered_by: Optional[str] = None
@@ -30,13 +32,18 @@ class KillSwitchState:
 
 class AbcKillSwitch(ABC):
     @abstractmethod
-    def is_active(self) -> bool: ...
+    def is_active(self) -> bool:
+        ...
 
     @abstractmethod
-    def check_and_trigger(self, daily_pnl_pct: float, drawdown_current: float, recent_trades: list) -> None: ...
+    def check_and_trigger(
+        self, daily_pnl_pct: float, drawdown_current: float, recent_trades: list
+    ) -> None:
+        ...
 
     @abstractmethod
-    def reset(self, admin_token: str) -> None: ...
+    def reset(self, admin_token: str) -> None:
+        ...
 
 
 class KillSwitch(AbcKillSwitch):
@@ -56,7 +63,9 @@ class KillSwitch(AbcKillSwitch):
     def is_active(self) -> bool:
         return self.state.active
 
-    def check_and_trigger(self, daily_pnl_pct: float, drawdown_current: float, recent_trades: list) -> None:
+    def check_and_trigger(
+        self, daily_pnl_pct: float, drawdown_current: float, recent_trades: list
+    ) -> None:
         self.state.daily_loss_current = daily_pnl_pct
 
         if daily_pnl_pct <= -self._settings.DAILY_LOSS_LIMIT_PCT:
@@ -88,7 +97,11 @@ class KillSwitch(AbcKillSwitch):
     def _count_consecutive_losses(self, recent_trades: list) -> int:
         count = 0
         for trade in reversed(recent_trades):
-            pnl = trade.get("net_pnl", 0) if isinstance(trade, dict) else getattr(trade, "net_pnl", 0)
+            pnl = (
+                trade.get("net_pnl", 0)
+                if isinstance(trade, dict)
+                else getattr(trade, "net_pnl", 0)
+            )
             if pnl < 0:
                 count += 1
             else:

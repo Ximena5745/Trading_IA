@@ -106,10 +106,13 @@ class TradingRepository:
         """
         try:
             unrealized = sum(p.unrealized_pnl for p in portfolio.positions)
-            positions_json = json.dumps([p.model_dump() for p in portfolio.positions], default=str)
+            positions_json = json.dumps(
+                [p.model_dump() for p in portfolio.positions], default=str
+            )
             total_pnl_pct = (
                 portfolio.total_pnl / (portfolio.total_capital - portfolio.total_pnl)
-                if (portfolio.total_capital - portfolio.total_pnl) > 0 else 0.0
+                if (portfolio.total_capital - portfolio.total_pnl) > 0
+                else 0.0
             )
             await get_pool().execute(
                 sql,
@@ -187,15 +190,28 @@ class TradingRepository:
             )
             await get_pool().execute(
                 sql,
-                strategy_id, symbol, timeframe, start_date, end_date,
-                metrics.get("sharpe"), metrics.get("sortino"),
-                metrics.get("max_drawdown"), metrics.get("win_rate"),
-                metrics.get("total_return"), metrics.get("total_trades"),
+                strategy_id,
+                symbol,
+                timeframe,
+                start_date,
+                end_date,
+                metrics.get("sharpe"),
+                metrics.get("sortino"),
+                metrics.get("max_drawdown"),
+                metrics.get("win_rate"),
+                metrics.get("total_return"),
+                metrics.get("total_trades"),
                 metrics.get("profit_factor"),
                 json.dumps(metrics),
                 passed,
             )
-            logger.info("backtest_result_saved", strategy_id=strategy_id, symbol=symbol,
-                        passed=passed)
+            logger.info(
+                "backtest_result_saved",
+                strategy_id=strategy_id,
+                symbol=symbol,
+                passed=passed,
+            )
         except Exception as e:
-            logger.error("backtest_result_save_failed", strategy_id=strategy_id, error=str(e))
+            logger.error(
+                "backtest_result_save_failed", strategy_id=strategy_id, error=str(e)
+            )

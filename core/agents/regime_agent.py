@@ -60,7 +60,9 @@ class RegimeAgent(AbcAgent):
                 agent_id=self.agent_id,
                 timestamp=features.timestamp,
                 symbol=features.symbol,
-                direction="NEUTRAL" if not regime_output.signal_allowed else self._regime_direction(regime_output.regime),
+                direction="NEUTRAL"
+                if not regime_output.signal_allowed
+                else self._regime_direction(regime_output.regime),
                 score=score,
                 confidence=regime_output.confidence,
                 features_used=REGIME_FEATURES,
@@ -74,6 +76,7 @@ class RegimeAgent(AbcAgent):
         """Log warning if Asian session only (LOW_LIQUIDITY) — does NOT block."""
         try:
             from core.ingestion.market_calendar import get_calendar
+
             calendar = get_calendar()
             if calendar.is_low_liquidity(symbol):
                 logger.warning(
@@ -83,7 +86,7 @@ class RegimeAgent(AbcAgent):
                     note="signals allowed per decision v2.4 — monitor spread widening",
                 )
         except Exception:
-            pass   # calendar not available in crypto-only mode
+            pass  # calendar not available in crypto-only mode
 
     def classify_regime(self, features: FeatureSet) -> RegimeOutput:
         if self._model is not None:
@@ -123,7 +126,9 @@ class RegimeAgent(AbcAgent):
         if len(self._regime_history) > 100:
             self._regime_history.pop(0)
 
-        signal_allowed = regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        signal_allowed = (
+            regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        )
 
         return RegimeOutput(
             timestamp=features.timestamp,
@@ -141,7 +146,9 @@ class RegimeAgent(AbcAgent):
         proba = self._model.predict_proba(X)[0]
         regime = MarketRegime(pred)
         confidence = float(max(proba))
-        signal_allowed = regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        signal_allowed = (
+            regime != MarketRegime.VOLATILE_CRASH and confidence >= MIN_CONFIDENCE
+        )
         prev = self._regime_history[-1] if self._regime_history else None
         self._regime_history.append(regime)
         return RegimeOutput(

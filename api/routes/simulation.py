@@ -41,6 +41,7 @@ def _get_sim() -> HistoricalSimulator:
 
 # ── Request / Response models ──────────────────────────────────────────────
 
+
 class SimulationRequest(BaseModel):
     symbol: str = "BTCUSDT"
     strategy_id: str
@@ -61,6 +62,7 @@ class SimulationRequest(BaseModel):
 
 
 # ── Background task ────────────────────────────────────────────────────────
+
 
 def _run_simulation_job(job_id: str, request: SimulationRequest) -> None:
     from core.features.feature_store import FeatureStore
@@ -107,6 +109,7 @@ def _run_simulation_job(job_id: str, request: SimulationRequest) -> None:
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
 
+
 @router.post("", status_code=status.HTTP_202_ACCEPTED)
 async def run_simulation(
     req: SimulationRequest,
@@ -115,6 +118,7 @@ async def run_simulation(
 ):
     """Submit a historical simulation job. Returns a job_id to poll."""
     import uuid
+
     job_id = str(uuid.uuid4())[:12]
     _jobs[job_id] = {
         "job_id": job_id,
@@ -138,7 +142,9 @@ async def get_simulation_status(job_id: str, user=Depends(get_current_user)):
     """Check the status of a simulation job."""
     job = _jobs.get(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail=f"Simulation job {job_id} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Simulation job {job_id} not found"
+        )
     # Return status without the heavy result payload
     return {k: v for k, v in job.items() if k != "result"}
 
@@ -148,7 +154,9 @@ async def get_simulation_results(job_id: str, user=Depends(get_current_user)):
     """Get full results of a completed simulation."""
     job = _jobs.get(job_id)
     if not job:
-        raise HTTPException(status_code=404, detail=f"Simulation job {job_id} not found")
+        raise HTTPException(
+            status_code=404, detail=f"Simulation job {job_id} not found"
+        )
     if job["status"] != "completed":
         raise HTTPException(
             status_code=status.HTTP_425_TOO_EARLY,

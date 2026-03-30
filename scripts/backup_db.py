@@ -26,11 +26,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DB_CONTAINER = "trader_db"          # name of the Docker container running PostgreSQL
-DB_NAME      = "trader_ai"
-DB_USER      = "trader"
-RCLONE_REMOTE = "onedrive"          # rclone remote name (configure with: rclone config)
-RCLONE_PATH   = f"{RCLONE_REMOTE}:trader_ai_backups"
+DB_CONTAINER = "trader_db"  # name of the Docker container running PostgreSQL
+DB_NAME = "trader_ai"
+DB_USER = "trader"
+RCLONE_REMOTE = "onedrive"  # rclone remote name (configure with: rclone config)
+RCLONE_PATH = f"{RCLONE_REMOTE}:trader_ai_backups"
 RETENTION_DAYS = 30
 BACKUP_DIR = Path(__file__).parent.parent / "data" / "backups"
 # ─────────────────────────────────────────────────────────────────────────────
@@ -48,11 +48,21 @@ def _run(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
 def dump_database(backup_path: Path) -> None:
     """pg_dump via docker exec, compressed with gzip."""
     _log(f"Dumping {DB_NAME} from container {DB_CONTAINER}...")
-    result = _run([
-        "docker", "exec", DB_CONTAINER,
-        "pg_dump", "-U", DB_USER, "-d", DB_NAME,
-        "--no-password", "-F", "plain",
-    ])
+    result = _run(
+        [
+            "docker",
+            "exec",
+            DB_CONTAINER,
+            "pg_dump",
+            "-U",
+            DB_USER,
+            "-d",
+            DB_NAME,
+            "--no-password",
+            "-F",
+            "plain",
+        ]
+    )
     compressed = backup_path.with_suffix(".sql.gz")
     with gzip.open(compressed, "wt", encoding="utf-8") as f:
         f.write(result.stdout)
@@ -80,7 +90,9 @@ def purge_old_backups(dry_run: bool) -> None:
         try:
             # filename: backup_YYYYMMDD_HHMMSS.sql.gz
             date_str = f.stem.replace("backup_", "").replace(".sql", "")
-            file_dt = datetime.strptime(date_str, "%Y%m%d_%H%M%S").replace(tzinfo=timezone.utc)
+            file_dt = datetime.strptime(date_str, "%Y%m%d_%H%M%S").replace(
+                tzinfo=timezone.utc
+            )
             if file_dt < cutoff:
                 if dry_run:
                     _log(f"[DRY RUN] Would delete local: {f.name}")
@@ -95,7 +107,9 @@ def purge_old_backups(dry_run: bool) -> None:
         _log(f"[DRY RUN] Would purge OneDrive backups older than {RETENTION_DAYS} days")
         return
     try:
-        result = _run(["rclone", "lsf", RCLONE_PATH + "/", "--format", "np"], check=False)
+        result = _run(
+            ["rclone", "lsf", RCLONE_PATH + "/", "--format", "np"], check=False
+        )
         for line in result.stdout.splitlines():
             parts = line.strip().split(";")
             if len(parts) < 2:
@@ -104,7 +118,9 @@ def purge_old_backups(dry_run: bool) -> None:
             if not name.startswith("backup_") or not name.endswith(".sql.gz"):
                 continue
             try:
-                file_dt = datetime.strptime(date_str[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                file_dt = datetime.strptime(date_str[:19], "%Y-%m-%d %H:%M:%S").replace(
+                    tzinfo=timezone.utc
+                )
                 if file_dt < cutoff:
                     _run(["rclone", "deletefile", f"{RCLONE_PATH}/{name}"])
                     _log(f"Deleted from OneDrive: {name}")

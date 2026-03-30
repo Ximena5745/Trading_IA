@@ -28,21 +28,21 @@ SUPPORTED_EXCHANGES = (
     "binance",
     "bybit",
     # Multiactivos (Forex, Índices, Commodities, Acciones, Futuros)
-    "ib",      # Interactive Brokers
-    "mt5",     # MetaTrader 5
+    "ib",  # Interactive Brokers
+    "mt5",  # MetaTrader 5
     # Alternativas
-    "oanda",   # Forex + Indices + Commodities
+    "oanda",  # Forex + Indices + Commodities
     "alpha_vantage",  # Market data universal
 )
 
 # ── Asset class → recommended adapter ────────────────────────────────────────
 ASSET_CLASS_ADAPTER: dict[str, str] = {
-    "crypto":      "binance",     # Binance es el estándar para cripto
-    "forex":       "ib",          # IB es el mejor para forex (latencia, spreads)
-    "indices":     "ib",          # IB: excelente cobertura de índices globales
-    "commodities": "ib",          # IB: futuros de commodities
-    "stocks":      "ib",          # IB: acciones de múltiples mercados
-    "futures":     "ib",          # IB: futuros de alta liquidez
+    "crypto": "binance",  # Binance es el estándar para cripto
+    "forex": "ib",  # IB es el mejor para forex (latencia, spreads)
+    "indices": "ib",  # IB: excelente cobertura de índices globales
+    "commodities": "ib",  # IB: futuros de commodities
+    "stocks": "ib",  # IB: acciones de múltiples mercados
+    "futures": "ib",  # IB: futuros de alta liquidez
 }
 
 
@@ -62,13 +62,16 @@ class ExchangeAdapter(ABC):
     # ── Connection lifecycle ───────────────────────────────────────────────
 
     @abstractmethod
-    async def connect(self) -> None: ...
+    async def connect(self) -> None:
+        ...
 
     @abstractmethod
-    async def disconnect(self) -> None: ...
+    async def disconnect(self) -> None:
+        ...
 
     @abstractmethod
-    def is_connected(self) -> bool: ...
+    def is_connected(self) -> bool:
+        ...
 
     # ── Market data ────────────────────────────────────────────────────────
 
@@ -78,19 +81,22 @@ class ExchangeAdapter(ABC):
         symbol: str,
         interval: str,
         limit: int = 500,
-    ) -> list[MarketData]: ...
+    ) -> list[MarketData]:
+        ...
 
     @abstractmethod
     async def get_order_book(
         self,
         symbol: str,
         depth: int = 20,
-    ) -> dict: ...
+    ) -> dict:
+        ...
 
     # ── Account & trading ─────────────────────────────────────────────────
 
     @abstractmethod
-    async def get_balance(self, asset: str = "USD") -> float: ...
+    async def get_balance(self, asset: str = "USD") -> float:
+        ...
 
     @abstractmethod
     async def place_order(
@@ -100,13 +106,16 @@ class ExchangeAdapter(ABC):
         quantity: float,
         order_type: str = "MARKET",
         client_order_id: Optional[str] = None,
-    ) -> dict: ...
+    ) -> dict:
+        ...
 
     @abstractmethod
-    async def cancel_order(self, symbol: str, order_id: str) -> dict: ...
+    async def cancel_order(self, symbol: str, order_id: str) -> dict:
+        ...
 
     @abstractmethod
-    async def get_order_status(self, symbol: str, order_id: str) -> dict: ...
+    async def get_order_status(self, symbol: str, order_id: str) -> dict:
+        ...
 
     # ── Normalisation helpers (shared) ────────────────────────────────────
 
@@ -129,6 +138,7 @@ class ExchangeAdapter(ABC):
 
 # ── OANDA symbol normalisation helper ────────────────────────────────────────
 
+
 def to_oanda_symbol(symbol: str) -> str:
     """Convert generic symbol to OANDA instrument format.
 
@@ -139,16 +149,16 @@ def to_oanda_symbol(symbol: str) -> str:
         USOIL   → WTICO_USD
     """
     _overrides = {
-        "USOIL":  "WTICO_USD",
-        "UKOIL":  "BCO_USD",
+        "USOIL": "WTICO_USD",
+        "UKOIL": "BCO_USD",
         "NATGAS": "NATGAS_USD",
-        "WHEAT":  "WHEAT_USD",
+        "WHEAT": "WHEAT_USD",
         "SPX500": "SPX500_USD",
         "NAS100": "NAS100_USD",
-        "US30":   "US30_USD",
-        "DE40":   "DE30_EUR",
-        "UK100":  "UK100_GBP",
-        "JP225":  "JP225_USD",
+        "US30": "US30_USD",
+        "DE40": "DE30_EUR",
+        "UK100": "UK100_GBP",
+        "JP225": "JP225_USD",
     }
     s = symbol.upper()
     if s in _overrides:
@@ -163,6 +173,7 @@ def to_oanda_symbol(symbol: str) -> str:
 
 
 # ── Registry ─────────────────────────────────────────────────────────────────
+
 
 class ExchangeAdapterRegistry:
     """Singleton registry that stores one adapter per exchange."""

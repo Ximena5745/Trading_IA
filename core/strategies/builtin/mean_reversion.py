@@ -47,7 +47,12 @@ class MeanReversionStrategy(AbcStrategy):
             tp = features.vwap  # target: revert to VWAP
             if tp <= entry:
                 return None
-            return {"action": "BUY", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "BUY",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         if self._is_sell(features):
             entry = features.close
@@ -55,7 +60,12 @@ class MeanReversionStrategy(AbcStrategy):
             tp = features.vwap  # target: revert to VWAP
             if tp >= entry:
                 return None
-            return {"action": "SELL", "entry_price": entry, "stop_loss": sl, "take_profit": tp}
+            return {
+                "action": "SELL",
+                "entry_price": entry,
+                "stop_loss": sl,
+                "take_profit": tp,
+            }
 
         return None
 
@@ -92,11 +102,16 @@ class MeanReversionStrategy(AbcStrategy):
             "timeframe": "1h",
             "symbols": [
                 # Crypto — high volatility suits mean reversion
-                "BTCUSDT", "ETHUSDT",
+                "BTCUSDT",
+                "ETHUSDT",
                 # Commodities — strong mean-reverting behaviour
-                "XAUUSD", "XAGUSD", "USOIL",
+                "XAUUSD",
+                "XAGUSD",
+                "USOIL",
                 # Forex — range-bound pairs
-                "EURUSD", "GBPUSD", "USDCHF",
+                "EURUSD",
+                "GBPUSD",
+                "USDCHF",
             ],
             "max_capital_pct": 0.15,
             "risk_per_trade_pct": 0.01,

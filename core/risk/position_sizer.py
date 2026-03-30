@@ -53,7 +53,10 @@ class PositionSizer:
             qty = self._crypto_sizing(risk_capital, entry_price, stop_loss)
         elif instrument is not None and asset_class == AssetClass.FOREX:
             qty = self._forex_sizing(risk_capital, stop_loss, entry_price, instrument)
-        elif instrument is not None and asset_class in (AssetClass.INDICES, AssetClass.COMMODITIES):
+        elif instrument is not None and asset_class in (
+            AssetClass.INDICES,
+            AssetClass.COMMODITIES,
+        ):
             qty = self._cfd_sizing(risk_capital, stop_loss, entry_price, instrument)
         else:
             qty = self._crypto_sizing(risk_capital, entry_price, stop_loss)
@@ -75,7 +78,8 @@ class PositionSizer:
     ) -> float:
         """Crypto-only sizing. Kept for backward compatibility."""
         return self._crypto_sizing(
-            available_capital * min(
+            available_capital
+            * min(
                 self._settings.MAX_RISK_PER_TRADE_PCT,
                 HARD_LIMITS["max_risk_per_trade_pct"],
             ),
@@ -91,11 +95,15 @@ class PositionSizer:
     # ── Sizing formulas ────────────────────────────────────────────────────
 
     @staticmethod
-    def _crypto_sizing(risk_capital: float, entry_price: float, stop_loss: float) -> float:
+    def _crypto_sizing(
+        risk_capital: float, entry_price: float, stop_loss: float
+    ) -> float:
         """qty = capital_at_risk / price_risk_per_unit"""
         price_risk = abs(entry_price - stop_loss)
         if price_risk == 0:
-            logger.warning("position_sizer_zero_price_risk", entry=entry_price, sl=stop_loss)
+            logger.warning(
+                "position_sizer_zero_price_risk", entry=entry_price, sl=stop_loss
+            )
             return 0.0
         return round(risk_capital / price_risk, 6)
 
@@ -112,12 +120,14 @@ class PositionSizer:
         pip_value is already in USD per standard lot.
         """
         point = instrument.point
-        pip_value = instrument.pip_value     # USD per pip per standard lot
+        pip_value = instrument.pip_value  # USD per pip per standard lot
         stop_pips = abs(entry_price - stop_loss) / point
         if stop_pips == 0 or pip_value == 0:
             return 0.0
         lots = risk_capital / (stop_pips * pip_value)
-        lots = max(instrument.min_lots, round(lots / instrument.lot_step) * instrument.lot_step)
+        lots = max(
+            instrument.min_lots, round(lots / instrument.lot_step) * instrument.lot_step
+        )
         return round(lots, 2)
 
     @staticmethod
@@ -132,12 +142,15 @@ class PositionSizer:
         For indices/commodities where pip_value = USD per point per contract.
         """
         point = instrument.point
-        point_value = instrument.pip_value   # USD per index point per contract
+        point_value = instrument.pip_value  # USD per index point per contract
         stop_points = abs(entry_price - stop_loss) / point
         if stop_points == 0 or point_value == 0:
             return 0.0
         contracts = risk_capital / (stop_points * point_value)
-        contracts = max(instrument.min_lots, round(contracts / instrument.lot_step) * instrument.lot_step)
+        contracts = max(
+            instrument.min_lots,
+            round(contracts / instrument.lot_step) * instrument.lot_step,
+        )
         return round(contracts, 2)
 
     def _apply_symbol_cap(
@@ -158,9 +171,14 @@ class PositionSizer:
         if position_value > max_value and entry_price > 0:
             if instrument is not None:
                 capped = max_value / (instrument.lot_size * entry_price)
-                capped = max(instrument.min_lots, round(capped / instrument.lot_step) * instrument.lot_step)
+                capped = max(
+                    instrument.min_lots,
+                    round(capped / instrument.lot_step) * instrument.lot_step,
+                )
             else:
                 capped = max_value / entry_price
-            logger.warning("position_capped", original=quantity, capped=round(capped, 6))
+            logger.warning(
+                "position_capped", original=quantity, capped=round(capped, 6)
+            )
             return round(capped, 6)
         return quantity

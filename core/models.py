@@ -17,10 +17,11 @@ from pydantic import BaseModel, validator
 # Asset Class
 # ---------------------------------------------------------------------------
 
+
 class AssetClass(str, Enum):
-    CRYPTO      = "crypto"
-    FOREX       = "forex"
-    INDICES     = "indices"
+    CRYPTO = "crypto"
+    FOREX = "forex"
+    INDICES = "indices"
     COMMODITIES = "commodities"
 
 
@@ -30,10 +31,19 @@ class InstrumentConfig:
     Use mt5_symbol for the exact name in the IC Markets terminal.
     Verified IC Markets symbols — section 1.2 of PROYECTO.md v2.4.
     """
+
     __slots__ = (
-        "symbol", "mt5_symbol", "asset_class", "pip_value",
-        "lot_size", "min_lots", "lot_step", "spread_pips",
-        "swap_long", "swap_short", "point",
+        "symbol",
+        "mt5_symbol",
+        "asset_class",
+        "pip_value",
+        "lot_size",
+        "min_lots",
+        "lot_step",
+        "spread_pips",
+        "swap_long",
+        "swap_short",
+        "point",
     )
 
     def __init__(
@@ -41,12 +51,12 @@ class InstrumentConfig:
         symbol: str,
         mt5_symbol: str,
         asset_class: "AssetClass",
-        pip_value: float,    # USD value of 1 pip per standard lot
-        lot_size: float,     # contract size (e.g. 100_000 for forex majors)
+        pip_value: float,  # USD value of 1 pip per standard lot
+        lot_size: float,  # contract size (e.g. 100_000 for forex majors)
         min_lots: float = 0.01,
         lot_step: float = 0.01,
         spread_pips: float = 0.0,
-        swap_long: float = 0.0,   # populated at runtime via MT5Client.get_symbol_info()
+        swap_long: float = 0.0,  # populated at runtime via MT5Client.get_symbol_info()
         swap_short: float = 0.0,
         point: float = 0.00001,
     ):
@@ -68,20 +78,105 @@ class InstrumentConfig:
 # refreshes them at runtime from the live broker feed.
 INSTRUMENT_CONFIGS: dict[str, InstrumentConfig] = {
     # Forex majors — pip = 0.0001, lot = 100,000 units, pip_value ≈ $10/lot
-    "EURUSD": InstrumentConfig("EURUSD", "EURUSD", AssetClass.FOREX, pip_value=10.0,  lot_size=100_000, spread_pips=0.6),
-    "GBPUSD": InstrumentConfig("GBPUSD", "GBPUSD", AssetClass.FOREX, pip_value=10.0,  lot_size=100_000, spread_pips=0.9),
-    "AUDUSD": InstrumentConfig("AUDUSD", "AUDUSD", AssetClass.FOREX, pip_value=10.0,  lot_size=100_000, spread_pips=0.8),
-    "USDJPY": InstrumentConfig("USDJPY", "USDJPY", AssetClass.FOREX, pip_value=9.09,  lot_size=100_000, spread_pips=0.7, point=0.001),
-    "USDCHF": InstrumentConfig("USDCHF", "USDCHF", AssetClass.FOREX, pip_value=10.94, lot_size=100_000, spread_pips=0.8),
-    "USDCAD": InstrumentConfig("USDCAD", "USDCAD", AssetClass.FOREX, pip_value=7.47,  lot_size=100_000, spread_pips=0.8),
+    "EURUSD": InstrumentConfig(
+        "EURUSD",
+        "EURUSD",
+        AssetClass.FOREX,
+        pip_value=10.0,
+        lot_size=100_000,
+        spread_pips=0.6,
+        swap_long=-0.5,  # typical IC Markets overnight rate (USD per lot per night)
+        swap_short=-0.3,
+    ),
+    "GBPUSD": InstrumentConfig(
+        "GBPUSD",
+        "GBPUSD",
+        AssetClass.FOREX,
+        pip_value=10.0,
+        lot_size=100_000,
+        spread_pips=0.9,
+    ),
+    "AUDUSD": InstrumentConfig(
+        "AUDUSD",
+        "AUDUSD",
+        AssetClass.FOREX,
+        pip_value=10.0,
+        lot_size=100_000,
+        spread_pips=0.8,
+    ),
+    "USDJPY": InstrumentConfig(
+        "USDJPY",
+        "USDJPY",
+        AssetClass.FOREX,
+        pip_value=9.09,
+        lot_size=100_000,
+        spread_pips=0.7,
+        point=0.001,
+    ),
+    "USDCHF": InstrumentConfig(
+        "USDCHF",
+        "USDCHF",
+        AssetClass.FOREX,
+        pip_value=10.94,
+        lot_size=100_000,
+        spread_pips=0.8,
+    ),
+    "USDCAD": InstrumentConfig(
+        "USDCAD",
+        "USDCAD",
+        AssetClass.FOREX,
+        pip_value=7.47,
+        lot_size=100_000,
+        spread_pips=0.8,
+    ),
     # Commodity
-    "XAUUSD": InstrumentConfig("XAUUSD", "XAUUSD", AssetClass.COMMODITIES, pip_value=1.0,  lot_size=100, spread_pips=0.25, point=0.01),
+    "XAUUSD": InstrumentConfig(
+        "XAUUSD",
+        "XAUUSD",
+        AssetClass.COMMODITIES,
+        pip_value=1.0,
+        lot_size=100,
+        spread_pips=0.25,
+        point=0.01,
+    ),
     # Indices CFD — point value varies; spread in index points
-    "US500":  InstrumentConfig("US500",  "US500",  AssetClass.INDICES, pip_value=1.0,  lot_size=1,   spread_pips=0.4,  point=0.1),
-    "US30":   InstrumentConfig("US30",   "US30",   AssetClass.INDICES, pip_value=1.0,  lot_size=1,   spread_pips=2.0,  point=1.0),
-    "UK100":  InstrumentConfig("UK100",  "UK100",  AssetClass.INDICES, pip_value=1.0,  lot_size=1,   spread_pips=1.0,  point=1.0),
+    "US500": InstrumentConfig(
+        "US500",
+        "US500",
+        AssetClass.INDICES,
+        pip_value=1.0,
+        lot_size=1,
+        spread_pips=0.4,
+        point=0.1,
+    ),
+    "US30": InstrumentConfig(
+        "US30",
+        "US30",
+        AssetClass.INDICES,
+        pip_value=1.0,
+        lot_size=1,
+        spread_pips=2.0,
+        point=1.0,
+    ),
+    "UK100": InstrumentConfig(
+        "UK100",
+        "UK100",
+        AssetClass.INDICES,
+        pip_value=1.0,
+        lot_size=1,
+        spread_pips=1.0,
+        point=1.0,
+    ),
     # Crypto CFD via MT5
-    "BTCUSD": InstrumentConfig("BTCUSD", "BTCUSD", AssetClass.CRYPTO, pip_value=1.0,  lot_size=1,   spread_pips=15.0, point=1.0),
+    "BTCUSD": InstrumentConfig(
+        "BTCUSD",
+        "BTCUSD",
+        AssetClass.CRYPTO,
+        pip_value=1.0,
+        lot_size=1,
+        spread_pips=15.0,
+        point=1.0,
+    ),
 }
 
 
@@ -103,10 +198,21 @@ def detect_asset_class(symbol: str) -> AssetClass:
     if s in ("USOIL", "UKOIL", "NATGAS", "WHEAT", "CORN", "SOYB"):
         return AssetClass.COMMODITIES
     # Equity indices
-    if s in ("SPX500", "NAS100", "US30", "DE40", "UK100", "JP225",
-             "AUS200", "HK50", "FR40"):
+    if s in (
+        "SPX500",
+        "NAS100",
+        "US500",
+        "US30",
+        "DE40",
+        "UK100",
+        "JP225",
+        "AUS200",
+        "HK50",
+        "FR40",
+    ):
         return AssetClass.INDICES
     # Forex: 6-char currency pairs (EURUSD, GBPUSD, etc.)
+    # Note: precious metals like XAUUSD are already caught above before this branch
     if len(s) == 6 and s.isalpha():
         return AssetClass.FOREX
     # Default fallback
@@ -116,6 +222,7 @@ def detect_asset_class(symbol: str) -> AssetClass:
 # ---------------------------------------------------------------------------
 # Market Data
 # ---------------------------------------------------------------------------
+
 
 class MarketData(BaseModel):
     timestamp: datetime
@@ -130,7 +237,7 @@ class MarketData(BaseModel):
     trades_count: Optional[int] = None
     taker_buy_volume: Optional[Decimal] = None
     # Metadata
-    source: str = "unknown"          # e.g. "binance", "oanda", "alpha_vantage"
+    source: str = "unknown"  # e.g. "binance", "oanda", "alpha_vantage"
     asset_class: Optional[str] = None  # populated by the adapter
     feature_version: str = "v1"
 
@@ -151,11 +258,12 @@ class MarketData(BaseModel):
 # Feature Set
 # ---------------------------------------------------------------------------
 
+
 class FeatureSet(BaseModel):
     timestamp: datetime
     symbol: str
     version: str = "v1"
-    asset_class: str = "crypto"   # inferred by FeatureEngine if not set
+    asset_class: str = "crypto"  # inferred by FeatureEngine if not set
 
     # Momentum
     rsi_14: float
@@ -196,12 +304,13 @@ class FeatureSet(BaseModel):
 # Market Regime
 # ---------------------------------------------------------------------------
 
+
 class MarketRegime(str, Enum):
-    BULL_TRENDING     = "bull_trending"
-    BEAR_TRENDING     = "bear_trending"
-    SIDEWAYS_LOW_VOL  = "sideways_low_vol"
+    BULL_TRENDING = "bull_trending"
+    BEAR_TRENDING = "bear_trending"
+    SIDEWAYS_LOW_VOL = "sideways_low_vol"
     SIDEWAYS_HIGH_VOL = "sideways_high_vol"
-    VOLATILE_CRASH    = "volatile_crash"
+    VOLATILE_CRASH = "volatile_crash"
 
 
 class RegimeOutput(BaseModel):
@@ -218,12 +327,13 @@ class RegimeOutput(BaseModel):
 # Agent Output
 # ---------------------------------------------------------------------------
 
+
 class AgentOutput(BaseModel):
     agent_id: str
     timestamp: datetime
     symbol: str
     direction: str  # "BUY" | "SELL" | "NEUTRAL"
-    score: float    # -1.0 to +1.0
+    score: float  # -1.0 to +1.0
     confidence: float
     features_used: list[str]
     shap_values: dict[str, float]
@@ -233,6 +343,7 @@ class AgentOutput(BaseModel):
 # ---------------------------------------------------------------------------
 # Consensus Output
 # ---------------------------------------------------------------------------
+
 
 class ConsensusOutput(BaseModel):
     timestamp: datetime
@@ -248,6 +359,7 @@ class ConsensusOutput(BaseModel):
 # ---------------------------------------------------------------------------
 # Signal
 # ---------------------------------------------------------------------------
+
 
 class SignalExplanationFactor(BaseModel):
     factor: str
@@ -279,14 +391,15 @@ class Signal(BaseModel):
 # Order
 # ---------------------------------------------------------------------------
 
+
 class OrderStatus(str, Enum):
-    PENDING   = "pending"
+    PENDING = "pending"
     SUBMITTED = "submitted"
-    PARTIAL   = "partial"
-    FILLED    = "filled"
+    PARTIAL = "partial"
+    FILLED = "filled"
     CANCELLED = "cancelled"
-    REJECTED  = "rejected"
-    EXPIRED   = "expired"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
 
 
 class Order(BaseModel):
@@ -317,6 +430,7 @@ class Order(BaseModel):
 # Portfolio
 # ---------------------------------------------------------------------------
 
+
 class Position(BaseModel):
     symbol: str
     asset_class: str = "crypto"
@@ -346,6 +460,7 @@ class Portfolio(BaseModel):
 # ---------------------------------------------------------------------------
 # Kill Switch State
 # ---------------------------------------------------------------------------
+
 
 class KillSwitchStateModel(BaseModel):
     active: bool

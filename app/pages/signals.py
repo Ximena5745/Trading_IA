@@ -20,20 +20,29 @@ st.title("⚡ Signals — Señales con Explicación XAI")
 _ALL_SYMBOLS = [
     "Todos",
     # Crypto
-    "BTCUSDT", "ETHUSDT", "SOLUSDT",
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
     # Forex
-    "EURUSD", "GBPUSD", "USDJPY",
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
     # Indices
-    "SPX500", "NAS100", "DE40",
+    "SPX500",
+    "NAS100",
+    "DE40",
     # Commodities
-    "XAUUSD", "USOIL",
+    "XAUUSD",
+    "USOIL",
 ]
 
 col1, col2, col3 = st.columns([2, 2, 1])
 with col1:
     symbol_filter = st.selectbox("Símbolo", _ALL_SYMBOLS)
 with col2:
-    status_filter = st.selectbox("Estado", ["Todos", "pending", "executed", "cancelled"])
+    status_filter = st.selectbox(
+        "Estado", ["Todos", "pending", "executed", "cancelled"]
+    )
 with col3:
     limit = st.number_input("Límite", 10, 200, 50)
 
@@ -49,7 +58,9 @@ def fetch_signals(symbol, sig_status, lim) -> list:
     if sig_status != "Todos":
         params["status"] = sig_status
     try:
-        resp = requests.get(f"{API_URL}/signals", params=params, headers=HEADERS, timeout=5)
+        resp = requests.get(
+            f"{API_URL}/signals", params=params, headers=HEADERS, timeout=5
+        )
         if resp.status_code == 200:
             return resp.json().get("signals", [])
     except Exception:
@@ -60,7 +71,9 @@ def fetch_signals(symbol, sig_status, lim) -> list:
 signals = fetch_signals(symbol_filter, status_filter, limit)
 
 if not signals:
-    st.info("No hay señales disponibles. El pipeline de señales se activará cuando haya datos.")
+    st.info(
+        "No hay señales disponibles. El pipeline de señales se activará cuando haya datos."
+    )
     st.stop()
 
 st.markdown(f"**{len(signals)} señal(es) encontrada(s)**")
@@ -87,19 +100,26 @@ for sig in signals:
         explanation = sig.get("explanation", [])
         if explanation:
             st.subheader("🔍 Factores de la señal (XAI)")
-            factors = sorted(explanation, key=lambda x: x.get("weight", 0), reverse=True)
+            factors = sorted(
+                explanation, key=lambda x: x.get("weight", 0), reverse=True
+            )
             labels = [f.get("factor", "") for f in factors]
             weights = [
-                f.get("weight", 0) if f.get("direction") == "bullish" else -f.get("weight", 0)
+                f.get("weight", 0)
+                if f.get("direction") == "bullish"
+                else -f.get("weight", 0)
                 for f in factors
             ]
             colors = ["#26a69a" if w > 0 else "#ef5350" for w in weights]
 
-            fig = go.Figure(go.Bar(
-                x=weights, y=labels,
-                orientation="h",
-                marker_color=colors,
-            ))
+            fig = go.Figure(
+                go.Bar(
+                    x=weights,
+                    y=labels,
+                    orientation="h",
+                    marker_color=colors,
+                )
+            )
             fig.update_layout(
                 title="Contribución de cada factor (SHAP)",
                 xaxis_title="Contribución",

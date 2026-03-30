@@ -19,13 +19,24 @@ from core.observability.logger import get_logger
 logger = get_logger(__name__)
 
 REQUIRED_INDICATORS = [
-    "rsi_14", "rsi_7",
-    "ema_9", "ema_21", "ema_50", "ema_200",
-    "macd_line", "macd_signal", "macd_histogram",
+    "rsi_14",
+    "rsi_7",
+    "ema_9",
+    "ema_21",
+    "ema_50",
+    "ema_200",
+    "macd_line",
+    "macd_signal",
+    "macd_histogram",
     "atr_14",
-    "bb_upper", "bb_lower", "bb_width",
-    "vwap", "volume_ratio", "obv",
-    "trend_direction", "volatility_regime",
+    "bb_upper",
+    "bb_lower",
+    "bb_width",
+    "vwap",
+    "volume_ratio",
+    "obv",
+    "trend_direction",
+    "volatility_regime",
 ]
 
 MIN_CANDLES = 200
@@ -127,7 +138,9 @@ def _calc_bollinger(df: pd.DataFrame) -> pd.DataFrame:
 
 def _calc_volume_indicators(df: pd.DataFrame) -> pd.DataFrame:
     # VWAP (rolling daily approximation)
-    df["vwap"] = (df["close"] * df["volume"]).rolling(20).sum() / df["volume"].rolling(20).sum()
+    df["vwap"] = (df["close"] * df["volume"]).rolling(20).sum() / df["volume"].rolling(
+        20
+    ).sum()
 
     df["volume_sma_20"] = df["volume"].rolling(20).mean()
     df["volume_ratio"] = df["volume"] / df["volume_sma_20"].replace(0, np.nan)

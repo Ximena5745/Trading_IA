@@ -45,7 +45,7 @@ async def seed(email: str, password: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create the first admin user")
-    parser.add_argument("--email",    default="", help="Admin email address")
+    parser.add_argument("--email", default="", help="Admin email address")
     parser.add_argument("--password", default="", help="Admin password (min 12 chars)")
     args = parser.parse_args()
 

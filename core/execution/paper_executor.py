@@ -37,7 +37,9 @@ class PaperExecutor(AbcExecutor):
     async def execute(self, signal: dict, quantity: float) -> dict:
         idempotency_key = signal.get("idempotency_key", "")
         if idempotency_key and idempotency_key in _orders:
-            logger.info("paper_executor_idempotent_hit", idempotency_key=idempotency_key)
+            logger.info(
+                "paper_executor_idempotent_hit", idempotency_key=idempotency_key
+            )
             return _orders[idempotency_key]
 
         await self._simulate_latency()
@@ -45,7 +47,9 @@ class PaperExecutor(AbcExecutor):
         entry_price = signal.get("entry_price", 0.0)
         action = signal.get("action", "BUY")
         slippage = entry_price * PAPER_SLIPPAGE_PCT
-        fill_price = entry_price + slippage if action == "BUY" else entry_price - slippage
+        fill_price = (
+            entry_price + slippage if action == "BUY" else entry_price - slippage
+        )
         commission = fill_price * quantity * PAPER_COMMISSION_PCT
 
         order = {
@@ -86,7 +90,9 @@ class PaperExecutor(AbcExecutor):
         for order in _orders.values():
             if order["id"] == order_id:
                 if order["status"] in ("filled", "cancelled"):
-                    raise ExecutionError(f"Cannot cancel order in status: {order['status']}")
+                    raise ExecutionError(
+                        f"Cannot cancel order in status: {order['status']}"
+                    )
                 order["status"] = "cancelled"
                 order["updated_at"] = datetime.utcnow().isoformat()
                 return order
