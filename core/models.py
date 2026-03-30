@@ -10,7 +10,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -241,17 +241,13 @@ class MarketData(BaseModel):
     asset_class: Optional[str] = None  # populated by the adapter
     feature_version: str = "v1"
 
-    @validator("high")
-    def high_gte_open(cls, v: Decimal, values: dict) -> Decimal:
-        if "open" in values and v < values["open"]:
+    @model_validator(mode="after")
+    def validate_ohlc_consistency(self) -> "MarketData":
+        if self.high is not None and self.open is not None and self.high < self.open:
             raise ValueError("high must be >= open")
-        return v
-
-    @validator("low")
-    def low_lte_open(cls, v: Decimal, values: dict) -> Decimal:
-        if "open" in values and v > values["open"]:
+        if self.low is not None and self.open is not None and self.low > self.open:
             raise ValueError("low must be <= open")
-        return v
+        return self
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +325,8 @@ class RegimeOutput(BaseModel):
 
 
 class AgentOutput(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     agent_id: str
     timestamp: datetime
     symbol: str

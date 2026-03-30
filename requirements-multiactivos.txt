@@ -1,0 +1,15 @@
+# Extra dependencies for multi-asset broker support
+# Install on top of requirements.txt:
+#   pip install -r requirements.txt
+#   pip install -r requirements-multiactivos.txt
+#
+# Notes:
+# - ib_insync: Interactive Brokers TWS/IB Gateway (cross-platform)
+# - MetaTrader5: Windows ONLY — skip this install on Linux/macOS/Docker
+# - httpx is already pinned in requirements.txt (needed by bybit_client and market_calendar)
+
+# ── Interactive Brokers (forex, indices, commodities, stocks, futures) ──────
+ib_insync>=0.9.86
+
+# ── MetaTrader 5 (Windows-only — comment out on Linux/macOS/Docker) ─────────
+# MetaTrader5==5.0.5640

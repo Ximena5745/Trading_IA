@@ -9,7 +9,7 @@
 
 ## ¿Qué es el sistema?
 
-Plataforma de trading algorítmico para criptomonedas que **genera señales de compra/venta** usando un sistema multi-agente de IA, valida cada señal contra reglas de riesgo estrictas y ejecuta órdenes automáticamente. Opera en **modo papel por defecto** — sin tocar dinero real hasta activación explícita.
+Plataforma de trading algorítmico multiactivo, forex, indices, comodities y criptomonedas que **genera señales de compra/venta** usando un sistema multi-agente de IA, valida cada señal contra reglas de riesgo estrictas y ejecuta órdenes automáticamente. Opera en **modo papel por defecto** — sin tocar dinero real hasta activación explícita.
 
 ---
 
