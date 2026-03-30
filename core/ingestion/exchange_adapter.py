@@ -27,18 +27,22 @@ SUPPORTED_EXCHANGES = (
     # Crypto
     "binance",
     "bybit",
-    # Forex + Indices + Commodities
-    "oanda",
-    # Universal market data (forex, stocks, commodities, indices)
-    "alpha_vantage",
+    # Multiactivos (Forex, Índices, Commodities, Acciones, Futuros)
+    "ib",      # Interactive Brokers
+    "mt5",     # MetaTrader 5
+    # Alternativas
+    "oanda",   # Forex + Indices + Commodities
+    "alpha_vantage",  # Market data universal
 )
 
 # ── Asset class → recommended adapter ────────────────────────────────────────
 ASSET_CLASS_ADAPTER: dict[str, str] = {
-    "crypto":      "binance",
-    "forex":       "oanda",
-    "indices":     "oanda",
-    "commodities": "oanda",
+    "crypto":      "binance",     # Binance es el estándar para cripto
+    "forex":       "ib",          # IB es el mejor para forex (latencia, spreads)
+    "indices":     "ib",          # IB: excelente cobertura de índices globales
+    "commodities": "ib",          # IB: futuros de commodities
+    "stocks":      "ib",          # IB: acciones de múltiples mercados
+    "futures":     "ib",          # IB: futuros de alta liquidez
 }
 
 

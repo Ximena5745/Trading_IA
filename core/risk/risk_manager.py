@@ -47,15 +47,26 @@ class RiskManager:
 
         return True, ""
 
-    def calculate_position_size(self, signal: dict, portfolio: dict) -> float:
+    def calculate_position_size(
+        self,
+        signal: dict,
+        portfolio: dict,
+        instrument=None,   # Optional[InstrumentConfig] — routes forex/CFD sizing
+    ) -> float:
         available = portfolio.get("available_capital", 0.0)
-        total = portfolio.get("total_capital", 0.0)
-        entry = signal.get("entry_price", 0.0)
-        sl = signal.get("stop_loss", 0.0)
+        total     = portfolio.get("total_capital", 0.0)
+        entry     = signal.get("entry_price", 0.0)
+        sl        = signal.get("stop_loss", 0.0)
+        symbol    = signal.get("symbol", "")
 
-        quantity = self._sizer.fixed_fractional(available, entry, sl)
-        quantity = self._sizer.apply_symbol_cap(quantity, entry, total)
-        return quantity
+        return self._sizer.calculate(
+            symbol=symbol,
+            available_capital=available,
+            total_capital=total,
+            entry_price=entry,
+            stop_loss=sl,
+            instrument=instrument,
+        )
 
     def update_kill_switch(self, portfolio: dict, recent_trades: list) -> None:
         self._kill_switch.check_and_trigger(

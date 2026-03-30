@@ -21,16 +21,18 @@
 
 ### A1 · Levantar servicios Docker
 - [ ] Verificar que Docker Desktop esté corriendo en Windows
-- [ ] Ejecutar `docker-compose up db redis -d` desde `docker/`
-- [ ] Confirmar con `docker-compose ps` que ambos servicios están en estado `Up`
-- [ ] Probar conexión a PostgreSQL: `docker exec -it trader_db psql -U trader -d trader_ai -c "\dt"`
+- [ ] Ejecutar desde `docker/`: `docker compose up db redis -d`
+- [ ] Confirmar estado: `docker compose -f docker/docker-compose.yml ps` → ambos `Up (healthy)`
+- [ ] Ver nombre real de contenedores: `docker ps --format "table {{.Names}}`t`{{.Status}}"`
+- [ ] Probar conexión a PostgreSQL: `docker exec -it docker-db-1 psql -U trader -d trader_ai -c "\dt"`
 
 ### A2 · Base de datos operativa
 Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `backtest_results` añadidas.
 
 **Opción rápida — schema SQL existente (recomendada para empezar):**
-- [ ] `docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_initial_schema.sql`
-- [ ] Verificar tablas: `docker exec -it trader_db psql -U trader -d trader_ai -c "\dt"`
+- [ ] `Get-Content "scripts\migrations\001_initial_schema.sql" | docker exec -i docker-db-1 psql -U trader -d trader_ai`
+- [ ] `Get-Content "scripts\migrations\002_instruments.sql" | docker exec -i docker-db-1 psql -U trader -d trader_ai`
+- [ ] Verificar tablas: `docker exec -it docker-db-1 psql -U trader -d trader_ai -c "\dt"`
 
 **Opción robusta — Alembic (recomendada para producción):**
 - [ ] `pip install -r requirements.txt`
@@ -44,7 +46,7 @@ Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `bac
 
 ### A3 · Variables de entorno reales
 `.env.example` actualizado (2026-03-29): añadidos `DB_PASSWORD=trader` y `PORTFOLIO_BASE_CURRENCY=USD`.
-- [ ] `copy .env.example .env` (Windows CMD) o `cp .env.example .env` (PowerShell/bash)
+- [ ] `Copy-Item .env.example .env`
 - [ ] Generar `JWT_SECRET_KEY`: `python -c "import secrets; print(secrets.token_hex(32))"`
 - [ ] Obtener claves testnet Binance en https://testnet.binance.vision/ → configurar `BINANCE_API_KEY`, `BINANCE_SECRET_KEY`
 - [ ] Verificar settings: `python -c "from core.config.settings import Settings; s=Settings(); print(s.EXECUTION_MODE, s.TRADING_ENABLED)"`
@@ -68,12 +70,14 @@ Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `bac
 - [ ] Crear tarea Windows Task Scheduler: programa=`python`, args=`"C:\ruta\scripts\backup_db.py"`, trigger=diario 03:00 AM
 
 ### A6 · Checklist de arranque completo
-- [ ] `docker-compose up db redis -d` → ambos `Up`
-- [ ] `alembic upgrade head` → sin errores
-- [ ] `.env` con claves reales configurado
-- [ ] `uvicorn api.main:app --reload` → `GET /health` responde `200 OK`
-- [ ] Telegram: mensaje de prueba recibido en el canal
-- [ ] Backup: archivo `.sql.gz` visible en OneDrive
+- [ ] `docker compose up db redis -d` (desde carpeta `docker/`) → ambos `Up (healthy)`
+- [ ] `.env` con `JWT_SECRET_KEY` + claves Binance testnet configurado
+- [ ] `python scripts/seed_admin.py --email admin@traderai.local --password <min 12 chars>`
+- [ ] `python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload`
+- [ ] Verificar API: `Invoke-RestMethod -Uri "http://localhost:8000/health"` → `{"status":"ok"}`
+- [ ] Verificar login: `Invoke-RestMethod -Uri "http://localhost:8000/auth/login" -Method POST -ContentType "application/json" -Body '{"username":"admin@traderai.local","password":"<tu_password"}'` → JWT recibido
+- [ ] Telegram: mensaje de prueba recibido en el canal (opcional — requiere token)
+- [ ] Backup: archivo `.sql.gz` visible en OneDrive (opcional — requiere rclone)
 
 **FASE A COMPLETADA cuando:** todos los checks de A6 pasan. ✅
 
@@ -129,10 +133,9 @@ Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `bac
 `core/db/user_repository.py` creado (2026-03-29): get_user_by_email, create_user, verify_password con bcrypt.
 `api/routes/auth.py` reescrito (2026-03-29): sin hardcoded _USERS — usa user_repository.
 `scripts/seed_admin.py` creado (2026-03-29): crea primer admin, idempotente.
-- [ ] `pip install passlib[bcrypt]==1.7.4` (añadido a requirements.txt)
 - [ ] Tabla `users` creada en DB (incluida en 001_initial_schema.sql desde FASE A)
 - [ ] `python scripts/seed_admin.py --email admin@traderai.local --password <min 12 chars>`
-- [ ] `POST /auth/login {"username": "admin@traderai.local", "password": "..."}` → JWT válido
+- [ ] Verificar login: `Invoke-RestMethod -Uri "http://localhost:8000/auth/login" -Method POST -ContentType "application/json" -Body '{"username":"admin@traderai.local","password":"..."}'` → JWT válido
 - [ ] Verificar que credenciales incorrectas devuelven 401
 
 **FASE D COMPLETADA cuando:** la autenticación usa DB con bcrypt y no existe ningún usuario hardcodeado en código. ✅
@@ -145,7 +148,7 @@ Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `bac
 
 ### E1 · MT5Client
 `core/ingestion/providers/mt5_client.py` creado (2026-03-29): connect con backoff × 5, get_historical_klines, get_tick, place_order, get_account_balance, get_symbol_info.
-- [ ] Instalar: `pip install MetaTrader5==5.0.5640` (añadido a requirements.txt)
+- [ ] Instalar (requiere MT5 terminal instalado en Windows): `pip install MetaTrader5==5.0.5640`
 - [ ] Probar conexión a IC Markets demo: configurar `MT5_SERVER`, `MT5_LOGIN`, `MT5_PASSWORD` en `.env`
 
 ### E2 · Modelos de datos multi-asset
@@ -154,8 +157,8 @@ Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `bac
 
 ### E3 · Tabla instruments en DB
 `scripts/migrations/002_instruments.sql` creado (2026-03-29): tabla `instruments` + seed de 13 instrumentos activos.
-- [ ] `docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/002_instruments.sql`
-- [ ] Verificar: `SELECT symbol, asset_class FROM instruments;`
+> Ya aplicado en FASE A junto con 001_initial_schema.sql
+- [ ] Verificar: `docker exec -it docker-db-1 psql -U trader -d trader_ai -c "SELECT symbol, asset_class FROM instruments;"`
 
 ### E4 · MarketCalendar
 `core/ingestion/market_calendar.py` creado (2026-03-29): sesiones UTC (Sydney/Tokyo/Londres/NY), is_market_open, is_low_liquidity, is_high_impact_event_window, ForexFactory RSS con caché 4h.
@@ -224,8 +227,8 @@ Schema SQL actualizado (2026-03-29): tablas `users`, `portfolio_snapshots`, `bac
 ### F3 · Despliegue de la aplicación
 - [ ] Completar pasos F1 y F2 en el VPS
 - [ ] Configurar `.env` con variables de producción (JWT_SECRET_KEY rotada, API keys reales)
-- [ ] `docker-compose up db redis -d` → `Up`
-- [ ] `uvicorn api.main:app --host 0.0.0.0 --port 8000` → arrancar
+- [ ] `docker compose up db redis -d` (desde carpeta `docker/`) → `Up (healthy)`
+- [ ] `python -m uvicorn api.main:app --host 0.0.0.0 --port 8000` → arrancar
 - [ ] Verificar `GET https://tu-dominio/health` → `200 OK`
 - [ ] Verificar backup Task Scheduler: `Get-ScheduledTask -TaskName "TraderAI_Backup"`
 

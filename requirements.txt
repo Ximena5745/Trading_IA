@@ -11,17 +11,17 @@ sqlalchemy[asyncio]==2.0.28
 asyncpg==0.29.0
 alembic==1.13.1
 redis==5.0.1
-pandas==2.2.0
-numpy==1.26.4
+pandas>=2.2.0
+numpy>=1.26.4
 
 # ML
-lightgbm==4.3.0
-xgboost==2.0.3
+lightgbm>=4.3.0
+xgboost>=2.0.3
 scikit-learn>=1.4,<2.0
-shap==0.44.1
+shap>=0.44.1
 # pandas-ta not available for Python 3.11+ on PyPI; indicators use manual fallback
-optuna==3.5.0
-hmmlearn==0.3.0
+optuna>=3.5.0
+hmmlearn>=0.3.0
 
 # Binance
 python-binance==1.0.19
