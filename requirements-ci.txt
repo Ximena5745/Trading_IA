@@ -1,9 +1,9 @@
-# Minimal dependencies for CI unit tests
-# Heavy packages (pandas-ta, shap, lightgbm, asyncpg, hmmlearn) are excluded:
+# Dependencies for CI unit + integration tests
+# Heavy packages excluded:
 # - pandas-ta: not available for Python 3.11+ on PyPI; indicators fall back to manual calc
 # - shap/lightgbm: TechnicalAgent uses rule-based fallback when model not trained
-# - asyncpg/sqlalchemy/alembic: no DB in unit tests
-# - hmmlearn/optuna: not exercised in unit tests
+# - sqlalchemy/alembic: not exercised in tests
+# - hmmlearn/optuna: not exercised in tests
 # Full production stack is validated in the Docker build job.
 
 # Core framework
@@ -23,6 +23,10 @@ prometheus-client==0.20.0
 
 # HTTP — pin below 0.28 to avoid starlette TestClient breakage
 httpx>=0.23.0,<0.28.0
+
+# DB driver — needed by integration tests (api.main imports core.db.session)
+# init_pool() is inside try/except so no real DB connection is required
+asyncpg==0.29.0
 
 # Redis (imported but mocked in unit tests)
 redis==5.0.1
