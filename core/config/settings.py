@@ -58,18 +58,23 @@ class Settings(BaseSettings):
     # via env var as a JSON list: SUPPORTED_SYMBOLS='["EURUSD","XAUUSD"]'
     SUPPORTED_SYMBOLS: list[str] = [
         # Crypto
-        "BTCUSDT", "ETHUSDT",
+        "BTCUSDT",
+        "ETHUSDT",
         # Forex
-        "EURUSD", "GBPUSD", "USDJPY",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
         # Indices
-        "SPX500", "NAS100",
+        "SPX500",
+        "NAS100",
         # Commodities
-        "XAUUSD", "USOIL",
+        "XAUUSD",
+        "USOIL",
     ]
 
     # ── MetaTrader 5 (FASE E) ────────────────────────────────────────────────
-    MT5_SERVER:   str = "ICMarketsSC-Demo04"
-    MT5_LOGIN:    int = 0
+    MT5_SERVER: str = "ICMarketsSC-Demo04"
+    MT5_LOGIN: int = 0
     MT5_PASSWORD: str = ""
 
     # ── Portfolio ───────────────────────────────────────────────────────────

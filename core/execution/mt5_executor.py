@@ -47,9 +47,9 @@ class MT5Executor(AbcExecutor):
         kill_switch: KillSwitch,
         mt5_client: MT5Client,
     ) -> None:
-        self._settings    = settings
+        self._settings = settings
         self._kill_switch = kill_switch
-        self._client      = mt5_client
+        self._client = mt5_client
         self._submitted_keys: set[str] = set()
 
     async def execute(self, signal: dict, quantity: float) -> dict:
@@ -64,7 +64,7 @@ class MT5Executor(AbcExecutor):
             raise ExecutionError(f"Duplicate MT5 order detected: {idempotency_key}")
 
         symbol = signal["symbol"]
-        side   = signal["action"]   # "BUY" | "SELL"
+        side = signal["action"]  # "BUY" | "SELL"
 
         # Resolve mt5_symbol from InstrumentConfig (IC Markets exact name)
         instrument = get_instrument(symbol)
@@ -80,7 +80,9 @@ class MT5Executor(AbcExecutor):
                 volume=round(quantity, 2),
                 sl=sl or 0.0,
                 tp=tp or 0.0,
-                idempotency_key=idempotency_key[:31] if idempotency_key else "TRADER_AI",
+                idempotency_key=idempotency_key[:31]
+                if idempotency_key
+                else "TRADER_AI",
             )
         except RuntimeError as e:
             logger.error("mt5_order_failed", symbol=mt5_symbol, side=side, error=str(e))
@@ -93,27 +95,27 @@ class MT5Executor(AbcExecutor):
         now = datetime.now(timezone.utc)
 
         order = {
-            "id":               str(uuid.uuid4()),
+            "id": str(uuid.uuid4()),
             "exchange_order_id": raw.get("exchange_order_id"),
-            "idempotency_key":  idempotency_key,
-            "signal_id":        signal.get("id", ""),
-            "symbol":           symbol,
-            "mt5_symbol":       mt5_symbol,
-            "side":             side,
-            "order_type":       "MARKET",
-            "quantity":         quantity,
-            "fill_price":       round(fill_price, 8),
-            "fill_quantity":    quantity,
-            "commission":       0.0,    # IC Markets Raw: spread-based, no separate commission
-            "slippage":         round(fill_price - signal.get("entry_price", fill_price), 8),
-            "stop_loss":        sl,
-            "take_profit":      tp,
-            "status":           "filled",
-            "execution_mode":   "live",
-            "provider":         "mt5",
-            "created_at":       now.isoformat(),
-            "updated_at":       now.isoformat(),
-            "error_message":    None,
+            "idempotency_key": idempotency_key,
+            "signal_id": signal.get("id", ""),
+            "symbol": symbol,
+            "mt5_symbol": mt5_symbol,
+            "side": side,
+            "order_type": "MARKET",
+            "quantity": quantity,
+            "fill_price": round(fill_price, 8),
+            "fill_quantity": quantity,
+            "commission": 0.0,  # IC Markets Raw: spread-based, no separate commission
+            "slippage": round(fill_price - signal.get("entry_price", fill_price), 8),
+            "stop_loss": sl,
+            "take_profit": tp,
+            "status": "filled",
+            "execution_mode": "live",
+            "provider": "mt5",
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "error_message": None,
         }
 
         logger.info(
@@ -132,7 +134,9 @@ class MT5Executor(AbcExecutor):
         )
 
     async def get_order_status(self, order_id: str) -> dict:
-        raise NotImplementedError("MT5 order status lookup not implemented in this phase")
+        raise NotImplementedError(
+            "MT5 order status lookup not implemented in this phase"
+        )
 
     # ── Safety guards ─────────────────────────────────────────────────────────
 

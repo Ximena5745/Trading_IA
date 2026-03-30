@@ -31,11 +31,13 @@ def make_kill_switch(active: bool = False) -> MagicMock:
 
 def make_mt5_client(fill_price: float = 1.1015) -> MagicMock:
     client = MagicMock()
-    client.place_order = AsyncMock(return_value={
-        "exchange_order_id": "MT5_ORDER_123",
-        "fill_price": fill_price,
-        "status": "filled",
-    })
+    client.place_order = AsyncMock(
+        return_value={
+            "exchange_order_id": "MT5_ORDER_123",
+            "fill_price": fill_price,
+            "status": "filled",
+        }
+    )
     return client
 
 
@@ -96,9 +98,9 @@ class TestSafetyChecks:
         """Each check independently blocks — test paper mode + disabled + kill switch."""
         # paper mode alone
         for mode, enabled, ks_active in [
-            ("paper", True,  False),
-            ("live",  False, False),
-            ("live",  True,  True),
+            ("paper", True, False),
+            ("live", False, False),
+            ("live", True, True),
         ]:
             executor = MT5Executor(
                 settings=make_settings(execution_mode=mode, trading_enabled=enabled),
@@ -166,8 +168,12 @@ class TestSuccessfulExecution:
             kill_switch=make_kill_switch(),
             mt5_client=make_mt5_client(),
         )
-        order1 = await executor.execute(make_signal(idempotency_key="key-1"), quantity=0.01)
-        order2 = await executor.execute(make_signal(idempotency_key="key-2"), quantity=0.01)
+        order1 = await executor.execute(
+            make_signal(idempotency_key="key-1"), quantity=0.01
+        )
+        order2 = await executor.execute(
+            make_signal(idempotency_key="key-2"), quantity=0.01
+        )
         assert order1["id"] != order2["id"]
 
 
@@ -194,8 +200,12 @@ class TestIdempotency:
             kill_switch=make_kill_switch(),
             mt5_client=make_mt5_client(),
         )
-        order1 = await executor.execute(make_signal(idempotency_key="key-A"), quantity=0.01)
-        order2 = await executor.execute(make_signal(idempotency_key="key-B"), quantity=0.01)
+        order1 = await executor.execute(
+            make_signal(idempotency_key="key-A"), quantity=0.01
+        )
+        order2 = await executor.execute(
+            make_signal(idempotency_key="key-B"), quantity=0.01
+        )
         assert order1 is not None
         assert order2 is not None
 

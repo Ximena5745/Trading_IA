@@ -31,7 +31,7 @@ class StrategyMarketplace:
 
     def __init__(self):
         self._listings: dict[str, StrategyListing] = {}
-        self._reviews: dict[str, list[MarketplaceReview]] = {}   # listing_id → reviews
+        self._reviews: dict[str, list[MarketplaceReview]] = {}  # listing_id → reviews
         self._subscriptions: dict[str, list[Subscription]] = {}  # user_id → subs
 
     # ── Publishing ─────────────────────────────────────────────────────────
@@ -79,7 +79,9 @@ class StrategyMarketplace:
         listing = self._get_or_raise(listing_id)
         listing.status = ListingStatus.REJECTED
         listing.updated_at = datetime.utcnow()
-        logger.warning("marketplace_listing_rejected", listing_id=listing_id, reason=reason)
+        logger.warning(
+            "marketplace_listing_rejected", listing_id=listing_id, reason=reason
+        )
         return listing
 
     def suspend(self, listing_id: str) -> StrategyListing:
@@ -99,11 +101,12 @@ class StrategyMarketplace:
         limit: int = 50,
     ) -> list[dict]:
         active = [
-            lst for lst in self._listings.values()
-            if lst.status == ListingStatus.ACTIVE
+            lst for lst in self._listings.values() if lst.status == ListingStatus.ACTIVE
         ]
         if tag:
-            active = [lst for lst in active if tag.lower() in [t.lower() for t in lst.tags]]
+            active = [
+                lst for lst in active if tag.lower() in [t.lower() for t in lst.tags]
+            ]
         if tier:
             active = [lst for lst in active if lst.tier == tier]
 
@@ -118,7 +121,9 @@ class StrategyMarketplace:
 
     def get_listing(self, listing_id: str, requester_id: Optional[str] = None) -> dict:
         listing = self._get_or_raise(listing_id)
-        is_subscribed = self._is_subscribed(requester_id, listing_id) if requester_id else False
+        is_subscribed = (
+            self._is_subscribed(requester_id, listing_id) if requester_id else False
+        )
         return listing.subscriber_view() if is_subscribed else listing.public_view()
 
     # ── Reviews ────────────────────────────────────────────────────────────
@@ -200,20 +205,24 @@ class StrategyMarketplace:
                     listing_id=listing_id,
                 )
                 return
-        raise KeyError(f"Active subscription not found for user {user_id}, listing {listing_id}")
+        raise KeyError(
+            f"Active subscription not found for user {user_id}, listing {listing_id}"
+        )
 
     def get_user_subscriptions(self, user_id: str) -> list[dict]:
         return [
-            s.model_dump()
-            for s in self._subscriptions.get(user_id, [])
-            if s.active
+            s.model_dump() for s in self._subscriptions.get(user_id, []) if s.active
         ]
 
     # ── Stats ──────────────────────────────────────────────────────────────
 
     def get_stats(self) -> MarketplaceStats:
-        active = [lst for lst in self._listings.values() if lst.status == ListingStatus.ACTIVE]
-        sharpe_values = [lst.backtest_sharpe for lst in active if lst.backtest_sharpe is not None]
+        active = [
+            lst for lst in self._listings.values() if lst.status == ListingStatus.ACTIVE
+        ]
+        sharpe_values = [
+            lst.backtest_sharpe for lst in active if lst.backtest_sharpe is not None
+        ]
         top = max(active, key=lambda lst: lst.subscriber_count, default=None)
 
         return MarketplaceStats(
@@ -221,7 +230,9 @@ class StrategyMarketplace:
             active_listings=len(active),
             total_subscribers=sum(lst.subscriber_count for lst in active),
             top_strategy_id=top.strategy_id if top else None,
-            avg_sharpe=round(sum(sharpe_values) / len(sharpe_values), 3) if sharpe_values else None,
+            avg_sharpe=round(sum(sharpe_values) / len(sharpe_values), 3)
+            if sharpe_values
+            else None,
         )
 
     def update_performance(

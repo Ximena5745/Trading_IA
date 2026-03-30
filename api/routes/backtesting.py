@@ -56,7 +56,9 @@ async def submit_backtest(
 async def get_backtest_job(job_id: str, _: dict = Depends(require_trader)):
     job = _jobs.get(job_id)
     if not job:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
     return {k: v for k, v in job.items() if k != "results"}
 
 
@@ -64,7 +66,9 @@ async def get_backtest_job(job_id: str, _: dict = Depends(require_trader)):
 async def get_backtest_results(job_id: str, _: dict = Depends(require_trader)):
     job = _jobs.get(job_id)
     if not job:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
     if job["status"] != "done":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

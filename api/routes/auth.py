@@ -18,7 +18,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class LoginRequest(BaseModel):
-    username: str   # treated as email
+    username: str  # treated as email
     password: str
 
 
@@ -36,7 +36,11 @@ class RefreshRequest(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, jwt: JWTHandler = Depends(get_jwt_handler)):
     user = await get_user_by_email(body.username)
-    if user is None or not user.is_active or not verify_password(body.password, user.hashed_password):
+    if (
+        user is None
+        or not user.is_active
+        or not verify_password(body.password, user.hashed_password)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -53,7 +57,9 @@ async def refresh(body: RefreshRequest, jwt: JWTHandler = Depends(get_jwt_handle
     email = jwt.decode_refresh(body.refresh_token)
     user = await get_user_by_email(email)
     if user is None or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+        )
     return TokenResponse(
         access_token=jwt.create_access_token(user.email, user.role),
         refresh_token=jwt.create_refresh_token(user.email),

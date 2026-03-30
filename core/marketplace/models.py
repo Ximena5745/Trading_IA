@@ -13,10 +13,10 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class ListingStatus(str, Enum):
-    PENDING = "pending"       # awaiting review
-    ACTIVE = "active"         # live in marketplace
-    SUSPENDED = "suspended"   # temporarily hidden
-    REJECTED = "rejected"     # failed review
+    PENDING = "pending"  # awaiting review
+    ACTIVE = "active"  # live in marketplace
+    SUSPENDED = "suspended"  # temporarily hidden
+    REJECTED = "rejected"  # failed review
 
 
 class SubscriptionTier(str, Enum):

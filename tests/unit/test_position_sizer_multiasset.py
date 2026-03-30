@@ -70,7 +70,7 @@ class TestForexSizing:
             available_capital=100.0,
             total_capital=100.0,
             entry_price=1.1000,
-            stop_loss=1.0900,   # 100-pip stop
+            stop_loss=1.0900,  # 100-pip stop
             instrument=instrument,
         )
         assert lots >= instrument.min_lots
@@ -103,7 +103,7 @@ class TestForexSizing:
             available_capital=10_000.0,
             total_capital=10_000.0,
             entry_price=150.00,
-            stop_loss=149.50,   # 50 pips (0.50 / 0.001 = 500 pips... wait, JPY point=0.001 so 0.50/0.001=500 pips)
+            stop_loss=149.50,  # 50 pips (0.50 / 0.001 = 500 pips... wait, JPY point=0.001 so 0.50/0.001=500 pips)
             instrument=jpy_instrument,
         )
         # 100 / (500 × 9.09) = 0.022 → rounds to 0.02 lots
@@ -122,7 +122,10 @@ class TestForexSizing:
             instrument=instrument,
         )
         # Check it's a multiple of lot_step (within float precision)
-        assert abs(lots % instrument.lot_step) < 1e-9 or abs(lots % instrument.lot_step - instrument.lot_step) < 1e-9
+        assert (
+            abs(lots % instrument.lot_step) < 1e-9
+            or abs(lots % instrument.lot_step - instrument.lot_step) < 1e-9
+        )
 
 
 class TestCFDIndexSizing:
@@ -145,7 +148,7 @@ class TestCFDIndexSizing:
             available_capital=10_000.0,
             total_capital=10_000.0,
             entry_price=5000.0,
-            stop_loss=4980.0,   # 20-point stop → 200 points (0.1 per point)
+            stop_loss=4980.0,  # 20-point stop → 200 points (0.1 per point)
             instrument=us500,
         )
         # risk = 100; stop_points = 200; contracts = 100 / (200 × 1.0) = 0.5
@@ -169,7 +172,7 @@ class TestCFDIndexSizing:
             available_capital=10_000.0,
             total_capital=10_000.0,
             entry_price=2000.0,
-            stop_loss=1990.0,   # $10 stop = 1000 pips (0.01 per point)
+            stop_loss=1990.0,  # $10 stop = 1000 pips (0.01 per point)
             instrument=xau,
         )
         assert lots > 0.0
@@ -209,7 +212,9 @@ class TestPositionCap:
 
     def test_crypto_position_capped_when_oversized(self):
         """If computed quantity exceeds % of capital, it gets capped."""
-        sizer = PositionSizer(make_settings(max_risk_pct=0.50))  # huge risk % to force cap
+        sizer = PositionSizer(
+            make_settings(max_risk_pct=0.50)
+        )  # huge risk % to force cap
         qty = sizer.calculate(
             symbol="BTCUSDT",
             available_capital=10_000.0,
@@ -219,7 +224,9 @@ class TestPositionCap:
         )
         # Without cap: 5000 / 1000 = 5.0 BTC = $250,000 (way above capital)
         # Cap: max_position_single_symbol_pct × 10,000 / 50,000
-        assert qty * 50_000.0 <= 10_000.0 * 0.25 + 1  # HARD_LIMITS["max_position_single_symbol_pct"] = 0.20-0.25 range
+        assert (
+            qty * 50_000.0 <= 10_000.0 * 0.25 + 1
+        )  # HARD_LIMITS["max_position_single_symbol_pct"] = 0.20-0.25 range
 
     def test_backward_compatible_fixed_fractional(self):
         """fixed_fractional() still works as before."""

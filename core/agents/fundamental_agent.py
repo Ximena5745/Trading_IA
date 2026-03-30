@@ -25,8 +25,8 @@ from core.observability.logger import get_logger
 logger = get_logger(__name__)
 
 # ── External API endpoints (all free / no key required) ─────────────────────
-FEAR_GREED_CRYPTO_URL   = "https://api.alternative.me/fng/?limit=1&format=json"
-COINGECKO_GLOBAL_URL    = "https://api.coingecko.com/api/v3/global"
+FEAR_GREED_CRYPTO_URL = "https://api.alternative.me/fng/?limit=1&format=json"
+COINGECKO_GLOBAL_URL = "https://api.coingecko.com/api/v3/global"
 
 # CNN Fear & Greed (equity markets / indices)
 # Unofficial proxy endpoint — provides the current CNN F&G score
@@ -34,18 +34,16 @@ CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graph
 
 # FRED (Federal Reserve Economic Data) — public, no key needed for basic series
 # Series: DFF = Fed Funds Rate effective daily
-FRED_DFF_URL = (
-    "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF&vintage_date="
-)
+FRED_DFF_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF&vintage_date="
 
 # Refresh every 30 minutes (avoid rate-limiting free APIs)
 CACHE_TTL_SECONDS = 1800
 
 # ── Signal thresholds (contrarian logic) ─────────────────────────────────────
-EXTREME_FEAR_THRESHOLD  = 20
+EXTREME_FEAR_THRESHOLD = 20
 EXTREME_GREED_THRESHOLD = 80
-FEAR_THRESHOLD          = 35
-GREED_THRESHOLD         = 65
+FEAR_THRESHOLD = 35
+GREED_THRESHOLD = 65
 
 
 class FundamentalAgent(AbcAgent):
@@ -78,7 +76,7 @@ class FundamentalAgent(AbcAgent):
 
         # Macro (forex / commodities)
         # Approximated via USD strength: positive = USD strong = bearish metals/majors
-        self._usd_strength_score: float = 0.0   # range -1..+1
+        self._usd_strength_score: float = 0.0  # range -1..+1
 
         self._last_fetch: Optional[datetime] = None
         self._fetch_lock = asyncio.Lock()
@@ -96,10 +94,12 @@ class FundamentalAgent(AbcAgent):
         Siempre False para crypto (Fear & Greed es filtro, no bloqueante).
         """
         from core.models import AssetClass, detect_asset_class
+
         if detect_asset_class(symbol) == AssetClass.CRYPTO:
             return False
         try:
             from core.ingestion.market_calendar import get_calendar
+
             calendar = get_calendar()
             for currency in calendar.affected_currencies(symbol):
                 if calendar.is_high_impact_event_window(currency):
@@ -110,7 +110,9 @@ class FundamentalAgent(AbcAgent):
                     )
                     return True
         except Exception as exc:
-            logger.warning("fundamental_event_check_failed", symbol=symbol, error=str(exc))
+            logger.warning(
+                "fundamental_event_check_failed", symbol=symbol, error=str(exc)
+            )
         return False
 
     def predict(self, features: FeatureSet) -> AgentOutput:
@@ -140,7 +142,11 @@ class FundamentalAgent(AbcAgent):
             timestamp=features.timestamp,
             symbol=features.symbol,
             direction=direction,
-            score=confidence if direction == "BUY" else -confidence if direction == "SELL" else 0.0,
+            score=confidence
+            if direction == "BUY"
+            else -confidence
+            if direction == "SELL"
+            else 0.0,
             confidence=confidence,
             features_used=features_used,
             shap_values=shap_values,
@@ -175,6 +181,7 @@ class FundamentalAgent(AbcAgent):
     async def _fetch_crypto_fear_greed(self) -> None:
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=8.0) as client:
                 resp = await client.get(FEAR_GREED_CRYPTO_URL)
                 resp.raise_for_status()
@@ -187,6 +194,7 @@ class FundamentalAgent(AbcAgent):
     async def _fetch_coingecko_global(self) -> None:
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=8.0) as client:
                 resp = await client.get(COINGECKO_GLOBAL_URL)
                 resp.raise_for_status()
@@ -206,6 +214,7 @@ class FundamentalAgent(AbcAgent):
         """Fetch CNN Fear & Greed index for equity markets / indices."""
         try:
             import httpx
+
             async with httpx.AsyncClient(timeout=8.0) as client:
                 resp = await client.get(CNN_FEAR_GREED_URL)
                 resp.raise_for_status()
@@ -250,8 +259,8 @@ class FundamentalAgent(AbcAgent):
         features = ["crypto_fear_greed_index", "btc_dominance", "market_cap_change_24h"]
         shap = {
             "crypto_fear_greed_index": round(confidence * 0.70, 3),
-            "btc_dominance":           round(confidence * 0.20, 3),
-            "market_cap_change_24h":   round(confidence * 0.10, 3),
+            "btc_dominance": round(confidence * 0.20, 3),
+            "market_cap_change_24h": round(confidence * 0.10, 3),
         }
         return direction, confidence, features, shap
 
@@ -264,11 +273,13 @@ class FundamentalAgent(AbcAgent):
         features = ["equity_fear_greed_index", "market_cap_change_24h"]
         shap = {
             "equity_fear_greed_index": round(confidence * 0.80, 3),
-            "market_cap_change_24h":   round(confidence * 0.20, 3),
+            "market_cap_change_24h": round(confidence * 0.20, 3),
         }
         return direction, confidence, features, shap
 
-    def _signal_forex(self, symbol: str) -> tuple[str, float, list[str], dict[str, float]]:
+    def _signal_forex(
+        self, symbol: str
+    ) -> tuple[str, float, list[str], dict[str, float]]:
         """
         Forex signal using USD strength proxy.
 
@@ -285,19 +296,25 @@ class FundamentalAgent(AbcAgent):
 
         score = self._usd_strength_score  # -1..+1
         if usd_is_base:
-            direction = "BUY" if score > 0.15 else "SELL" if score < -0.15 else "NEUTRAL"
+            direction = (
+                "BUY" if score > 0.15 else "SELL" if score < -0.15 else "NEUTRAL"
+            )
         else:
-            direction = "SELL" if score > 0.15 else "BUY" if score < -0.15 else "NEUTRAL"
+            direction = (
+                "SELL" if score > 0.15 else "BUY" if score < -0.15 else "NEUTRAL"
+            )
 
         confidence = min(abs(score) * 0.8, 0.75) if direction != "NEUTRAL" else 0.25
         features = ["usd_strength_proxy", "market_cap_change_24h"]
         shap = {
-            "usd_strength_proxy":    round(confidence * 0.85, 3),
+            "usd_strength_proxy": round(confidence * 0.85, 3),
             "market_cap_change_24h": round(confidence * 0.15, 3),
         }
         return direction, round(confidence, 3), features, shap
 
-    def _signal_commodities(self, symbol: str) -> tuple[str, float, list[str], dict[str, float]]:
+    def _signal_commodities(
+        self, symbol: str
+    ) -> tuple[str, float, list[str], dict[str, float]]:
         """
         Commodities signal.
 
@@ -314,8 +331,12 @@ class FundamentalAgent(AbcAgent):
 
         if s.startswith(("XAU", "XAG", "XPT", "XPD")):
             # Precious metals — inversely correlated with USD
-            direction = "SELL" if score > 0.15 else "BUY" if score < -0.15 else "NEUTRAL"
-            confidence = min(abs(score) * 0.75, 0.70) if direction != "NEUTRAL" else 0.25
+            direction = (
+                "SELL" if score > 0.15 else "BUY" if score < -0.15 else "NEUTRAL"
+            )
+            confidence = (
+                min(abs(score) * 0.75, 0.70) if direction != "NEUTRAL" else 0.25
+            )
             features = ["usd_strength_proxy"]
             shap = {"usd_strength_proxy": round(confidence, 3)}
         else:
@@ -338,7 +359,12 @@ class FundamentalAgent(AbcAgent):
             conf = 0.70 + (EXTREME_FEAR_THRESHOLD - fg) / EXTREME_FEAR_THRESHOLD * 0.20
             return "BUY", min(round(conf, 2), 0.90)
         if fg >= EXTREME_GREED_THRESHOLD:
-            conf = 0.70 + (fg - EXTREME_GREED_THRESHOLD) / (100 - EXTREME_GREED_THRESHOLD) * 0.20
+            conf = (
+                0.70
+                + (fg - EXTREME_GREED_THRESHOLD)
+                / (100 - EXTREME_GREED_THRESHOLD)
+                * 0.20
+            )
             return "SELL", min(round(conf, 2), 0.90)
         if fg < FEAR_THRESHOLD:
             return "BUY", 0.45
@@ -362,7 +388,9 @@ class FundamentalAgent(AbcAgent):
     def _cache_expired(self) -> bool:
         if self._last_fetch is None:
             return True
-        return (datetime.utcnow() - self._last_fetch).total_seconds() > CACHE_TTL_SECONDS
+        return (
+            datetime.utcnow() - self._last_fetch
+        ).total_seconds() > CACHE_TTL_SECONDS
 
     def _data_age_seconds(self) -> Optional[float]:
         if self._last_fetch is None:

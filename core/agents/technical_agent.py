@@ -18,11 +18,23 @@ from core.observability.logger import get_logger
 logger = get_logger(__name__)
 
 FEATURE_ORDER = [
-    "rsi_14", "rsi_7",
-    "ema_9", "ema_21", "ema_50", "ema_200",
-    "macd_line", "macd_signal", "macd_histogram",
-    "atr_14", "bb_upper", "bb_lower", "bb_width",
-    "vwap", "volume_sma_20", "volume_ratio", "obv",
+    "rsi_14",
+    "rsi_7",
+    "ema_9",
+    "ema_21",
+    "ema_50",
+    "ema_200",
+    "macd_line",
+    "macd_signal",
+    "macd_histogram",
+    "atr_14",
+    "bb_upper",
+    "bb_lower",
+    "bb_width",
+    "vwap",
+    "volume_sma_20",
+    "volume_ratio",
+    "obv",
 ]
 
 SCORE_THRESHOLD = 0.30
@@ -88,7 +100,9 @@ class TechnicalAgent(AbcAgent):
             raise AgentPredictionError(f"TechnicalAgent prediction failed: {e}") from e
 
     def _features_to_array(self, features: FeatureSet) -> np.ndarray:
-        return np.array([[getattr(features, f) for f in FEATURE_ORDER]], dtype=np.float32)
+        return np.array(
+            [[getattr(features, f) for f in FEATURE_ORDER]], dtype=np.float32
+        )
 
     def _predict_with_model(self, X: np.ndarray) -> float:
         proba = self._model.predict_proba(X)[0]
@@ -129,7 +143,9 @@ class TechnicalAgent(AbcAgent):
         return max(-1.0, min(1.0, score))
 
     def _rule_based_shap(self, features: FeatureSet) -> dict[str, float]:
-        rsi_contrib = 0.4 if features.rsi_14 < 30 else (-0.4 if features.rsi_14 > 70 else 0.0)
+        rsi_contrib = (
+            0.4 if features.rsi_14 < 30 else (-0.4 if features.rsi_14 > 70 else 0.0)
+        )
         macd_contrib = 0.2 if features.macd_histogram > 0 else -0.2
         return {
             "rsi_14": round(rsi_contrib, 6),
@@ -164,6 +180,8 @@ class TechnicalAgent(AbcAgent):
             os.makedirs(os.path.dirname(self._model_path), exist_ok=True)
             with open(self._model_path, "wb") as f:
                 pickle.dump({"model": self._model, "explainer": self._explainer}, f)
-            logger.info("technical_agent_trained", samples=len(X), path=self._model_path)
+            logger.info(
+                "technical_agent_trained", samples=len(X), path=self._model_path
+            )
         except Exception as e:
             raise AgentPredictionError(f"TechnicalAgent training failed: {e}") from e

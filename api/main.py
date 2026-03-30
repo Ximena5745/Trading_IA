@@ -124,6 +124,7 @@ async def lifespan(app: FastAPI):
         logger.warning("live_mode_but_trading_disabled")
 
     import asyncio as _asyncio2
+
     _asyncio2.create_task(
         alert_engine.on_system_restart("2.0.0", settings.EXECUTION_MODE)
     )

@@ -35,6 +35,7 @@ from core.signals.signal_engine import SignalEngine
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
+
 def make_feature_set(
     rsi_14: float = 45.0,
     ema_9: float = 50100.0,
@@ -138,6 +139,7 @@ def _make_settings() -> Settings:
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def feature_set() -> FeatureSet:
     return make_feature_set()
@@ -161,6 +163,7 @@ def paper_executor() -> PaperExecutor:
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────
+
 
 class TestDataValidation:
     def test_valid_market_data_passes(self):
@@ -266,7 +269,9 @@ class TestSignalEngine:
         assert signal.action == "BUY"
         assert signal.stop_loss < signal.entry_price
         assert signal.take_profit > signal.entry_price
-        rr = (signal.take_profit - signal.entry_price) / (signal.entry_price - signal.stop_loss)
+        rr = (signal.take_profit - signal.entry_price) / (
+            signal.entry_price - signal.stop_loss
+        )
         assert rr >= 1.5
 
     def test_neutral_consensus_produces_no_signal(self, feature_set):
@@ -378,6 +383,7 @@ class TestPortfolioManager:
     def test_kelly_fraction_capped(self, portfolio_manager):
         """Kelly fraction must never exceed hard limit."""
         from core.config.constants import HARD_LIMITS
+
         fraction = portfolio_manager.kelly_fraction(
             win_rate=0.60,
             avg_win=0.03,

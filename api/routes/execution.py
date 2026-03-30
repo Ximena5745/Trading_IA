@@ -57,7 +57,9 @@ class ExecuteRequest(BaseModel):
     idempotency_key: Optional[str] = None
 
 
-@router.post("", dependencies=[Depends(require_trader)], status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "", dependencies=[Depends(require_trader)], status_code=status.HTTP_202_ACCEPTED
+)
 async def execute_signal(
     req: ExecuteRequest,
     user=Depends(get_current_user),

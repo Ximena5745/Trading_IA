@@ -37,17 +37,19 @@ def generate_synthetic_ohlcv(n: int = 1200) -> pd.DataFrame:
     closes = prices_arr * (1 + np.random.normal(0, 0.002, n))
     volumes = 100.0 + np.abs(np.random.normal(0, 30, n))
 
-    return pd.DataFrame({
-        "timestamp": timestamps,
-        "symbol": "BTCUSDT",
-        "open": opens,
-        "high": highs,
-        "low": lows,
-        "close": closes,
-        "volume": volumes,
-        "quote_volume": volumes * closes,
-        "taker_buy_volume": volumes * 0.55,
-    })
+    return pd.DataFrame(
+        {
+            "timestamp": timestamps,
+            "symbol": "BTCUSDT",
+            "open": opens,
+            "high": highs,
+            "low": lows,
+            "close": closes,
+            "volume": volumes,
+            "quote_volume": volumes * closes,
+            "taker_buy_volume": volumes * 0.55,
+        }
+    )
 
 
 def simple_ema_strategy(features) -> dict | None:
@@ -105,8 +107,12 @@ def run_gate() -> None:
     print()
     print("  OVERALL METRICS:")
     print(f"    Sharpe Ratio  : {sharpe:.3f}")
-    print(f"    Win Rate      : {win_rate * 100:.1f}%  (min {REQUIRED_WIN_RATE * 100:.0f}%)")
-    print(f"    Max Drawdown  : {max_dd * 100:.1f}%  (max {MAX_ALLOWED_DRAWDOWN * 100:.0f}%)")
+    print(
+        f"    Win Rate      : {win_rate * 100:.1f}%  (min {REQUIRED_WIN_RATE * 100:.0f}%)"
+    )
+    print(
+        f"    Max Drawdown  : {max_dd * 100:.1f}%  (max {MAX_ALLOWED_DRAWDOWN * 100:.0f}%)"
+    )
     print(f"    Total Trades  : {total_trades}  (min {MIN_TRADES})")
     print(f"    Final Capital : {final_capital:.2f}")
     print()

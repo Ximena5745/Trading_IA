@@ -16,7 +16,12 @@ class AlertEngine:
         self._telegram = telegram_bot
 
     async def on_signal(self, signal: Signal) -> None:
-        logger.info("alert_signal", symbol=signal.symbol, action=signal.action, confidence=signal.confidence)
+        logger.info(
+            "alert_signal",
+            symbol=signal.symbol,
+            action=signal.action,
+            confidence=signal.confidence,
+        )
         if self._telegram:
             await self._telegram.send_signal_alert(signal)
 
@@ -39,6 +44,8 @@ class AlertEngine:
             await self._telegram.send_critical_error_alert(error_type, details)
 
     async def on_system_restart(self, version: str, execution_mode: str) -> None:
-        logger.info("alert_system_restart", version=version, execution_mode=execution_mode)
+        logger.info(
+            "alert_system_restart", version=version, execution_mode=execution_mode
+        )
         if self._telegram:
             await self._telegram.send_system_restart_alert(version, execution_mode)

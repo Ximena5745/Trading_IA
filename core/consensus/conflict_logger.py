@@ -18,7 +18,9 @@ class ConflictLogger:
         directions = [a.direction for a in agent_outputs if a.direction != "NEUTRAL"]
 
         if len(set(directions)) > 1:
-            summary = ", ".join(f"{a.agent_id}={a.direction}({a.score:+.2f})" for a in agent_outputs)
+            summary = ", ".join(
+                f"{a.agent_id}={a.direction}({a.score:+.2f})" for a in agent_outputs
+            )
             conflicts.append(f"Direction conflict: {summary}")
 
         high_conf = [a for a in agent_outputs if a.confidence >= 0.70]

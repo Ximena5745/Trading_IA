@@ -37,7 +37,9 @@ class FeatureEngine:
     def _to_feature_set(self, row: pd.Series, symbol: str) -> FeatureSet:
         try:
             return FeatureSet(
-                timestamp=row["timestamp"] if hasattr(row["timestamp"], "isoformat") else row.name,
+                timestamp=row["timestamp"]
+                if hasattr(row["timestamp"], "isoformat")
+                else row.name,
                 symbol=symbol,
                 version=self._version,
                 rsi_14=float(row["rsi_14"]),

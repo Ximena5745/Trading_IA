@@ -34,31 +34,35 @@ logger = get_logger("download_data")
 OUTPUT_DIR = Path(__file__).parent.parent / "data" / "raw"
 
 TIMEFRAME_MS: dict[str, int] = {
-    "1m":  60_000,
-    "5m":  300_000,
+    "1m": 60_000,
+    "5m": 300_000,
     "15m": 900_000,
-    "1h":  3_600_000,
-    "4h":  14_400_000,
-    "1d":  86_400_000,
+    "1h": 3_600_000,
+    "4h": 14_400_000,
+    "1d": 86_400_000,
 }
 
 BINANCE_INTERVAL_MAP = {
-    "1m": "1m", "5m": "5m", "15m": "15m",
-    "1h": "1h", "4h": "4h",  "1d": "1d",
+    "1m": "1m",
+    "5m": "5m",
+    "15m": "15m",
+    "1h": "1h",
+    "4h": "4h",
+    "1d": "1d",
 }
 
 
 def _parse_raw_kline(symbol: str, k: list) -> dict:
     return {
-        "timestamp":        pd.Timestamp(k[0], unit="ms", tz="UTC"),
-        "symbol":           symbol,
-        "open":             float(k[1]),
-        "high":             float(k[2]),
-        "low":              float(k[3]),
-        "close":            float(k[4]),
-        "volume":           float(k[5]),
-        "quote_volume":     float(k[7]),
-        "trades_count":     int(k[8]),
+        "timestamp": pd.Timestamp(k[0], unit="ms", tz="UTC"),
+        "symbol": symbol,
+        "open": float(k[1]),
+        "high": float(k[2]),
+        "low": float(k[3]),
+        "close": float(k[4]),
+        "volume": float(k[5]),
+        "quote_volume": float(k[7]),
+        "trades_count": int(k[8]),
         "taker_buy_volume": float(k[9]),
     }
 
@@ -75,8 +79,12 @@ def _detect_gaps(df: pd.DataFrame, timeframe: str) -> int:
         for idx, gap_ms in gaps.items():
             gap_candles = int(gap_ms / expected_ms) - 1
             ts = df.loc[idx, "timestamp"]
-            logger.warning("data_gap_detected", symbol=df["symbol"].iloc[0],
-                           at=str(ts), missing_candles=gap_candles)
+            logger.warning(
+                "data_gap_detected",
+                symbol=df["symbol"].iloc[0],
+                at=str(ts),
+                missing_candles=gap_candles,
+            )
     return len(gaps)
 
 
@@ -119,8 +127,13 @@ async def _download_binance(
                 break
             rows.extend(_parse_raw_kline(symbol, k) for k in raw)
             current_ms = int(raw[-1][0]) + step_ms
-            logger.info("batch_downloaded", symbol=symbol, fetched=len(raw),
-                        total=len(rows), up_to=str(pd.Timestamp(raw[-1][0], unit="ms")))
+            logger.info(
+                "batch_downloaded",
+                symbol=symbol,
+                fetched=len(raw),
+                total=len(rows),
+                up_to=str(pd.Timestamp(raw[-1][0], unit="ms")),
+            )
     finally:
         await client.close_connection()
 
@@ -152,14 +165,28 @@ async def download(symbol: str, timeframe: str, years: int) -> None:
         return
 
     new_df = pd.DataFrame(new_rows)
-    combined = pd.concat([existing, new_df], ignore_index=True) if not existing.empty else new_df
-    combined = combined.drop_duplicates(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
+    combined = (
+        pd.concat([existing, new_df], ignore_index=True)
+        if not existing.empty
+        else new_df
+    )
+    combined = (
+        combined.drop_duplicates(subset=["timestamp"])
+        .sort_values("timestamp")
+        .reset_index(drop=True)
+    )
 
     gap_count = _detect_gaps(combined, timeframe)
     combined.to_parquet(out_path, index=False)
 
-    logger.info("download_complete", symbol=symbol, timeframe=timeframe,
-                rows=len(combined), gaps=gap_count, path=str(out_path))
+    logger.info(
+        "download_complete",
+        symbol=symbol,
+        timeframe=timeframe,
+        rows=len(combined),
+        gaps=gap_count,
+        path=str(out_path),
+    )
     print(f"✅ {symbol} {timeframe}: {len(combined):,} candles guardadas en {out_path}")
     if gap_count:
         print(f"⚠️  {gap_count} gaps detectados en los datos — revisar el log")
@@ -176,16 +203,18 @@ async def _download_mt5(symbol: str, timeframe: str, years: int) -> None:
 
     settings = get_settings()
     # MT5 connection settings come from environment (add to .env for FASE E):
-    mt5_server   = getattr(settings, "MT5_SERVER",   "ICMarketsSC-Demo04")
-    mt5_login    = int(getattr(settings, "MT5_LOGIN",    "0"))
+    mt5_server = getattr(settings, "MT5_SERVER", "ICMarketsSC-Demo04")
+    mt5_login = int(getattr(settings, "MT5_LOGIN", "0"))
     mt5_password = getattr(settings, "MT5_PASSWORD", "")
 
     client = MT5Client(server=mt5_server, login=mt5_login, password=mt5_password)
     await client.connect()
 
-    bars_needed = years * 365 * 24   # rough estimate for 1h; adjust for other TFs
+    bars_needed = years * 365 * 24  # rough estimate for 1h; adjust for other TFs
     try:
-        candles = await client.get_historical_klines(symbol, timeframe, min(bars_needed, 50000))
+        candles = await client.get_historical_klines(
+            symbol, timeframe, min(bars_needed, 50000)
+        )
     finally:
         await client.disconnect()
 
@@ -196,18 +225,26 @@ async def _download_mt5(symbol: str, timeframe: str, years: int) -> None:
     rows = [
         {
             "timestamp": c.timestamp,
-            "symbol":    c.symbol,
-            "open":      float(c.open),
-            "high":      float(c.high),
-            "low":       float(c.low),
-            "close":     float(c.close),
-            "volume":    float(c.volume),
+            "symbol": c.symbol,
+            "open": float(c.open),
+            "high": float(c.high),
+            "low": float(c.low),
+            "close": float(c.close),
+            "volume": float(c.volume),
         }
         for c in candles
     ]
     new_df = pd.DataFrame(rows)
-    combined = pd.concat([existing, new_df], ignore_index=True) if not existing.empty else new_df
-    combined = combined.drop_duplicates(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
+    combined = (
+        pd.concat([existing, new_df], ignore_index=True)
+        if not existing.empty
+        else new_df
+    )
+    combined = (
+        combined.drop_duplicates(subset=["timestamp"])
+        .sort_values("timestamp")
+        .reset_index(drop=True)
+    )
     gap_count = _detect_gaps(combined, timeframe)
     combined.to_parquet(out_path, index=False)
     print(f"✅ {symbol} {timeframe} (MT5): {len(combined):,} candles → {out_path}")
@@ -217,11 +254,21 @@ async def _download_mt5(symbol: str, timeframe: str, years: int) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download historical OHLCV data")
-    parser.add_argument("--symbol",    default="BTCUSDT",  help="Trading pair, e.g. BTCUSDT or EURUSD")
-    parser.add_argument("--timeframe", default="1h",       help="Candle interval: 1m 5m 15m 1h 4h 1d")
-    parser.add_argument("--years",     type=int, default=2, help="Years of history to download")
-    parser.add_argument("--provider",  default="binance",  choices=["binance", "mt5"],
-                        help="Data provider: binance (default) or mt5 (FASE E)")
+    parser.add_argument(
+        "--symbol", default="BTCUSDT", help="Trading pair, e.g. BTCUSDT or EURUSD"
+    )
+    parser.add_argument(
+        "--timeframe", default="1h", help="Candle interval: 1m 5m 15m 1h 4h 1d"
+    )
+    parser.add_argument(
+        "--years", type=int, default=2, help="Years of history to download"
+    )
+    parser.add_argument(
+        "--provider",
+        default="binance",
+        choices=["binance", "mt5"],
+        help="Data provider: binance (default) or mt5 (FASE E)",
+    )
     args = parser.parse_args()
 
     if args.timeframe not in TIMEFRAME_MS:

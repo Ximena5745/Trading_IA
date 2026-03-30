@@ -20,10 +20,10 @@ st.title("📊 Market View")
 
 # --- Asset class & symbol selector ---
 _SYMBOLS_BY_CLASS = {
-    "Crypto":       ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"],
-    "Forex":        ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD"],
-    "Indices":      ["SPX500", "NAS100", "US30", "DE40", "UK100", "JP225"],
-    "Commodities":  ["XAUUSD", "XAGUSD", "USOIL", "UKOIL", "NATGAS"],
+    "Crypto": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"],
+    "Forex": ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD"],
+    "Indices": ["SPX500", "NAS100", "US30", "DE40", "UK100", "JP225"],
+    "Commodities": ["XAUUSD", "XAGUSD", "USOIL", "UKOIL", "NATGAS"],
 }
 
 col0, col1, col2, col3 = st.columns([2, 2, 2, 1])
@@ -32,12 +32,15 @@ with col0:
 with col1:
     symbol = st.selectbox("Symbol", _SYMBOLS_BY_CLASS[asset_class])
 with col2:
-    timeframe = st.selectbox("Timeframe", ["1m", "5m", "15m", "1h", "4h", "1d"], index=3)
+    timeframe = st.selectbox(
+        "Timeframe", ["1m", "5m", "15m", "1h", "4h", "1d"], index=3
+    )
 with col3:
     limit = st.number_input("Candles", min_value=50, max_value=500, value=200)
 
 if st.button("🔄 Refresh", use_container_width=True):
     st.rerun()
+
 
 # --- Fetch data from API ---
 @st.cache_data(ttl=60)
@@ -76,12 +79,15 @@ df = fetch_market_data(symbol, limit)
 features = fetch_features(symbol)
 
 if df.empty:
-    st.warning("No market data available. Make sure the API is running and the ingestion pipeline is active.")
+    st.warning(
+        "No market data available. Make sure the API is running and the ingestion pipeline is active."
+    )
     st.stop()
 
 # --- OHLCV Candlestick Chart ---
 fig = make_subplots(
-    rows=3, cols=1,
+    rows=3,
+    cols=1,
     shared_xaxes=True,
     vertical_spacing=0.05,
     row_heights=[0.6, 0.2, 0.2],
@@ -91,25 +97,52 @@ fig = make_subplots(
 fig.add_trace(
     go.Candlestick(
         x=df["timestamp"],
-        open=df["open"], high=df["high"],
-        low=df["low"], close=df["close"],
+        open=df["open"],
+        high=df["high"],
+        low=df["low"],
+        close=df["close"],
         name="OHLCV",
     ),
-    row=1, col=1,
+    row=1,
+    col=1,
 )
 
 # EMA lines
-for ema, color in [("ema_9", "#FFD700"), ("ema_21", "#FF8C00"), ("ema_50", "#1E90FF"), ("ema_200", "#FF4500")]:
+for ema, color in [
+    ("ema_9", "#FFD700"),
+    ("ema_21", "#FF8C00"),
+    ("ema_50", "#1E90FF"),
+    ("ema_200", "#FF4500"),
+]:
     if ema in df.columns:
-        fig.add_trace(go.Scatter(x=df["timestamp"], y=df[ema], name=ema.upper(), line=dict(color=color, width=1)), row=1, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=df["timestamp"],
+                y=df[ema],
+                name=ema.upper(),
+                line=dict(color=color, width=1),
+            ),
+            row=1,
+            col=1,
+        )
 
 # Volume
 colors = ["#26a69a" if c >= o else "#ef5350" for c, o in zip(df["close"], df["open"])]
-fig.add_trace(go.Bar(x=df["timestamp"], y=df["volume"], name="Volume", marker_color=colors), row=2, col=1)
+fig.add_trace(
+    go.Bar(x=df["timestamp"], y=df["volume"], name="Volume", marker_color=colors),
+    row=2,
+    col=1,
+)
 
 # RSI
 if "rsi_14" in df.columns:
-    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["rsi_14"], name="RSI 14", line=dict(color="#9B59B6")), row=3, col=1)
+    fig.add_trace(
+        go.Scatter(
+            x=df["timestamp"], y=df["rsi_14"], name="RSI 14", line=dict(color="#9B59B6")
+        ),
+        row=3,
+        col=1,
+    )
     fig.add_hline(y=70, line_dash="dash", line_color="red", row=3, col=1)
     fig.add_hline(y=30, line_dash="dash", line_color="green", row=3, col=1)
 

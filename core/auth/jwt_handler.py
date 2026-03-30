@@ -16,7 +16,9 @@ logger = get_logger(__name__)
 
 
 class JWTHandler:
-    def __init__(self, secret_key: str, algorithm: str = "HS256", expire_minutes: int = 60):
+    def __init__(
+        self, secret_key: str, algorithm: str = "HS256", expire_minutes: int = 60
+    ):
         self._secret = secret_key
         self._algorithm = algorithm
         self._expire_minutes = expire_minutes

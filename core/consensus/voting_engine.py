@@ -13,26 +13,35 @@ from __future__ import annotations
 from datetime import datetime
 
 from core.consensus.conflict_logger import ConflictLogger
-from core.models import AgentOutput, AssetClass, ConsensusOutput, RegimeOutput, detect_asset_class
+from core.models import (
+    AgentOutput,
+    AssetClass,
+    ConsensusOutput,
+    RegimeOutput,
+    detect_asset_class,
+)
 from core.observability.logger import get_logger
 
 logger = get_logger(__name__)
 
 # ── Agent weights by asset class (decision v2.4) ─────────────────────────────
 AGENT_WEIGHTS_CRYPTO: dict[str, float] = {
-    "technical_v1":      0.45,
-    "regime_v1":         0.35,
+    "technical_v1": 0.45,
+    "regime_v1": 0.35,
     "microstructure_v1": 0.20,
 }
 
 AGENT_WEIGHTS_MT5: dict[str, float] = {
-    "technical_v1":      0.55,
-    "regime_v1":         0.45,
-    "microstructure_v1": 0.00,   # disabled — MT5 has no L2 book
+    "technical_v1": 0.55,
+    "regime_v1": 0.45,
+    "microstructure_v1": 0.00,  # disabled — MT5 has no L2 book
 }
 
 MIN_CONSENSUS_SCORE = 0.30
 MIN_AGENTS_AGREEING = 0.60
+
+# Alias for backward compatibility — defaults to crypto weights
+AGENT_WEIGHTS: dict[str, float] = AGENT_WEIGHTS_CRYPTO
 
 
 def _weights_for_symbol(symbol: str) -> dict[str, float]:
@@ -51,10 +60,9 @@ class ConsensusEngine:
         agent_outputs: list[AgentOutput],
         regime: RegimeOutput,
     ) -> ConsensusOutput:
-
         conflicts = self._conflict_logger.detect_conflicts(agent_outputs)
         symbol = agent_outputs[0].symbol if agent_outputs else ""
-        ts     = agent_outputs[0].timestamp if agent_outputs else datetime.utcnow()
+        ts = agent_outputs[0].timestamp if agent_outputs else datetime.utcnow()
         weights = _weights_for_symbol(symbol)
 
         # Gate 1: regime veto (VOLATILE_CRASH or low confidence)
@@ -77,14 +85,14 @@ class ConsensusEngine:
             )
 
         # Weighted score — skip agents with 0 weight
-        total_weight  = 0.0
+        total_weight = 0.0
         weighted_score = 0.0
         for output in agent_outputs:
             weight = weights.get(output.agent_id, 0.10)
             if weight == 0.0:
                 continue
             weighted_score += output.score * weight
-            total_weight   += weight
+            total_weight += weight
 
         if total_weight > 0:
             weighted_score /= total_weight
@@ -97,13 +105,14 @@ class ConsensusEngine:
         if abs(weighted_score) >= MIN_CONSENSUS_SCORE and active_outputs:
             dominant = "BUY" if weighted_score > 0 else "SELL"
             agreeing = sum(
-                1 for o in active_outputs
+                1
+                for o in active_outputs
                 if (dominant == "BUY" and o.score > 0)
                 or (dominant == "SELL" and o.score < 0)
             )
             agreement = agreeing / len(active_outputs)
         else:
-            dominant  = "NEUTRAL"
+            dominant = "NEUTRAL"
             agreement = 0.0
 
         # Gate 2: minimum agreement

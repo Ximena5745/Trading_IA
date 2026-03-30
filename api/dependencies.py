@@ -35,13 +35,17 @@ async def get_current_user(
 
 async def require_trader(user: dict = Depends(get_current_user)) -> dict:
     if not has_permission(user["role"], Role.TRADER):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Trader role required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Trader role required"
+        )
     return user
 
 
 async def require_admin(user: dict = Depends(get_current_user)) -> dict:
     if not has_permission(user["role"], Role.ADMIN):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required"
+        )
     return user
 
 

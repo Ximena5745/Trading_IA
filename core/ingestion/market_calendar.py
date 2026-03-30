@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 
 # ── ForexFactory RSS (free, no key) ─────────────────────────────────────────
 FOREX_FACTORY_RSS = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
-EVENT_BLOCK_MINUTES = 30   # block ± this many minutes around high-impact events
+EVENT_BLOCK_MINUTES = 30  # block ± this many minutes around high-impact events
 HIGH_IMPACT_MARKER = "High"
 CACHE_TTL_SECONDS = 4 * 3600
 
@@ -31,21 +31,21 @@ CACHE_TTL_SECONDS = 4 * 3600
 # Each session: (open_hour, open_min, close_hour, close_min)
 # Overlapping sessions are the most liquid periods
 SESSIONS_UTC: dict[str, tuple[int, int, int, int]] = {
-    "sydney":   (21, 0, 6,  0),   # Sun 21:00 – Fri 06:00 UTC
-    "tokyo":    (0,  0, 9,  0),   # 00:00 – 09:00 UTC
-    "london":   (7,  0, 16, 0),   # 07:00 – 16:00 UTC
-    "new_york": (12, 0, 21, 0),   # 12:00 – 21:00 UTC
+    "sydney": (21, 0, 6, 0),  # Sun 21:00 – Fri 06:00 UTC
+    "tokyo": (0, 0, 9, 0),  # 00:00 – 09:00 UTC
+    "london": (7, 0, 16, 0),  # 07:00 – 16:00 UTC
+    "new_york": (12, 0, 21, 0),  # 12:00 – 21:00 UTC
 }
 
 # Symbols that follow equity/index sessions (closed weekends + specific hours)
 INDEX_SYMBOLS = {"US500", "US30", "UK100", "NAS100", "SPX500", "DE40", "JP225"}
 
 # US equity-like hours (UTC): 13:30 – 20:00 (09:30–16:00 ET)
-US_INDEX_OPEN_UTC  = (13, 30)
+US_INDEX_OPEN_UTC = (13, 30)
 US_INDEX_CLOSE_UTC = (20, 0)
 
 # UK index hours (UTC): 08:00 – 16:30
-UK_INDEX_OPEN_UTC  = (8,  0)
+UK_INDEX_OPEN_UTC = (8, 0)
 UK_INDEX_CLOSE_UTC = (16, 30)
 
 
@@ -56,7 +56,9 @@ class MarketCalendar:
     """
 
     def __init__(self) -> None:
-        self._high_impact_events: list[dict] = []  # [{time: datetime, currency: str, title: str}]
+        self._high_impact_events: list[
+            dict
+        ] = []  # [{time: datetime, currency: str, title: str}]
         self._last_fetch: Optional[datetime] = None
         self._lock = asyncio.Lock()
 
@@ -73,9 +75,9 @@ class MarketCalendar:
 
         # All markets closed on weekends (Sat/Sun UTC)
         weekday = now.weekday()  # 0=Mon … 6=Sun
-        if weekday == 6:          # Sunday before Sydney open
+        if weekday == 6:  # Sunday before Sydney open
             return now.hour >= 21
-        if weekday == 5:          # Saturday — all closed
+        if weekday == 5:  # Saturday — all closed
             return False
 
         sym_upper = symbol.upper()
@@ -94,8 +96,8 @@ class MarketCalendar:
         if detect_asset_class(symbol) == AssetClass.CRYPTO:
             return False
         london_open = self._session_active("london", now)
-        ny_open     = self._session_active("new_york", now)
-        tokyo_open  = self._session_active("tokyo", now)
+        ny_open = self._session_active("new_york", now)
+        tokyo_open = self._session_active("tokyo", now)
         return tokyo_open and not london_open and not ny_open
 
     def is_high_impact_event_window(
@@ -115,7 +117,7 @@ class MarketCalendar:
                 logger.info(
                     "high_impact_event_window",
                     currency=currency,
-                    event=event["title"],
+                    event_title=event["title"],
                     event_time=event_time.isoformat(),
                 )
                 return True
@@ -127,10 +129,10 @@ class MarketCalendar:
         EURUSD → ["EUR", "USD"],  XAUUSD → ["USD"],  US500 → ["USD"]
         """
         s = symbol.upper()
-        if len(s) == 6 and s.isalpha():
-            return [s[:3], s[3:]]
         if s in ("XAUUSD", "XAGUSD"):
             return ["USD"]
+        if len(s) == 6 and s.isalpha():
+            return [s[:3], s[3:]]
         if s in ("US500", "US30", "NAS100"):
             return ["USD"]
         if s == "UK100":
@@ -148,6 +150,7 @@ class MarketCalendar:
                 return
             try:
                 import httpx
+
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.get(FOREX_FACTORY_RSS)
                     resp.raise_for_status()
@@ -173,7 +176,7 @@ class MarketCalendar:
                 date_str = item.findtext("date", "")
                 time_str = item.findtext("time", "")
                 currency = item.findtext("currency", "")
-                title    = item.findtext("title", "")
+                title = item.findtext("title", "")
                 try:
                     dt = datetime.strptime(
                         f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p"
@@ -188,16 +191,18 @@ class MarketCalendar:
     def _cache_expired(self) -> bool:
         if self._last_fetch is None:
             return True
-        return (datetime.now(timezone.utc) - self._last_fetch).total_seconds() > CACHE_TTL_SECONDS
+        return (
+            datetime.now(timezone.utc) - self._last_fetch
+        ).total_seconds() > CACHE_TTL_SECONDS
 
     def _any_session_open(self, now: datetime) -> bool:
         return any(self._session_active(name, now) for name in SESSIONS_UTC)
 
     def _session_active(self, session: str, now: datetime) -> bool:
         oh, om, ch, cm = SESSIONS_UTC[session]
-        open_min  = oh * 60 + om
+        open_min = oh * 60 + om
         close_min = ch * 60 + cm
-        current   = now.hour * 60 + now.minute
+        current = now.hour * 60 + now.minute
 
         if open_min < close_min:
             return open_min <= current < close_min
@@ -212,9 +217,9 @@ class MarketCalendar:
         else:
             oh, om = US_INDEX_OPEN_UTC
             ch, cm = US_INDEX_CLOSE_UTC
-        open_min  = oh * 60 + om
+        open_min = oh * 60 + om
         close_min = ch * 60 + cm
-        current   = now.hour * 60 + now.minute
+        current = now.hour * 60 + now.minute
         return open_min <= current < close_min
 
 

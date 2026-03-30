@@ -65,6 +65,7 @@ class BybitClient(ExchangeAdapter):
     async def connect(self) -> None:
         try:
             import httpx
+
             self._session = httpx.AsyncClient(base_url=self._base_url, timeout=10.0)
             self._connected = True
             logger.info("bybit_connected", testnet=self._testnet)
@@ -202,7 +203,9 @@ class BybitClient(ExchangeAdapter):
         ts = str(int(time.time() * 1000))
         headers = self._auth_headers("POST", "/v5/order/create", payload, ts)
 
-        response = await self._session.post("/v5/order/create", json=payload, headers=headers)
+        response = await self._session.post(
+            "/v5/order/create", json=payload, headers=headers
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -231,7 +234,9 @@ class BybitClient(ExchangeAdapter):
         ts = str(int(time.time() * 1000))
         headers = self._auth_headers("POST", "/v5/order/cancel", payload, ts)
 
-        response = await self._session.post("/v5/order/cancel", json=payload, headers=headers)
+        response = await self._session.post(
+            "/v5/order/cancel", json=payload, headers=headers
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -279,6 +284,7 @@ class BybitClient(ExchangeAdapter):
             param_str = "&".join(f"{k}={v}" for k, v in sorted(params.items()))
         else:
             import json
+
             param_str = json.dumps(params, separators=(",", ":"))
 
         sign_str = timestamp + self._api_key + recv_window + param_str

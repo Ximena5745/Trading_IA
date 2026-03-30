@@ -54,7 +54,7 @@ class CostModel:
         if instrument is not None:
             return self._apply_mt5(trade, instrument)
 
-        return self._apply_crypto(trade)   # fallback
+        return self._apply_crypto(trade)  # fallback
 
     def apply_fill_slippage(self, price: float, side: str) -> float:
         """Apply slippage to a crypto fill price (backward-compatible)."""
@@ -85,8 +85,15 @@ class CostModel:
             return 0.0
         rate = inst.swap_long if side == "BUY" else inst.swap_short
         cost = abs(rate) * lots * nights
-        logger.debug("swap_cost_calculated", symbol=symbol, nights=nights, side=side,
-                     lots=lots, rate=rate, cost=round(cost, 4))
+        logger.debug(
+            "swap_cost_calculated",
+            symbol=symbol,
+            nights=nights,
+            side=side,
+            lots=lots,
+            rate=rate,
+            cost=round(cost, 4),
+        )
         return round(cost, 4)
 
     def get_spread_cost(
@@ -110,28 +117,30 @@ class CostModel:
     def _apply_crypto(self, trade: dict) -> dict:
         value = trade.get("value", 0.0)
         commission = value * self.commission_pct
-        slippage   = value * self.slippage_pct
-        gross_pnl  = trade.get("gross_pnl", 0.0)
-        trade["net_pnl"]    = gross_pnl - commission - slippage
+        slippage = value * self.slippage_pct
+        gross_pnl = trade.get("gross_pnl", 0.0)
+        trade["net_pnl"] = gross_pnl - commission - slippage
         trade["commission"] = commission
-        trade["slippage"]   = slippage
+        trade["slippage"] = slippage
         trade["cost_model"] = "crypto"
         return trade
 
     def _apply_mt5(self, trade: dict, instrument: InstrumentConfig) -> dict:
-        lots   = trade.get("quantity", 0.0)
-        side   = trade.get("side", "BUY")
+        lots = trade.get("quantity", 0.0)
+        side = trade.get("side", "BUY")
         nights = trade.get("nights_held", 0)
 
         spread_cost = self.get_spread_cost(instrument.symbol, lots, instrument)
-        swap_cost   = self.get_swap_cost(instrument.symbol, nights, side, lots, instrument)
-        total_cost  = spread_cost + swap_cost
+        swap_cost = self.get_swap_cost(
+            instrument.symbol, nights, side, lots, instrument
+        )
+        total_cost = spread_cost + swap_cost
 
         gross_pnl = trade.get("gross_pnl", 0.0)
-        trade["net_pnl"]       = gross_pnl - total_cost
-        trade["spread_cost"]   = spread_cost
-        trade["swap_cost"]     = swap_cost
-        trade["commission"]    = 0.0
-        trade["slippage"]      = spread_cost   # spread IS the effective slippage for MT5
-        trade["cost_model"]    = "mt5"
+        trade["net_pnl"] = gross_pnl - total_cost
+        trade["spread_cost"] = spread_cost
+        trade["swap_cost"] = swap_cost
+        trade["commission"] = 0.0
+        trade["slippage"] = spread_cost  # spread IS the effective slippage for MT5
+        trade["cost_model"] = "mt5"
         return trade

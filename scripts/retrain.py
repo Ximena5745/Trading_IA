@@ -29,20 +29,20 @@ from core.observability.logger import configure_logging, get_logger
 configure_logging()
 logger = get_logger("retrain")
 
-DATA_DIR   = Path(__file__).parent.parent / "data" / "raw"
+DATA_DIR = Path(__file__).parent.parent / "data" / "raw"
 MODELS_DIR = Path(__file__).parent.parent / "data" / "models"
 
 ASSET_CLASS_SYMBOLS: dict[str, list[str]] = {
     "crypto": ["BTCUSDT", "ETHUSDT"],
-    "forex":  ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD"],
-    "index":  ["US500", "US30", "UK100"],
+    "forex": ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD"],
+    "index": ["US500", "US30", "UK100"],
     "commodity": ["XAUUSD"],
 }
 
 MODEL_PATHS: dict[str, str] = {
-    "crypto":    "data/models/technical_crypto_v1.pkl",
-    "forex":     "data/models/technical_forex_v1.pkl",
-    "index":     "data/models/technical_index_v1.pkl",
+    "crypto": "data/models/technical_crypto_v1.pkl",
+    "forex": "data/models/technical_forex_v1.pkl",
+    "index": "data/models/technical_index_v1.pkl",
     "commodity": "data/models/technical_commodity_v1.pkl",
 }
 
@@ -101,7 +101,9 @@ def retrain(asset_class: str, timeframe: str, symbols: list[str]) -> None:
     for symbol in symbols:
         df = _load_parquet(symbol, timeframe)
         if df is None:
-            print(f"⚠️  {symbol}: parquet not found — run download_data.py first. Skipping.")
+            print(
+                f"⚠️  {symbol}: parquet not found — run download_data.py first. Skipping."
+            )
             continue
         try:
             X, y = _build_features_and_labels(df)
@@ -134,14 +136,18 @@ def retrain(asset_class: str, timeframe: str, symbols: list[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train TechnicalAgent from parquet data")
+    parser = argparse.ArgumentParser(
+        description="Train TechnicalAgent from parquet data"
+    )
     parser.add_argument(
         "--asset-class",
         default="crypto",
         choices=list(ASSET_CLASS_SYMBOLS.keys()),
         help="Asset class to train on",
     )
-    parser.add_argument("--timeframe", default="1h", help="Candle interval (must match downloaded data)")
+    parser.add_argument(
+        "--timeframe", default="1h", help="Candle interval (must match downloaded data)"
+    )
     parser.add_argument(
         "--symbols",
         nargs="*",

@@ -33,6 +33,7 @@ def _make_settings() -> Settings:
 
 # ── App-level fixtures ─────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="module")
 def client():
     """TestClient with initialized app state."""
@@ -65,7 +66,9 @@ def client():
 @pytest.fixture
 def auth_token(client):
     """Obtain a valid JWT token."""
-    response = client.post("/auth/login", json={"username": "admin", "password": "admin123"})
+    response = client.post(
+        "/auth/login", json={"username": "admin", "password": "admin123"}
+    )
     if response.status_code == 200:
         return response.json().get("access_token", "")
     return "mock-token"
@@ -78,6 +81,7 @@ def auth_headers(auth_token):
 
 # ── Health endpoint ────────────────────────────────────────────────────────
 
+
 class TestHealthEndpoint:
     def test_health_returns_ok(self, client):
         response = client.get("/health")
@@ -89,6 +93,7 @@ class TestHealthEndpoint:
 
 
 # ── Portfolio endpoints ────────────────────────────────────────────────────
+
 
 class TestPortfolioEndpoints:
     def test_get_portfolio_requires_auth(self, client):
@@ -114,6 +119,7 @@ class TestPortfolioEndpoints:
 
 # ── Execution endpoints ────────────────────────────────────────────────────
 
+
 class TestExecutionEndpoints:
     def test_execute_without_auth_rejected(self, client):
         payload = {
@@ -137,11 +143,14 @@ class TestExecutionEndpoints:
             assert isinstance(body["orders"], list)
 
     def test_cancel_nonexistent_order_returns_404(self, client, auth_headers):
-        response = client.delete("/execution/orders/nonexistent-id-xyz", headers=auth_headers)
+        response = client.delete(
+            "/execution/orders/nonexistent-id-xyz", headers=auth_headers
+        )
         assert response.status_code in (404, 401, 403)
 
 
 # ── Strategy endpoints ─────────────────────────────────────────────────────
+
 
 class TestStrategyEndpoints:
     def test_list_strategies_public_accessible(self, client, auth_headers):
@@ -178,13 +187,18 @@ class TestStrategyEndpoints:
 
 # ── Risk endpoints ─────────────────────────────────────────────────────────
 
+
 class TestRiskEndpoints:
     def test_risk_status_accessible(self, client, auth_headers):
         response = client.get("/risk/status", headers=auth_headers)
         assert response.status_code in (200, 401, 403)
         if response.status_code == 200:
             body = response.json()
-            assert "kill_switch" in body or "kill_switch_active" in body or "is_active" in body
+            assert (
+                "kill_switch" in body
+                or "kill_switch_active" in body
+                or "is_active" in body
+            )
 
     def test_risk_limits_accessible(self, client, auth_headers):
         response = client.get("/risk/limits", headers=auth_headers)
@@ -192,6 +206,7 @@ class TestRiskEndpoints:
 
 
 # ── Signals endpoints ──────────────────────────────────────────────────────
+
 
 class TestSignalsEndpoints:
     def test_list_signals(self, client, auth_headers):

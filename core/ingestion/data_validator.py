@@ -33,15 +33,21 @@ class DataValidator:
             try:
                 valid.append(self.validate_market_data(record))
             except DataValidationError as e:
-                logger.warning("market_data_validation_failed", error=str(e), symbol=record.symbol)
+                logger.warning(
+                    "market_data_validation_failed", error=str(e), symbol=record.symbol
+                )
         return valid
 
-    def check_timestamp_freshness(self, data: MarketData, timeframe_seconds: int) -> bool:
+    def check_timestamp_freshness(
+        self, data: MarketData, timeframe_seconds: int
+    ) -> bool:
         """Returns False if data is older than MAX_TIMESTAMP_AGE_BARS candles."""
         max_age = timedelta(seconds=timeframe_seconds * MAX_TIMESTAMP_AGE_BARS)
         age = datetime.utcnow() - data.timestamp.replace(tzinfo=None)
         if age > max_age:
-            logger.warning("stale_market_data", symbol=data.symbol, age_seconds=age.total_seconds())
+            logger.warning(
+                "stale_market_data", symbol=data.symbol, age_seconds=age.total_seconds()
+            )
             return False
         return True
 

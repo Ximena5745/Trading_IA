@@ -55,7 +55,9 @@ model_latency = Histogram(
 
 # Portfolio gauges
 portfolio_pnl = Gauge("trader_ai_portfolio_pnl", "Current portfolio P&L in USD")
-portfolio_drawdown = Gauge("trader_ai_portfolio_drawdown", "Current drawdown percentage")
+portfolio_drawdown = Gauge(
+    "trader_ai_portfolio_drawdown", "Current drawdown percentage"
+)
 portfolio_capital = Gauge("trader_ai_portfolio_capital", "Total portfolio capital")
 
 

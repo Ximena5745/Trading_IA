@@ -121,10 +121,20 @@ def render():
     if positions_data and positions_data.get("positions"):
         df_pos = pd.DataFrame(positions_data["positions"])
         display_cols = [
-            c for c in ["symbol", "side", "size", "entry_price", "current_price", "unrealized_pnl"]
+            c
+            for c in [
+                "symbol",
+                "side",
+                "size",
+                "entry_price",
+                "current_price",
+                "unrealized_pnl",
+            ]
             if c in df_pos.columns
         ]
-        st.dataframe(df_pos[display_cols] if display_cols else df_pos, use_container_width=True)
+        st.dataframe(
+            df_pos[display_cols] if display_cols else df_pos, use_container_width=True
+        )
     else:
         st.info("No open positions.")
 
@@ -144,7 +154,9 @@ def render():
             fig.add_trace(
                 go.Bar(
                     x=df_perf["strategy_id"],
-                    y=df_perf.get("win_rate", []) * 100 if "win_rate" in df_perf else [],
+                    y=df_perf.get("win_rate", []) * 100
+                    if "win_rate" in df_perf
+                    else [],
                     name="Win Rate %",
                     marker_color="#00E096",
                 )

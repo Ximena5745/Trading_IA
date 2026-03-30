@@ -13,17 +13,24 @@ logger = get_logger(__name__)
 TOP_N_FACTORS = 5
 
 FEATURE_DESCRIPTIONS = {
-    "rsi_14": lambda v, s: f"RSI(14) en zona de {'sobreventa' if s > 0 else 'sobrecompra'} ({v:.1f})",
+    "rsi_14": lambda v,
+    s: f"RSI(14) en zona de {'sobreventa' if s > 0 else 'sobrecompra'} ({v:.1f})",
     "rsi_7": lambda v, s: f"RSI(7) en {v:.1f}",
-    "macd_histogram": lambda v, s: f"MACD histograma {'positivo' if v > 0 else 'negativo'} ({v:+.4f})",
+    "macd_histogram": lambda v,
+    s: f"MACD histograma {'positivo' if v > 0 else 'negativo'} ({v:+.4f})",
     "macd_line": lambda v, s: f"MACD línea en {v:.4f}",
     "ema_50": lambda v, s: f"EMA50 {'por encima' if s > 0 else 'por debajo'} de precio",
-    "ema_200": lambda v, s: f"EMA200 señal de {'tendencia alcista' if s > 0 else 'tendencia bajista'}",
-    "atr_14": lambda v, s: f"ATR(14) en {v:.2f} (volatilidad {'alta' if v > 0 else 'baja'})",
-    "bb_width": lambda v, s: f"Bandas Bollinger {'expandidas' if v > 0.05 else 'comprimidas'} ({v:.4f})",
-    "volume_ratio": lambda v, s: f"Volumen {v:.1f}× por {'encima' if v > 1 else 'debajo'} de la media",
+    "ema_200": lambda v,
+    s: f"EMA200 señal de {'tendencia alcista' if s > 0 else 'tendencia bajista'}",
+    "atr_14": lambda v,
+    s: f"ATR(14) en {v:.2f} (volatilidad {'alta' if v > 0 else 'baja'})",
+    "bb_width": lambda v,
+    s: f"Bandas Bollinger {'expandidas' if v > 0.05 else 'comprimidas'} ({v:.4f})",
+    "volume_ratio": lambda v,
+    s: f"Volumen {v:.1f}× por {'encima' if v > 1 else 'debajo'} de la media",
     "obv": lambda v, s: f"OBV {'creciente' if s > 0 else 'decreciente'} ({v:+.0f})",
-    "order_book_imbalance": lambda v, s: f"Presión {'compradora' if v > 0 else 'vendedora'} ({v:+.2f})",
+    "order_book_imbalance": lambda v,
+    s: f"Presión {'compradora' if v > 0 else 'vendedora'} ({v:+.2f})",
 }
 
 
@@ -49,7 +56,11 @@ class XAIModule:
             direction = "bullish" if shap_val > 0 else "bearish"
             feature_val = shap_val  # use shap as proxy when raw value unavailable
             desc_fn = FEATURE_DESCRIPTIONS.get(feature)
-            description = desc_fn(feature_val, shap_val) if desc_fn else f"{feature}: {shap_val:+.4f}"
+            description = (
+                desc_fn(feature_val, shap_val)
+                if desc_fn
+                else f"{feature}: {shap_val:+.4f}"
+            )
             factors.append(
                 SignalExplanationFactor(
                     factor=feature,
@@ -76,6 +87,7 @@ class XAIModule:
     @staticmethod
     def _get_lead_agent(consensus: ConsensusOutput) -> AgentOutput | None:
         from core.consensus.voting_engine import AGENT_WEIGHTS
+
         best = None
         best_weight = -1.0
         for output in consensus.agent_outputs:

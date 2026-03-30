@@ -55,48 +55,42 @@ IB_SYMBOL_MAP = {
     "USDCAD": ("USD", "CAD", "IDEALPRO"),
     "EURJPY": ("EUR", "JPY", "IDEALPRO"),
     "GBPJPY": ("GBP", "JPY", "IDEALPRO"),
-
     # Indices (US)
     "SPX500": ("SPX", None, "SMART"),  # S&P 500
     "NAS100": ("NDX", None, "SMART"),  # Nasdaq-100
-    "US30":   ("INDU", None, "SMART"), # Dow Jones
-
+    "US30": ("INDU", None, "SMART"),  # Dow Jones
     # Indices (Other)
-    "DE40":   ("DAX", None, "SMART"),  # DAX
-    "UK100":  ("FTSE", None, "SMART"), # FTSE 100
-    "JP225":  ("N225", None, "SMART"), # Nikkei 225
-
+    "DE40": ("DAX", None, "SMART"),  # DAX
+    "UK100": ("FTSE", None, "SMART"),  # FTSE 100
+    "JP225": ("N225", None, "SMART"),  # Nikkei 225
     # Metals
-    "XAUUSD": ("GC", None, "NYMEX"),   # Gold futures
-    "XAGUSD": ("SI", None, "NYMEX"),   # Silver futures
-    "XPTUSD": ("PL", None, "NYMEX"),   # Platinum futures
-
+    "XAUUSD": ("GC", None, "NYMEX"),  # Gold futures
+    "XAGUSD": ("SI", None, "NYMEX"),  # Silver futures
+    "XPTUSD": ("PL", None, "NYMEX"),  # Platinum futures
     # Energy
-    "USOIL":  ("CL", None, "NYMEX"),   # WTI Crude Oil
-    "UKOIL":  ("B", None, "IPE"),      # Brent Oil
-    "NATGAS": ("NG", None, "NYMEX"),   # Natural Gas
-
+    "USOIL": ("CL", None, "NYMEX"),  # WTI Crude Oil
+    "UKOIL": ("B", None, "IPE"),  # Brent Oil
+    "NATGAS": ("NG", None, "NYMEX"),  # Natural Gas
     # Agriculture
-    "WHEAT":  ("ZW", None, "CBOT"),    # Wheat
-    "CORN":   ("ZC", None, "CBOT"),    # Corn
-    "SOYBEAN": ("ZS", None, "CBOT"),   # Soybeans
-
+    "WHEAT": ("ZW", None, "CBOT"),  # Wheat
+    "CORN": ("ZC", None, "CBOT"),  # Corn
+    "SOYBEAN": ("ZS", None, "CBOT"),  # Soybeans
     # Stocks (example)
-    "AAPL":   ("AAPL", None, "SMART"),
-    "MSFT":   ("MSFT", None, "SMART"),
-    "GOOGL":  ("GOOGL", None, "SMART"),
-    "TSLA":   ("TSLA", None, "SMART"),
+    "AAPL": ("AAPL", None, "SMART"),
+    "MSFT": ("MSFT", None, "SMART"),
+    "GOOGL": ("GOOGL", None, "SMART"),
+    "TSLA": ("TSLA", None, "SMART"),
 }
 
 # ── Interval mapping ─────────────────────────────────────────────────────────
 IB_INTERVAL_MAP = {
-    "1m":  "1 min",
-    "5m":  "5 mins",
+    "1m": "1 min",
+    "5m": "5 mins",
     "15m": "15 mins",
-    "1h":  "1 hour",
-    "4h":  "4 hours",
-    "1d":  "1 day",
-    "1w":  "1 week",
+    "1h": "1 hour",
+    "4h": "4 hours",
+    "1d": "1 day",
+    "1w": "1 week",
 }
 
 
@@ -206,7 +200,9 @@ class IBClient(ExchangeAdapter):
                 endDateTime="",  # End at today
                 durationStr=f"{limit} D",  # Duration (naive, adjust as needed)
                 barSizeSetting=IB_INTERVAL_MAP[interval],
-                whatToShow="MIDPOINT" if symbol.upper().startswith(("EUR", "GBP")) else "TRADES",
+                whatToShow="MIDPOINT"
+                if symbol.upper().startswith(("EUR", "GBP"))
+                else "TRADES",
                 useRTH=True,  # Regular trading hours only
                 formatDate=1,  # 1=yyyyMMdd HH:mm:ss
             )
@@ -263,8 +259,8 @@ class IBClient(ExchangeAdapter):
                 "bid_size": int(tick.bidSize) if tick.bidSize else 0,
                 "ask_size": int(tick.askSize) if tick.askSize else 0,
                 "spread": (float(tick.ask) - float(tick.bid))
-                    if tick.bid and tick.ask
-                    else None,
+                if tick.bid and tick.ask
+                else None,
             }
 
             logger.debug("ib_orderbook_fetched", symbol=symbol)
@@ -357,7 +353,9 @@ class IBClient(ExchangeAdapter):
             return {"order_id": order_id, "status": "NOT_FOUND"}
 
         except Exception as e:
-            logger.error("ib_order_cancellation_failed", order_id=order_id, error=str(e))
+            logger.error(
+                "ib_order_cancellation_failed", order_id=order_id, error=str(e)
+            )
             raise
 
     async def get_order_status(self, symbol: str, order_id: str) -> dict:
@@ -378,15 +376,20 @@ class IBClient(ExchangeAdapter):
                         "order_id": order_id,
                         "symbol": symbol,
                         "status": status_map.get(trade.orderStatus, trade.orderStatus),
-                        "filled": trade.fills[-1].execution.shares if trade.fills else 0,
-                        "remaining": trade.order.totalQuantity - (
-                            trade.fills[-1].execution.shares if trade.fills else 0
-                        ),
-                        "avg_price": trade.fills[-1].execution.price if trade.fills else None,
+                        "filled": trade.fills[-1].execution.shares
+                        if trade.fills
+                        else 0,
+                        "remaining": trade.order.totalQuantity
+                        - (trade.fills[-1].execution.shares if trade.fills else 0),
+                        "avg_price": trade.fills[-1].execution.price
+                        if trade.fills
+                        else None,
                     }
 
             return {"order_id": order_id, "status": "NOT_FOUND"}
 
         except Exception as e:
-            logger.error("ib_order_status_fetch_failed", order_id=order_id, error=str(e))
+            logger.error(
+                "ib_order_status_fetch_failed", order_id=order_id, error=str(e)
+            )
             raise

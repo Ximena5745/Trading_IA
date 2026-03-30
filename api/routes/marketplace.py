@@ -34,6 +34,7 @@ def _get_mp() -> StrategyMarketplace:
 
 # ── Request models ─────────────────────────────────────────────────────────
 
+
 class PublishRequest(BaseModel):
     strategy_id: str
     name: str
@@ -53,6 +54,7 @@ class SubscribeRequest(BaseModel):
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
+
 
 @router.get("")
 async def list_listings(
@@ -85,7 +87,9 @@ async def get_listing(listing_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail=f"Listing {listing_id} not found")
 
 
-@router.post("", dependencies=[Depends(require_trader)], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", dependencies=[Depends(require_trader)], status_code=status.HTTP_201_CREATED
+)
 async def publish_strategy(body: PublishRequest, user=Depends(get_current_user)):
     """Publish a registered strategy to the marketplace."""
     mp = _get_mp()
@@ -113,7 +117,9 @@ async def approve_listing(listing_id: str, user=Depends(get_current_user)):
 
 
 @router.post("/{listing_id}/reject", dependencies=[Depends(require_admin)])
-async def reject_listing(listing_id: str, reason: str = "", user=Depends(get_current_user)):
+async def reject_listing(
+    listing_id: str, reason: str = "", user=Depends(get_current_user)
+):
     """Admin: reject a pending listing."""
     mp = _get_mp()
     try:
@@ -124,7 +130,9 @@ async def reject_listing(listing_id: str, reason: str = "", user=Depends(get_cur
 
 
 @router.post("/{listing_id}/subscribe")
-async def subscribe(listing_id: str, body: SubscribeRequest, user=Depends(get_current_user)):
+async def subscribe(
+    listing_id: str, body: SubscribeRequest, user=Depends(get_current_user)
+):
     """Subscribe to a marketplace listing."""
     mp = _get_mp()
     try:
@@ -160,7 +168,9 @@ async def my_subscriptions(user=Depends(get_current_user)):
 
 
 @router.post("/{listing_id}/reviews", status_code=status.HTTP_201_CREATED)
-async def add_review(listing_id: str, body: ReviewRequest, user=Depends(get_current_user)):
+async def add_review(
+    listing_id: str, body: ReviewRequest, user=Depends(get_current_user)
+):
     """Submit a rating and review for a listing."""
     mp = _get_mp()
     try:

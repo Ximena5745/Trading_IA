@@ -92,9 +92,13 @@ class TestMicrostructureIgnoredForForex:
         """Micro agent strongly bullish, tech+regime neutral → NEUTRAL for EURUSD."""
         engine = ConsensusEngine()
         outputs = [
-            make_output("technical_v1",      symbol="EURUSD", direction="NEUTRAL", score=0.0),
-            make_output("regime_v1",          symbol="EURUSD", direction="NEUTRAL", score=0.0),
-            make_output("microstructure_v1",  symbol="EURUSD", direction="BUY",     score=1.0),
+            make_output(
+                "technical_v1", symbol="EURUSD", direction="NEUTRAL", score=0.0
+            ),
+            make_output("regime_v1", symbol="EURUSD", direction="NEUTRAL", score=0.0),
+            make_output(
+                "microstructure_v1", symbol="EURUSD", direction="BUY", score=1.0
+            ),
         ]
         result = engine.aggregate(outputs, make_regime(symbol="EURUSD"))
         assert result.final_direction == "NEUTRAL"
@@ -103,9 +107,11 @@ class TestMicrostructureIgnoredForForex:
         """All three agents BUY for BTCUSDT → microstructure contributes → BUY."""
         engine = ConsensusEngine()
         outputs = [
-            make_output("technical_v1",      symbol="BTCUSDT", direction="BUY", score=0.6),
-            make_output("regime_v1",          symbol="BTCUSDT", direction="BUY", score=0.7),
-            make_output("microstructure_v1",  symbol="BTCUSDT", direction="BUY", score=0.5),
+            make_output("technical_v1", symbol="BTCUSDT", direction="BUY", score=0.6),
+            make_output("regime_v1", symbol="BTCUSDT", direction="BUY", score=0.7),
+            make_output(
+                "microstructure_v1", symbol="BTCUSDT", direction="BUY", score=0.5
+            ),
         ]
         result = engine.aggregate(outputs, make_regime(symbol="BTCUSDT"))
         assert result.final_direction == "BUY"
@@ -120,9 +126,11 @@ class TestWeightedScoreCalculation:
         engine = ConsensusEngine()
         # All scoring 1.0 — max possible weighted score
         outputs = [
-            make_output("technical_v1",     symbol="BTCUSDT", score=1.0, direction="BUY"),
-            make_output("regime_v1",         symbol="BTCUSDT", score=1.0, direction="BUY"),
-            make_output("microstructure_v1", symbol="BTCUSDT", score=1.0, direction="BUY"),
+            make_output("technical_v1", symbol="BTCUSDT", score=1.0, direction="BUY"),
+            make_output("regime_v1", symbol="BTCUSDT", score=1.0, direction="BUY"),
+            make_output(
+                "microstructure_v1", symbol="BTCUSDT", score=1.0, direction="BUY"
+            ),
         ]
         result = engine.aggregate(outputs, make_regime("BTCUSDT"))
         # weighted_score should be 1.0 (all agents at 1.0, weights sum to 1.0)
@@ -134,9 +142,11 @@ class TestWeightedScoreCalculation:
         # tech=1.0, regime=1.0 → weighted=(1.0×0.55 + 1.0×0.45)/(0.55+0.45) = 1.0
         # micro=0.0 (SELL) — should NOT pull the score down
         outputs = [
-            make_output("technical_v1",     symbol="EURUSD", score=1.0,   direction="BUY"),
-            make_output("regime_v1",         symbol="EURUSD", score=1.0,   direction="BUY"),
-            make_output("microstructure_v1", symbol="EURUSD", score=-1.0,  direction="SELL"),
+            make_output("technical_v1", symbol="EURUSD", score=1.0, direction="BUY"),
+            make_output("regime_v1", symbol="EURUSD", score=1.0, direction="BUY"),
+            make_output(
+                "microstructure_v1", symbol="EURUSD", score=-1.0, direction="SELL"
+            ),
         ]
         result = engine.aggregate(outputs, make_regime("EURUSD"))
         # micro with 0 weight doesn't affect score or agreement
@@ -159,8 +169,10 @@ class TestRegimeVetoUnaffectedByWeightMode:
     def test_regime_veto_blocks_btcusdt(self):
         engine = ConsensusEngine()
         outputs = [
-            make_output("technical_v1",     symbol="BTCUSDT", score=0.9, direction="BUY"),
-            make_output("microstructure_v1", symbol="BTCUSDT", score=0.8, direction="BUY"),
+            make_output("technical_v1", symbol="BTCUSDT", score=0.9, direction="BUY"),
+            make_output(
+                "microstructure_v1", symbol="BTCUSDT", score=0.8, direction="BUY"
+            ),
         ]
         result = engine.aggregate(outputs, make_regime("BTCUSDT", signal_allowed=False))
         assert result.final_direction == "NEUTRAL"
