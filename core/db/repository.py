@@ -10,7 +10,7 @@ import json
 from datetime import datetime, timezone
 
 from core.db.session import get_pool
-from core.models import Order, Portfolio, Signal
+from core.models import Portfolio, Signal
 from core.observability.logger import get_logger
 
 logger = get_logger(__name__)

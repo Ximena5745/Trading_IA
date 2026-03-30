@@ -4,7 +4,6 @@ Covers: spread cost, swap cost, crypto fallback, net_pnl reduction.
 """
 from __future__ import annotations
 
-import pytest
 
 from core.backtesting.costs import CostModel
 from core.models import AssetClass, InstrumentConfig
