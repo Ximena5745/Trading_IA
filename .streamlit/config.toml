@@ -1,0 +1,11 @@
+[theme]
+primaryColor = "#D4AF37"
+backgroundColor = "#0a0a0f"
+secondaryBackgroundColor = "#12121a"
+textColor = "#ffffff"
+
+[server]
+headless = true
+
+[runner]
+magicEnabled = true
