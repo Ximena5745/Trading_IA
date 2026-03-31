@@ -41,3 +41,7 @@ apscheduler==3.10.4
 
 # HTTP client (FundamentalAgent) — pin below 0.28 to avoid starlette TestClient breakage
 httpx>=0.23.0,<0.28.0
+
+# Dashboard
+streamlit>=1.35.0
+plotly>=5.18.0
