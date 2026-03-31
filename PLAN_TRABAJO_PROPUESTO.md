@@ -112,11 +112,11 @@ El proyecto tiene todo el código pero:
 
 #### Día 1: Configuración base
 
-- [ ] Verificar que Docker Desktop está instalado y corriendo
-- [ ] Ejecutar `docker-compose up -d db redis` para levantar servicios
-- [ ] Crear `.env` desde `.env.example` con valores mínimos
-- [ ] Verificar conectividad: `docker-compose exec db psql -U trader -d trader_ai -c "SELECT 1"`
-- [ ] Ejecutar schema SQL: `docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_initial_schema.sql`
+- [x] Verificar que Docker Desktop está instalado y corriendo
+- [x] Ejecutar `docker-compose up -d db redis` para levantar servicios
+- [x] Crear `.env` desde `.env.example` con valores mínimos
+- [x] Verificar conectividad: `docker-compose exec db psql -U trader -d trader_ai -c "SELECT 1"`
+- [x] Ejecutar schema SQL: `docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_initial_schema.sql`
 
 ```bash
 # Comandos rápidos
@@ -128,11 +128,11 @@ docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_in
 
 #### Día 2: API y Dashboard
 
-- [ ] Instalar dependencias: `pip install -r requirements.txt`
-- [ ] Iniciar API: `uvicorn api.main:app --reload --port 8000`
-- [ ] Verificar health: `curl http://localhost:8000/health`
-- [ ] Iniciar Dashboard: `streamlit run app/dashboard.py --server.port 8501`
-- [ ] Verificar que ambas interfaces cargan sin errores
+- [x] Instalar dependencias: `pip install -r requirements.txt`
+- [x] Iniciar API: `uvicorn api.main:app --reload --port 8000`
+- [x] Verificar health: `curl http://localhost:8000/health`
+- [x] Iniciar Dashboard: `streamlit run app/dashboard.py --server.port 8501`
+- [x] Verificar que ambas interfaces cargan sin errores
 
 #### Día 3: Test del sistema completo
 

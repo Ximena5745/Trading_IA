@@ -1,0 +1,20 @@
+# ============================================================
+# Data Download & Processing Dependencies
+# Para FASE 1: Descarga de Datos Reales
+# ============================================================
+
+# Data handling
+pandas>=2.0.0
+pyarrow>=14.0.0          # Parquet I/O
+numpy>=1.24.0
+
+# Descarga de datos
+yfinance>=0.2.31         # Yahoo Finance (Forex, Commodities, Índices)
+requests>=2.31.0         # HTTP requests (Binance API)
+
+# Utilidades
+tqdm>=4.65.0             # Barra de progreso
+python-dotenv>=1.0.0     # Variables de entorno
+
+# Validación y logging
+pydantic>=2.0.0
