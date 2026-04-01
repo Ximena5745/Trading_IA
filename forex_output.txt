@@ -1,0 +1,21 @@
+2026-03-31 14:07:24,352 [INFO] Descargando EURUSD (EURUSD=X) 2y 1h...
+2026-03-31 14:07:28,219 [ERROR] Error al descargar EURUSD: "['timestamp'] not in index"
+2026-03-31 14:07:28,219 [INFO] Descargando GBPUSD (GBPUSD=X) 2y 1h...
+2026-03-31 14:07:30,245 [ERROR] Error al descargar GBPUSD: "['timestamp'] not in index"
+2026-03-31 14:07:30,246 [INFO] Descargando USDJPY (USDJPY=X) 2y 1h...
+Traceback (most recent call last):
+  File "C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\scripts\download_forex.py", line 107, in <module>
+    main()
+  File "C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\scripts\download_forex.py", line 91, in main
+    path = download_symbol(symbol, DEFAULT_SYMBOLS[symbol], args.years, args.interval)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ximen\OneDrive\Proyectos_DS\Trading IA\scripts\download_forex.py", line 33, in download_symbol
+    df = yf.download(
+         ^^^^^^^^^^^^
+  File "C:\Users\ximen\AppData\Local\Programs\Python\Python312\Lib\site-packages\yfinance\utils.py", line 95, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ximen\AppData\Local\Programs\Python\Python312\Lib\site-packages\yfinance\multi.py", line 158, in download
+    _time.sleep(0.01)
+KeyboardInterrupt
+^C

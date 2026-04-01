@@ -199,6 +199,48 @@ El archivo `scripts/migrations/001_initial_schema.sql` ya existe. Hay dos opcion
 docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_initial_schema.sql
 ```
 
+---
+
+## 🟦 Estado actual (a la fecha 2026-03-31)
+
+### FASE 1: Descarga y preparación de datos (Completada)
+- Arquitectura de datos en `scripts/download_all_forex.py` entregada y probada.
+- Símbolos: EURUSD, GBPUSD, USDJPY, XAUUSD, US500, US30.
+- Temporalidades: 1h, 4h, 1d, 1wk, 1mo, 6mo, 1y.
+- Guardado dual: `data/raw/parquet/...` y `data/raw/csv/...`.
+- Validaciones implementadas: timestamps, OHLCV, volumes, duplicados, NaNs.
+- Ajustes y correcciones resueltos:
+  - 730d intradía (1h,4h) con Yahoo limite histórico.
+  - Resample semestral/anual con `6ME` / `1YE`.
+  - Columnas MultiIndex normalizadas.
+
+### FASE 2: Feature engineering y modelado (En curso / próximas tareas)
+- Prioridad inmediata:
+  - Generar indicadores técnicos (SMA, EMA, RSI, ATR, MACD) para cada timeframe.
+  - Fijar targets de entrenamiento (e.g., `futuro_1h_pct`, `up_down_binario`).
+  - Crear split temporal Train/Val/Test y escalar características.
+- Entrenamiento recomendado:
+  - LightGBM para cada timeframe separada.
+  - Guardar modelos en `data/models/<symbol>_<tf>.pkl`.
+- Evaluación:
+  - Métricas: Sharpe, Win Rate, Profit Factor, F1 Score, MASE.
+  - Backtest cross-validation Walk-forward.
+
+### FASE 3: Backtesting y transición a paper trading
+- Integrar modelos entrenados en `core/backtesting/`.
+- Implementar sesión de ejecución con señales y modelo en `core/execution/`.
+- Verificar con métricas de riesgo (DD, drawdowns, max positions).
+
+### FASE 4: Deploy y monitorización
+- Levantar API `api/main.py` + scheduler cron de inferencia cada 1h.
+- Añadir monitoreo Prometheus + alertas Slack/Telegram.
+- CI/CD con pruebas A/B, gates de calidad.
+
+---
+
+> Nota: Esta sección se actualiza automáticamente tras cada sprint en el backlog de tareas y cada commit relevante en `feature/data-download`.
+
+
 **Opción robusta (Alembic):**
 ```bash
 alembic init alembic

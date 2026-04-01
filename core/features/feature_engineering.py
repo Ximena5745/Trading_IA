@@ -19,20 +19,29 @@ class FeatureEngine:
     def __init__(self, feature_version: str = "v1"):
         self._version = feature_version
 
-    def calculate(self, ohlcv_df: pd.DataFrame) -> FeatureSet:
+    def calculate(self, ohlcv_df: pd.DataFrame, symbol: str | None = None) -> FeatureSet:
         """
         Full pipeline: raw OHLCV DataFrame → validated FeatureSet.
         Raises FeatureCalculationError if data is insufficient or invalid.
         """
         enriched = calculate_all(ohlcv_df)
         last = enriched.iloc[-1]
-        return self._to_feature_set(last, ohlcv_df["symbol"].iloc[-1])
+        symbol_value = symbol
+        if symbol_value is None and "symbol" in ohlcv_df.columns:
+            symbol_value = str(ohlcv_df["symbol"].iloc[-1])
+        if symbol_value is None:
+            symbol_value = ""
+        return self._to_feature_set(last, symbol_value)
 
-    def calculate_batch(self, ohlcv_df: pd.DataFrame) -> list[FeatureSet]:
+    def calculate_batch(self, ohlcv_df: pd.DataFrame, symbol: str | None = None) -> list[FeatureSet]:
         """Calculate features for every row (use for backtesting)."""
         enriched = calculate_all(ohlcv_df)
-        symbol = ohlcv_df["symbol"].iloc[0]
-        return [self._to_feature_set(row, symbol) for _, row in enriched.iterrows()]
+        symbol_value = symbol
+        if symbol_value is None and "symbol" in ohlcv_df.columns:
+            symbol_value = str(ohlcv_df["symbol"].iloc[0])
+        if symbol_value is None:
+            symbol_value = ""
+        return [self._to_feature_set(row, symbol_value) for _, row in enriched.iterrows()]
 
     def _to_feature_set(self, row: pd.Series, symbol: str) -> FeatureSet:
         try:

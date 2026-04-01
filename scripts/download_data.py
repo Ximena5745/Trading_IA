@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import io
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,6 +26,11 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import io
+import sys
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 from core.observability.logger import configure_logging, get_logger
 
