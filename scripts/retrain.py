@@ -59,6 +59,7 @@ def _load_parquet(symbol: str, timeframe: str) -> pd.DataFrame | None:
 
 def _build_features_and_labels(
     df: pd.DataFrame,
+    symbol: str,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns (X, y) where:
@@ -66,7 +67,7 @@ def _build_features_and_labels(
       y: binary label — 1 if next candle close > current close, else 0
     """
     engine = FeatureEngine()
-    feature_sets = engine.calculate_batch(df)
+    feature_sets = engine.calculate_batch(df, symbol=symbol)
 
     if len(feature_sets) < 2:
         raise ValueError("Insufficient data for training (need at least 2 rows)")
@@ -106,7 +107,7 @@ def retrain(asset_class: str, timeframe: str, symbols: list[str]) -> None:
             )
             continue
         try:
-            X, y = _build_features_and_labels(df)
+            X, y = _build_features_and_labels(df, symbol=symbol)
             all_X.append(X)
             all_y.append(y)
             print(f"   {symbol}: {len(X):,} samples, class balance {y.mean():.2%} BUY")

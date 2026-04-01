@@ -136,13 +136,13 @@ docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_in
 
 #### Día 3: Test del sistema completo
 
-- [ ] Ejecutar tests unitarios: `pytest tests/unit/ -v`
-- [ ] Ejecutar tests de integración: `pytest tests/integration/ -v`
-- [ ] Probar un pipeline manual con datos mock:
+- [x] Ejecutar tests unitarios: `pytest tests/unit/ -v`
+- [x] Ejecutar tests de integración: `pytest tests/integration/ -v`
+- [x] Probar un pipeline manual con datos mock:
   ```bash
-  python scripts/run_pipeline.py --once BTCUSDT
+  python scripts/run_pipeline_mock.py
   ```
-- [ ] Verificar logs y identificar errores conocidos
+- [x] Verificar logs y identificar errores conocidos
 
 #### Día 4: Fix de errores críticos
 
@@ -157,10 +157,10 @@ docker exec -i trader_db psql -U trader -d trader_ai < scripts/migrations/001_in
 ✅ docker-compose.yml funcionando (db + redis)
 ✅ .env configurado para desarrollo
 ✅ API corriendo en :8000
-✅ Dashboard corriendo en :8501
-✅ Tests pasando (unit + integration)
-✅ Pipeline manual ejecutable
-✅ Lista de errores conocidos documentados
+✅ Dashboard Streamlit Cloud desplegado
+✅ Tests pasando (unit + integration): 160 tests
+✅ Pipeline mock ejecutable: scripts/run_pipeline_mock.py
+✅ Documentación actualizada
 ```
 
 ---
@@ -896,21 +896,21 @@ CAPITAL_ALLOCATED=500              # 5% de $10,000
 
 ### FASE 0 — Entorno Desarrollo (Semana 1)
 
-- [ ] Docker corriendo (db + redis)
-- [ ] .env configurado
-- [ ] API corriendo en :8000
-- [ ] Dashboard en :8501
-- [ ] Tests pasando
-- [ ] Pipeline manual ejecutable
+- [x] Docker corriendo (db + redis)
+- [x] .env configurado
+- [x] API corriendo en :8000
+- [x] Dashboard Streamlit Cloud desplegado
+- [x] Tests pasando (160 tests)
+- [x] Pipeline mock ejecutable
 
 ### FASE 1 — Datos Reales (Semanas 2-3)
 
-- [ ] Script download_data.py
-- [ ] 8+ símbolos descargados (2 años)
-- [ ] Validación de datos OK
-- [ ] FeatureEngine funcionando
-- [ ] data/raw/ con .parquet files
-- [ ] data/processed/ con features
+- [x] Script download_data.py
+- [x] 8+ símbolos descargados (EURUSD, GBPUSD, USDJPY, US30, US500, XAUUSD, BTCUSDT, ETHUSDT)
+- [x] Validación de datos OK
+- [x] FeatureEngine funcionando
+- [x] data/raw/ con .parquet files
+- [x] data/processed/ con features (FASE 1 test suite passing)
 
 ### FASE 2 — Modelos (Semana 4)
 

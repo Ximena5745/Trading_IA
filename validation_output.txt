@@ -1,0 +1,31 @@
+Iniciando validación simple...
+Archivos encontrados: 4
+Procesando btcusdt_1h.parquet...
+  Filas: 17995
+  Columnas: ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+  Rango: 2024-03-11 12:00:00+00:00 a 2026-03-31 06:00:00+00:00
+  High >= OHLC: True
+  Low <= OHLC: True
+  ERROR: 'charmap' codec can't encode character '\u2713' in position 2: character maps to <undefined>
+Procesando btcusdt_4h.parquet...
+  Filas: 5000
+  Columnas: ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+  Rango: 2023-12-19 00:00:00+00:00 a 2026-03-31 04:00:00+00:00
+  High >= OHLC: True
+  Low <= OHLC: True
+  ERROR: 'charmap' codec can't encode character '\u2713' in position 2: character maps to <undefined>
+Procesando ethusdt_1h.parquet...
+  Filas: 18000
+  Columnas: ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+  Rango: 2024-03-11 07:00:00+00:00 a 2026-03-31 06:00:00+00:00
+  High >= OHLC: True
+  Low <= OHLC: True
+  ERROR: 'charmap' codec can't encode character '\u2713' in position 2: character maps to <undefined>
+Procesando ethusdt_4h.parquet...
+  Filas: 5000
+  Columnas: ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+  Rango: 2023-12-19 00:00:00+00:00 a 2026-03-31 04:00:00+00:00
+  High >= OHLC: True
+  Low <= OHLC: True
+  ERROR: 'charmap' codec can't encode character '\u2713' in position 2: character maps to <undefined>
+Validación completada.

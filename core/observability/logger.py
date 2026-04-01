@@ -6,10 +6,22 @@ Dependencies: structlog
 from __future__ import annotations
 
 import logging
-import structlog
+
+try:
+    import structlog
+except ImportError:
+    structlog = None  # type: ignore
 
 
 def configure_logging(log_level: str = "INFO") -> None:
+    if structlog is None:
+        # Fallback to estándar cuando structlog no está instalado
+        logging.basicConfig(
+            level=getattr(logging, log_level.upper(), logging.INFO),
+            format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        )
+        return
+
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -27,5 +39,7 @@ def configure_logging(log_level: str = "INFO") -> None:
     )
 
 
-def get_logger(name: str) -> structlog.BoundLogger:
+def get_logger(name: str):
+    if structlog is None:
+        return logging.getLogger(name)
     return structlog.get_logger(name)

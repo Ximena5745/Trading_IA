@@ -158,7 +158,11 @@ async def run_mock_pipeline():
         consensus_out = consensus.aggregate(
             [tech_output, regime_output], regime_classified
         )
-        print(f"   Consensus: {consensus_out.action}, conf={consensus_out.confidence:.3f}")
+        # ConsensusOutput fields: final_direction, weighted_score, agents_agreement
+        print(
+            f"   Consensus: {consensus_out.final_direction}, weighted_score={consensus_out.weighted_score:.3f}, "
+            f"agreements={consensus_out.agents_agreement:.2f}"
+        )
 
         # Signal generation
         signal = signal_engine.generate(consensus_out, features, strategy_id="mock_v1")
@@ -221,14 +225,18 @@ async def run_mock_pipeline():
     print(f"   Portfolio state:")
     final = portfolio.get_portfolio()
     print(f"     Total Capital:   ${final.total_capital:,.2f}")
-    print(f"     Available:       ${final.capital_available:,.2f}")
-    print(f"     Open Positions:  {final.open_positions}")
+    print(f"     Available:       ${final.available_capital:,.2f}")
+    print(f"     Open Positions:  {len(final.positions)}")
     print(f"     Daily P&L:       {final.daily_pnl_pct:.2%}")
     print()
 
     # Cleanup
-    await feature_store.disconnect()
-    await close_pool()
+    # feature_store has connect/save; no explicit disconnect() method
+    # Ensure a clean exit by closing the DB pool if applicable
+    try:
+        await close_pool()
+    except Exception:
+        pass
     print("✅ Cleanup complete")
     print()
     print("🎉 Pipeline mock test PASSED — all components working!")
