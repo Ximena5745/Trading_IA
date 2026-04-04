@@ -1,272 +1,316 @@
 """
 Module: app/dashboard.py
-Responsibility: Streamlit dashboard entry point - Professional Trading Interface
+Responsibility: Streamlit dashboard entry point — TRADER IA Design System v1.0
 Dependencies: streamlit
 """
 import streamlit as st
 
 st.set_page_config(
-    page_title="TRADER AI",
+    page_title="TRADER IA",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown("""
 <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    /* Global Styles */
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700');
+
+    :root {
+        --bg0:    #0a0d11;
+        --bg1:    #0f1318;
+        --bg2:    #151a22;
+        --bg3:    #1c2330;
+        --bg4:    #232c3b;
+        --border:  rgba(255,255,255,0.07);
+        --border2: rgba(255,255,255,0.13);
+        --text1: #e8edf5;
+        --text2: #8c99b0;
+        --text3: #4d5a70;
+        --green:  #00d084;
+        --green2: rgba(0,208,132,0.12);
+        --red:    #ff4757;
+        --red2:   rgba(255,71,87,0.12);
+        --blue:   #3d8ef8;
+        --blue2:  rgba(61,142,248,0.12);
+        --amber:  #f5a623;
+        --amber2: rgba(245,166,35,0.12);
+        --purple: #a78bfa;
+        --mono: 'JetBrains Mono', monospace;
+        --sans: 'Syne', sans-serif;
+    }
+
     .stApp {
-        background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 50%, #0f0f1a 100%);
-        font-family: 'Inter', sans-serif;
+        background: var(--bg0);
+        font-family: var(--sans);
+        color: var(--text1);
     }
-    
-    /* Hide default Streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0a0a0f 0%, #12121a 100%);
-        border-right: 1px solid #1a1a2e;
-    }
-    
-    [data-testid="stSidebar"] .stMarkdown {
-        color: #ffffff;
-    }
-    
-    /* Headers */
+
+    #MainMenu, footer, header { visibility: hidden; }
+
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Inter', sans-serif;
+        font-family: var(--sans);
         font-weight: 600;
-        color: #d4af37 !important;
-        letter-spacing: -0.02em;
+        color: var(--text1) !important;
+        letter-spacing: -0.01em;
     }
-    
-    h1 { font-size: 2.2rem; }
-    h2 { font-size: 1.6rem; }
-    h3 { font-size: 1.3rem; }
-    
-    /* Metrics */
-    div[data-testid="stMetric"] {
-        background: linear-gradient(135deg, #12121a 0%, #1a1a2e 100%);
-        border: 1px solid #2a2a3e;
-        border-radius: 12px;
-        padding: 16px 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.3rem; }
+    h3 { font-size: 1.1rem; }
+
+    [data-testid="stMetric"] {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
     }
-    
-    div[data-testid="stMetric"] label {
-        color: #8888a0 !important;
-        font-size: 0.85rem;
-        font-weight: 500;
+    [data-testid="stMetric"] label {
+        color: var(--text3) !important;
+        font-family: var(--sans);
+        font-size: 10px;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.8px;
     }
-    
-    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        color: #ffffff !important;
-        font-weight: 700;
-        font-size: 1.5rem;
-    }
-    
-    /* Buttons */
-    .stButton > button {
-        background: linear-gradient(135deg, #d4af37 0%, #b8960b 100%);
-        color: #0a0a0f;
-        border: none;
-        border-radius: 8px;
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: var(--text1) !important;
+        font-family: var(--mono);
         font-weight: 600;
-        padding: 12px 24px;
-        transition: all 0.3s ease;
+        font-size: 22px;
     }
-    
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #ffd700 0%, #d4af37 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+    [data-testid="stMetric"] [data-testid="stMetricDelta"] {
+        font-family: var(--mono);
+        font-size: 11px;
     }
-    
-    /* Select boxes */
-    .stSelectbox > div > div {
-        background: #12121a;
-        border: 1px solid #2a2a3e;
-        border-radius: 8px;
-        color: #ffffff;
-    }
-    
-    /* DataFrames */
-    [data-testid="stDataFrame"] {
-        border: 1px solid #2a2a3e;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    
-    /* Expanders */
-    .stExpander {
-        background: #12121a;
-        border: 1px solid #2a2a3e;
-        border-radius: 12px;
-    }
-    
-    .stExpander > summary {
-        color: #d4af37;
-    }
-    
-    /* Alerts */
-    .stAlert {
-        background: #12121a;
-        border-left: 4px solid #4169e1;
-        border-radius: 8px;
-    }
-    
-    /* Dividers */
-    hr {
-        border-color: #2a2a3e;
-    }
-    
-    /* Input fields */
-    .stTextInput > div > div {
-        background: #12121a;
-        border: 1px solid #2a2a3e;
-        border-radius: 8px;
-        color: #ffffff;
-    }
-    
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
+
+    .stButton > button {
         background: transparent;
-        border-radius: 8px 8px 0px 0px;
-        color: #8888a0;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text2);
+        font-family: var(--sans);
+        font-weight: 500;
+        font-size: 12px;
+        padding: 8px 16px;
+        transition: all 0.15s ease;
     }
-    
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #d4af37 0%, #b8960b 100%);
-        color: #0a0a0f;
+    .stButton > button:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue2);
     }
-    
-    /* Custom cards */
-    .custom-card {
-        background: linear-gradient(135deg, #12121a 0%, #1a1a2e 100%);
-        border: 1px solid #2a2a3e;
-        border-radius: 16px;
-        padding: 24px;
-        margin: 12px 0;
+
+    [data-testid="stSelectbox"] > div > div {
+        background: var(--bg4);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text1);
+        font-family: var(--mono);
+        font-size: 11px;
     }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+
+    [data-testid="stDataFrame"] {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
     }
-    
-    ::-webkit-scrollbar-track {
-        background: #0a0a0f;
+
+    [data-testid="stExpander"] {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
     }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #2a2a3e;
-        border-radius: 4px;
+
+    .stAlert {
+        background: var(--bg2);
+        border-left: 3px solid var(--blue);
+        border-radius: 6px;
     }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #3a3a4e;
+
+    hr { border-color: var(--border); }
+
+    [data-testid="stTextInput"] > div > div {
+        background: var(--bg4);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text1);
+        font-family: var(--mono);
     }
+
+    [data-testid="stTabs"] [data-baseweb="tab-list"] { gap: 4px; }
+    [data-testid="stTabs"] [data-baseweb="tab"] {
+        background: transparent;
+        color: var(--text3);
+        font-family: var(--sans);
+        font-size: 11px;
+        font-weight: 500;
+    }
+    [data-testid="stTabs"] [aria-selected="true"] {
+        background: var(--bg3);
+        color: var(--text1);
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg0); }
+    ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--bg4); }
+
+    .card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .badge-buy {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: var(--green2);
+        color: var(--green);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .badge-sell {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: var(--red2);
+        color: var(--red);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .badge-hold {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: var(--bg3);
+        color: var(--text3);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .badge-watch {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: var(--amber2);
+        color: var(--amber);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .badge-paper {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: var(--amber2);
+        color: var(--amber);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .mono { font-family: var(--mono); }
+    .sans { font-family: var(--sans); }
+    .text1 { color: var(--text1); }
+    .text2 { color: var(--text2); }
+    .text3 { color: var(--text3); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .blue { color: var(--blue); }
+    .amber { color: var(--amber); }
 </style>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-<div style="text-align: center; padding: 20px 0;">
-    <h2 style="color: #d4af37 !important; margin-bottom: 4px;">📈 TRADER AI</h2>
-    <p style="color: #8888a0; font-size: 0.85rem;">Algorithmic Trading Platform</p>
-</div>
-""", unsafe_allow_html=True)
-
-st.sidebar.markdown("---")
-
-menu_items = [
-    {"icon": "📊", "label": "Vista de Mercado", "file": "pages/market_view.py"},
-    {"icon": "⚡", "label": "Señales", "file": "pages/signals.py"},
-    {"icon": "🧠", "label": "Estrategias", "file": "pages/strategies.py"},
-    {"icon": "💼", "label": "Portafolio", "file": "pages/portfolio.py"},
-    {"icon": "🔁", "label": "Backtesting", "file": "pages/backtesting.py"},
-    {"icon": "🎮", "label": "Simulador", "file": "pages/simulator.py"},
-    {"icon": "🛡️", "label": "Riesgo", "file": "pages/risk_monitor.py"},
-]
-
-for item in menu_items:
-    st.sidebar.page_link(item["file"], label=f"{item['icon']} {item['label']}")
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div style="text-align: center; color: #5a5a70; font-size: 0.75rem;">
-    <p>Version 2.0.0</p>
-    <p>Trading Mode: <span style="color: #26a69a;">PAPER</span></p>
-</div>
-""", unsafe_allow_html=True)
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
 st.markdown("""
 <div style="text-align: center; padding: 40px 20px;">
-    <h1 style="font-size: 3rem; margin-bottom: 8px;">📈 TRADER AI</h1>
-    <p style="color: #8888a0; font-size: 1.2rem;">Plataforma de Trading Algorítmico con Inteligencia Artificial</p>
+    <h1 style="font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: #3d8ef8; letter-spacing: 2px; margin-bottom: 8px;">TRADER·IA</h1>
+    <p style="color: #8c99b0; font-size: 1rem; font-family: 'Syne', sans-serif;">Plataforma de Trading Algorítmico con IA Explicable</p>
 </div>
 """, unsafe_allow_html=True)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("Modo", "PAPER", delta=None)
+    st.markdown("""
+<div class="card" style="text-align:center;">
+    <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:600;color:#4d5a70;text-transform:uppercase;letter-spacing:0.8px;">MODO</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:#f5a623;margin-top:4px;">PAPER</div>
+</div>
+""", unsafe_allow_html=True)
 with col2:
-    st.metric("Estrategias", "2")
+    st.markdown("""
+<div class="card" style="text-align:center;">
+    <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:600;color:#4d5a70;text-transform:uppercase;letter-spacing:0.8px;">ESTRATEGIAS</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:#e8edf5;margin-top:4px;">2</div>
+</div>
+""", unsafe_allow_html=True)
 with col3:
-    st.metric("P&G Diario", "$0.00")
+    st.markdown("""
+<div class="card" style="text-align:center;">
+    <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:600;color:#4d5a70;text-transform:uppercase;letter-spacing:0.8px;">P&L DIARIO</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:#e8edf5;margin-top:4px;">$0.00</div>
+</div>
+""", unsafe_allow_html=True)
 with col4:
-    st.metric("Kill Switch", "OFF")
+    st.markdown("""
+<div class="card" style="text-align:center;">
+    <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:600;color:#4d5a70;text-transform:uppercase;letter-spacing:0.8px;">KILL SWITCH</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:#00d084;margin-top:4px;">OFF</div>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
 col_info1, col_info2 = st.columns([2, 1])
 with col_info1:
     st.markdown("""
-    <div class="custom-card">
-        <h3 style="margin-bottom: 16px;">🚀 Bienvenido a TRADER AI</h3>
-        <p style="color: #aaa; line-height: 1.8;">
-            Plataforma profesional de trading algorítmico con análisis de mercado en tiempo real,
-            generación de señales con explicaciones XAI, gestión de riesgo y backtesting.
-        </p>
-        <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
-            <span style="background: #1a1a2e; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem;">📊 Análisis Técnico</span>
-            <span style="background: #1a1a2e; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem;">⚡ Señales IA</span>
-            <span style="background: #1a1a2e; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem;">🛡️ Gestión de Riesgo</span>
-            <span style="background: #1a1a2e; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem;">🔁 Backtesting</span>
-        </div>
+<div class="card">
+    <h3 style="margin-bottom:12px;font-family:'Syne',sans-serif;">Bienvenido a TRADER IA</h3>
+    <p style="color:#8c99b0;line-height:1.8;font-family:'Syne',sans-serif;font-size:0.9rem;">
+        Plataforma profesional de trading algorítmico con análisis de mercado en tiempo real,
+        generación de señales con explicaciones XAI, gestión de riesgo y backtesting.
+    </p>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+        <span class="badge-watch">Análisis Técnico</span>
+        <span class="badge-watch">Señales IA</span>
+        <span class="badge-watch">Gestión de Riesgo</span>
+        <span class="badge-watch">Backtesting</span>
     </div>
-    """, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
 with col_info2:
     st.markdown("""
-    <div class="custom-card">
-        <h4 style="color: #d4af37 !important; margin-bottom: 12px;">⚡ Acciones Rápidas</h4>
-        <p style="color: #8888a0; font-size: 0.9rem; margin-bottom: 16px;">
-            Navega usando el menú lateral para acceder a las diferentes funcionalidades.
-        </p>
+<div class="card">
+    <h4 style="color:#3d8ef8;margin-bottom:12px;font-family:'Syne',sans-serif;">Acceso Rápido</h4>
+    <p style="color:#8c99b0;font-size:0.85rem;margin-bottom:12px;font-family:'Syne',sans-serif;">
+        Usa el menú lateral para navegar entre las páginas del dashboard.
+    </p>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#4d5a70;">
+        v2.0.0 · Paper Trading
     </div>
-    """, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
-with st.expander("ℹ️ Acerca de TRADER AI"):
+with st.expander("Acerca de TRADER IA"):
     st.markdown("""
-    | Característica | Descripción |
-    |---------------|-------------|
-    | **Versión** | 2.0.0 |
-    | **API** | FastAPI |
-    | **Dashboard** | Streamlit |
-    | **Base de Datos** | TimescaleDB (PostgreSQL) |
-    | **Caché** | Redis |
-    | **Modo de Ejecución** | Paper Trading |
-    """)
+| Característica | Descripción |
+|---------------|-------------|
+| **Versión** | 2.0.0 |
+| **API** | FastAPI |
+| **Dashboard** | Streamlit |
+| **Base de Datos** | TimescaleDB (PostgreSQL) |
+| **Caché** | Redis |
+| **Modo de Ejecución** | Paper Trading |
+""")

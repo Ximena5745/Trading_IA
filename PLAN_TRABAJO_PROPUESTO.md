@@ -1,8 +1,8 @@
-# TRADER IA — Plan de Trabajo Propuesto v4.0
+# TRADER IA — Plan de Trabajo Propuesto v5.0
 
-> **Versión:** 4.0.0 | **Fecha:** Marzo 2026 | **Horizonte:** 12 semanas
+> **Versión:** 5.0.0 | **Fecha:** Abril 2026 | **Horizonte:** 14 semanas
 > 
-> **Enfoque:** Entorno de pruebas → Descarga datos reales → Pruebas de modelos → Producción
+> **Enfoque:** Entorno de pruebas → Datos reales → **Frontend Profesional** → Modelos → Pipeline → Paper → Producción
 
 ---
 
@@ -12,12 +12,14 @@
 2. [Nueva Estrategia por Fases](#2-nueva-estrategia-por-fases)
 3. [FASE 0 — Entorno de Desarrollo Local](#3-fase-0--entorno-de-desarrollo-local)
 4. [FASE 1 — Descarga de Datos Reales](#4-fase-1--descarga-de-datos-reales)
-5. [FASE 2 — Entrenamiento de Modelos](#5-fase-2--entrenamiento-de-modelos)
-6. [FASE 3 — Pipeline Automático Funcional](#6-fase-3--pipeline-automático-funcional)
-7. [FASE 4 — Validación Paper Trading](#7-fase-4--validación-paper-trading)
-8. [FASE 5 — Mejoras y Optimización](#8-fase-5--mejoras-y-optimización)
-9. [FASE 6 — Producción Controlada](#9-fase-6--producción-controlada)
-10. [Checklist Maestro](#10-checklist-maestro)
+5. [FASE 2 — Frontend Profesional](#5-fase-2--frontend-profesional) ⭐ **PRIORIDAD**
+6. [FASE 3 — Entrenamiento de Modelos](#6-fase-3--entrenamiento-de-modelos)
+7. [FASE 4 — Pipeline Automático Funcional](#7-fase-4--pipeline-automático-funcional)
+8. [FASE 5 — Validación Paper Trading](#8-fase-5--validación-paper-trading)
+9. [FASE 6 — Mejoras y Optimización](#9-fase-6--mejoras-y-optimización)
+10. [FASE 7 — Producción Controlada](#10-fase-7--producción-controlada)
+11. [Checklist Maestro](#11-checklist-maestro)
+12. [MVP por Fase](#12-mvp-por-fase)
 
 ---
 
@@ -27,11 +29,12 @@
 
 | Problema | Impacto | Propuesta |
 |----------|---------|-----------|
-| Plan muy ambicioso (16 semanas) | Se pierde momentum | Reducir a 12 semanas |
+| Plan muy ambicioso (16 semanas) | Se pierde momentum | Reducir a 14 semanas con frontend prioritario |
 | Fase 0 muy teórica | No genera avances tangibles | Enfoque práctico inmediato |
 | RL y Meta-aprendizaje muy pronto | El sistema no tiene datos suficientes | Mover a Fase 6+ |
-| UI antes que funcionalidad | Prioridades invertidas | UI al final |
+| UI antes que funcionalidad | Prioridades invertidas | **UI después de datos (FASE 2)** |
 | Falta énfasis en datos reales | Sin datos = sin modelos | Fase 1 dedicada a datos |
+| Frontend incompleto | UX no profesional | **FASE 2 dedicada a frontend** |
 
 ### Ventajas del Nuevo Plan
 
@@ -39,6 +42,9 @@
 2. **Datos primero:** Sin datos reales no hay ML real
 3. **Entorno de pruebas:** Prioridad #1 para iterar rápidamente
 4. **Realista:** Considera el estado actual del código (completo pero sin datos)
+5. **Frontend prioritario:** Dashboard profesional para visualizar datos y modelos
+6. **Mejor debugging:** Visualización gráfica facilita identificar problemas
+7. **Demostración:** Stakeholders pueden ver el sistema funcionando
 
 ---
 
@@ -47,50 +53,62 @@
 ### Mapa Visual
 
 ```
-SEMANA →    1     2     3     4     5     6     7     8     9    10    11    12
-            │     │     │     │     │     │     │     │     │     │     │     │
-FASE 0      ██████│     │     │     │     │     │     │     │     │     │     │
-            Entorno│    │     │     │     │     │     │     │     │     │     │
-            Local  │    │     │     │     │     │     │     │     │     │     │
-                   │    │     │     │     │     │     │     │     │     │     │
-FASE 1            │██████│██████│    │     │     │     │     │     │     │     │
-                  │Descarga│Datos│   │     │     │     │     │     │     │     │
-                  │Binance │ MT5 │   │     │     │     │     │     │     │     │
-                  │        │     │   │     │     │     │     │     │     │     │
-FASE 2                  │██████│██████│    │     │     │     │     │     │     │
-                        │Train │Modelos│   │     │     │     │     │     │     │
-                        │LightGBM │ML │   │     │     │     │     │     │     │
-                              │     │   │     │     │     │     │     │     │
-FASE 3                        │██████│██████│██████│    │     │     │     │     │
-                              │Pipeline│Auto-│Valid│    │     │     │     │     │
-                              │  mático │mático│ación│   │     │     │     │     │
-                                       │     │    │     │     │     │     │
-FASE 4                                    │██████│██████│    │     │     │     │
-                                          │Paper │Trading│   │     │     │     │
-                                          │2-4 sem│    │   │     │     │     │
-                                                    │    │   │     │     │
-FASE 5                                              │██████│██████│    │     │
-                                                    │Mejoras│Optim│    │     │
-                                                    │      │     │   │     │
-FASE 6                                                        │██████│██████│██████
-                                                              │Staging│Prod │Live│
-                                                                    │     │    │
+SEMANA →    1     2     3     4     5     6     7     8     9    10    11    12    13    14
+            │     │     │     │     │     │     │     │     │     │     │     │     │     │
+FASE 0      ██████│     │     │     │     │     │     │     │     │     │     │     │     │
+            Entorno│    │     │     │     │     │     │     │     │     │     │     │     │
+            Local  │    │     │     │     │     │     │     │     │     │     │     │     │
+                   │    │     │     │     │     │     │     │     │     │     │     │     │
+FASE 1            │██████│██████│    │     │     │     │     │     │     │     │     │     │
+                  │Descarga│Datos│   │     │     │     │     │     │     │     │     │     │
+                  │Binance │ MT5 │   │     │     │     │     │     │     │     │     │     │
+                  │        │     │   │     │     │     │     │     │     │     │     │     │
+FASE 2                  │██████│██████│    │     │     │     │     │     │     │     │     │
+                        │Frontend│UX   │     │     │     │     │     │     │     │     │     │
+                        │Refactor│Profes│    │     │     │     │     │     │     │     │     │
+                              │     │   │     │     │     │     │     │     │     │     │
+FASE 3                              │██████│    │     │     │     │     │     │     │     │
+                                    │Train │    │     │     │     │     │     │     │     │
+                                    │LightGBM│   │     │     │     │     │     │     │     │
+                                          │   │     │     │     │     │     │     │     │
+FASE 4                                      ██████│██████│    │     │     │     │     │     │
+                                            │Pipeline│Auto-│   │     │     │     │     │     │
+                                            │  mático │mático│   │     │     │     │     │     │
+                                                     │     │ │     │     │     │     │     │
+FASE 5                                                   │██████│██████│██████│    │     │     │
+                                                         │Paper │Trading│Valid│    │     │     │
+                                                         │2-4 sem│    │   │     │     │     │     │
+FASE 6                                                                │██████│██████│    │     │
+                                                                      │Optim │Prod │     │     │
+FASE 7                                                                        ██████│██████│
+                                                                              │Staging│Live │
+                                                                                    │     │
             ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
             ←────────────── DATOS REALES EN TODAS LAS FASES ──────────────────→
-            │     │     │     │     │     │     │     │     │     │     │     │
+            │     │     │     │     │     │     │     │     │     │     │     │     │     │
 ```
 
 ### Resumen por Fase
 
-| Fase | Duración | Objetivo Principal | Entregable |
-|------|----------|-------------------|------------|
-| **FASE 0** | 3-4 días | Entorno funcional | Docker + DB + API corriendo |
-| **FASE 1** | 2 semanas | Datos reales históricos | 2 años de OHLCV por símbolo |
-| **FASE 2** | 1 semana | Modelos entrenados | .pkl files con LightGBM |
-| **FASE 3** | 2 semanas | Pipeline automático | Scheduler ejecutando 12 símbolos |
-| **FASE 4** | 2-4 semanas | Validación | Métricas paper trading reales |
-| **FASE 5** | 2 semanas | Optimización | Pesos dinámicos, mejoras |
-| **FASE 6** | 2 semanas | Producción | Staging → Live controlado |
+| Fase | Duración | Objetivo Principal | Entregable | MVP |
+|------|----------|-------------------|------------|-----|
+| **FASE 0** | 3-4 días | Entorno funcional | Docker + DB + API corriendo | API + Dashboard mock |
+| **FASE 1** | 2 semanas | Datos reales históricos | 2 años de OHLCV por símbolo | 8+ símbolos en parquet |
+| **FASE 2** | 2 semanas | **Frontend profesional** | **Dashboard según design system** | **4 páginas refactorizadas** |
+| **FASE 3** | 1 semana | Modelos entrenados | .pkl files con LightGBM | 3 modelos + SHAP |
+| **FASE 4** | 2 semanas | Pipeline automático | Scheduler ejecutando 12 símbolos | Pipeline 1 símbolo |
+| **FASE 5** | 2-4 semanas | Validación | Métricas paper trading reales | 100+ operaciones |
+| **FASE 6** | 2 semanas | Optimización | Pesos dinámicos, mejoras | Sharpe +0.2 |
+| **FASE 7** | 2 semanas | Producción | Staging → Live controlado | 5% capital live |
+
+### Justificación: ¿Por qué Frontend Primero?
+
+1. **Visualización inmediata:** Permite ver datos reales en tiempo real desde el dashboard
+2. **Mejor debugging:** Gráficas y métricas visuales facilitan identificar problemas del sistema
+3. **Demostración:** Stakeholders pueden ver el sistema funcionando profesionalmente
+4. **Motivación:** Ver progreso tangible mantiene el momentum del equipo
+5. **Monitoreo:** Dashboard profesional es necesario para paper trading (FASE 5)
+6. **Datos ya disponibles:** Con FASE 1 completa, hay datos reales para mostrar
 
 ---
 
@@ -354,13 +372,247 @@ data/
 
 ---
 
-## 5. FASE 2 — Entrenamiento de Modelos
+## 5. FASE 2 — Frontend Profesional ⭐ **PRIORIDAD**
+
+**Duración:** 2 semanas  
+**Objetivo:** Refactorizar dashboard según design system del SKILL.md  
+**Branch:** `feature/frontend-refactor`  
+**MVP:** 4 páginas principales refactorizadas  
+**Prioridad:** **ALTA** - Permite visualizar todo el sistema
+
+### 5.1 Sprint 2.1: Componentes Base — Semana 1
+
+#### Actividades
+
+- [ ] Crear `app/components/` con estructura de módulos
+- [ ] Crear `app/styles/tokens.py` con variables CSS del SKILL.md
+- [ ] Implementar `components/nav.py` — Navigation bar horizontal
+- [ ] Implementar `components/ticker.py` — Ticker bar global
+- [ ] Implementar `components/metrics.py` — Metric cards
+- [ ] Reemplazar `Inter` → `Syne` + `JetBrains Mono` en todos los archivos
+
+#### Código Base: tokens.py
+
+```python
+# app/styles/tokens.py
+CSS_TOKENS = """
+:root {
+  /* ── Fondos (de más oscuro a más claro) ─────────────────── */
+  --bg0:    #0a0d11;   /* fondo raíz / página */
+  --bg1:    #0f1318;   /* nav, ticker bar */
+  --bg2:    #151a22;   /* cards principales */
+  --bg3:    #1c2330;   /* cards secundarias, hover rows */
+  --bg4:    #232c3b;   /* elementos interactivos, inputs */
+
+  /* ── Bordes ──────────────────────────────────────────────── */
+  --border:  rgba(255,255,255,0.07);   /* borde sutil (cards) */
+  --border2: rgba(255,255,255,0.13);   /* borde énfasis (hover) */
+
+  /* ── Texto ───────────────────────────────────────────────── */
+  --text1: #e8edf5;   /* texto principal */
+  --text2: #8c99b0;   /* texto secundario */
+  --text3: #4d5a70;   /* texto terciario / labels */
+
+  /* ── Semánticos ──────────────────────────────────────────── */
+  --green:  #00d084;                    /* BUY, profit, OK */
+  --green2: rgba(0,208,132,0.12);       /* fondo badge verde */
+  --red:    #ff4757;                    /* SELL, loss, danger */
+  --red2:   rgba(255,71,87,0.12);       /* fondo badge rojo */
+  --blue:   #3d8ef8;                    /* info, TechnicalAgent, links */
+  --blue2:  rgba(61,142,248,0.12);      /* fondo badge azul */
+  --amber:  #f5a623;                    /* warning, WATCH, RSI neutro */
+  --amber2: rgba(245,166,35,0.12);      /* fondo badge ámbar */
+  --purple: #a78bfa;                    /* RegimeAgent, consenso */
+
+  /* ── Tipografía ──────────────────────────────────────────── */
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+"""
+```
+
+#### Criterios de Aceptación
+
+```
+✅ Módulo components/ creado
+✅ Nav bar con 4 tabs (Market View, Signals, Portfolio, Risk)
+✅ Ticker bar con 7 símbolos
+✅ Fuentes correctas: Syne (UI) + JetBrains Mono (números)
+✅ Metric cards reutilizables
+```
+
+### 5.2 Sprint 2.2: Market View + Signals — Semana 2 (Parte 1)
+
+#### Actividades - Market View
+
+- [ ] 4 metric cards superiores (Precio, Cambio 24h, Volumen, RSI)
+- [ ] Selector de símbolo tipo pill (no selectbox)
+- [ ] Candlestick con colores correctos (--green, --red)
+- [ ] Mini-charts: RSI, MACD, Bollinger
+- [ ] Panel de agentes (4 filas con score bars)
+- [ ] Consensus gauge SVG
+
+#### Actividades - Signals
+
+- [ ] 4 metric cards (Señales activas, Win rate, Sharpe, R:R promedio)
+- [ ] Tabla de señales con badges (BUY/SELL/WATCH)
+- [ ] SHAP bars horizontales en expander
+- [ ] Recuadro resumen XAI
+
+#### Criterios de Aceptación
+
+```
+✅ Market View refactorizada
+✅ Signals refactorizada
+✅ Componentes reutilizables funcionando
+```
+
+### 5.3 Sprint 2.3: Portfolio + Risk Monitor — Semana 2 (Parte 2)
+
+#### Actividades - Portfolio
+
+- [ ] 4 metric cards (Capital, PnL, Sharpe, Drawdown)
+- [ ] Equity curve con colores correctos
+- [ ] Posiciones abiertas con dots de estado
+- [ ] PnL por símbolo (horizontal bar chart)
+
+#### Actividades - Risk Monitor
+
+- [ ] 4 metric cards (Exposición, Pérdida diaria, Drawdown, Consecutivas)
+- [ ] Progress bars para cada hard limit
+- [ ] Donut chart de exposición por símbolo
+- [ ] Hard limits table con mini bars
+- [ ] Kill switch UI
+
+#### Criterios de Aceptación
+
+```
+✅ Portfolio refactorizada
+✅ Risk Monitor refactorizada
+✅ Responsive (móvil colapsa a 2 columnas)
+✅ 4 páginas principales completas
+```
+
+### 5.4 Arquitectura de Componentes
+
+```
+app/
+├── dashboard.py                    # Entry point con Nav + Ticker
+├── .streamlit/config.toml         # Theme config ✅
+├── styles/
+│   └── tokens.py                  # Variables CSS
+├── components/                     # ← NUEVO: Componentes reutilizables
+│   ├── __init__.py
+│   ├── nav.py                      # Navigation bar
+│   ├── ticker.py                   # Ticker bar
+│   ├── metrics.py                  # Metric cards
+│   ├── shap_bar.py                 # SHAP bars horizontales
+│   ├── consensus_gauge.py          # Gauge SVG para consenso
+│   ├── agent_row.py                # Fila de agente con score
+│   └── kill_switch.py              # Kill switch UI
+└── pages/
+    ├── market_view.py              # Página 1
+    ├── signals.py                  # Página 2
+    ├── portfolio.py                # Página 3
+    └── risk_monitor.py             # Página 4
+```
+
+### 5.5 Comandos de Referencia
+
+```bash
+# Iniciar dashboard en modo desarrollo
+streamlit run app/dashboard.py --server.port 8501 --server.headless true
+
+# Verificar que no haya errores de importación
+python -c "from app.components import nav, ticker, metrics; print('OK')"
+
+# Test de componentes
+pytest tests/unit/test_frontend_components.py -v
+```
+
+### 5.6 Deliverables FASE 2
+
+```
+✅ app/components/ con 7 componentes reutilizables
+✅ app/styles/tokens.py con variables CSS completas
+✅ Navigation bar horizontal (4 tabs)
+✅ Ticker bar global (7 símbolos)
+✅ Market View refactorizada
+✅ Signals refactorizada
+✅ Portfolio refactorizada
+✅ Risk Monitor refactorizada
+✅ Fuentes: Syne (UI) + JetBrains Mono (números)
+✅ Responsive design (móvil/desktop)
+```
+
+---
+
+## 6. FASE 3 — Entrenamiento de Modelos
 
 **Duración:** 1 semana  
 **Objetivo:** Entrenar LightGBM para TechnicalAgent con datos reales  
-**Branch:** `feature/model-training`
+**Branch:** `feature/model-training`  
+**MVP:** 3 modelos .pkl + SHAP explainers
 
-### 5.1 Modelos a Entrenar
+### 6.1 Sprint 3.1: Entrenamiento Crypto (Día 1-2)
+
+#### Actividades
+
+- [ ] Crear `scripts/train_models.py` con validación walk-forward
+- [ ] Cargar datos de `data/raw/btcusdt_1h.parquet` y `ethusdt_1h.parquet`
+- [ ] Calcular features con `FeatureEngine`
+- [ ] Preparar datos de entrenamiento (X, y)
+- [ ] Entrenar LightGBM con TimeSeriesSplit(n_splits=5)
+- [ ] Evaluar métricas: accuracy, F1, precision, recall
+- [ ] Crear SHAP explainer
+- [ ] Guardar en `data/models/technical_crypto_v1.pkl`
+
+#### Criterios de Aceptación
+
+```
+✅ technical_crypto_v1.pkl entrenado
+✅ Métricas: F1 > 0.52, Accuracy > 52%
+✅ SHAP explainer funcional
+✅ Feature importance documentado
+```
+
+### 6.2 Sprint 3.2: Entrenamiento Forex/Commodities (Día 3-4)
+
+#### Actividades
+
+- [ ] Entrenar modelo Forex (EURUSD + GBPUSD + USDJPY combinados)
+- [ ] Entrenar modelo Commodities (XAUUSD)
+- [ ] Guardar en `data/models/technical_forex_v1.pkl` y `technical_commodities_v1.pkl`
+- [ ] Comparar métricas entre modelos (Crypto vs Forex)
+
+#### Criterios de Aceptación
+
+```
+✅ technical_forex_v1.pkl entrenado
+✅ technical_commodities_v1.pkl entrenado
+✅ Métricas documentadas por asset class
+```
+
+### 6.3 Sprint 3.3: Validación e Integración (Día 5)
+
+#### Actividades
+
+- [ ] Verificar que `TechnicalAgent._load_model()` carga los .pkl
+- [ ] Probar predicción con modelo real vs rule-based
+- [ ] Comparar outputs (score, confidence, shap_values)
+- [ ] Test end-to-end: datos → features → modelo → predicción
+- [ ] Crear tests unitarios para entrenamiento
+
+#### Criterios de Aceptación
+
+```
+✅ TechnicalAgent cargando modelos correctamente
+✅ Outputs en rango correcto (-1 a +1)
+✅ Tests de integración pasando
+✅ Documentación en docs/model-training-results.md
+```
+
+### 6.4 Modelos a Entrenar
 
 | Modelo | Datos | Target | Output |
 |--------|-------|--------|--------|
@@ -368,7 +620,7 @@ data/
 | `technical_forex_v1.pkl` | EUR, GBP, JPY features | Signo retorno siguiente vela | Score -1 a +1 |
 | `technical_commodities_v1.pkl` | XAU features | Signo retorno siguiente vela | Score -1 a +1 |
 
-### 5.2 Script de Entrenamiento
+### 6.5 Script de Entrenamiento
 
 #### `scripts/train_models.py`
 
@@ -510,7 +762,7 @@ def save_model(model, explainer, path: str):
 | Precision | 52% | 58% | ? | ? |
 | Sharpe (backtest) | 1.0 | 1.5 | ? | ? |
 
-### 5.5 Deliverables FASE 2
+### 6.6 Deliverables FASE 3
 
 ```
 ✅ scripts/train_models.py funcional
@@ -525,13 +777,55 @@ def save_model(model, explainer, path: str):
 
 ---
 
-## 6. FASE 3 — Pipeline Automático Funcional
+## 7. FASE 4 — Pipeline Automático Funcional
 
 **Duración:** 2 semanas  
 **Objetivo:** Pipeline ejecutándose automáticamente cada hora  
-**Branch:** `feature/pipeline-functional`
+**Branch:** `feature/pipeline-functional`  
+**MVP:** Pipeline 1 símbolo corriendo cada hora
 
-### 6.1 Lo que falta para pipeline funcional
+### 7.1 Sprint 4.1: Scheduler y DB — Semana 1
+
+#### Actividades
+
+- [ ] Verificar APScheduler está instalado
+- [ ] Modificar `scripts/run_pipeline.py` para usar configuración real
+- [ ] Crear función `_build_components()` que conecte todo
+- [ ] Probar un ciclo manual con datos reales: `python scripts/run_pipeline.py --once BTCUSDT`
+- [ ] Verificar conexión PostgreSQL
+- [ ] Implementar `TradingRepository` para guardar señales/órdenes
+- [ ] Implementar `FeatureStore` con Redis
+
+#### Criterios de Aceptación
+
+```
+✅ Pipeline 1 símbolo ejecuta sin errores
+✅ Señales se guardan en PostgreSQL
+✅ Features se cachean en Redis
+✅ Logs estructurados
+```
+
+### 7.2 Sprint 4.2: Multi-Símbolo y Eventos — Semana 2
+
+#### Actividades
+
+- [ ] Configurar schedule para 12 símbolos (staggered)
+- [ ] Probar que scheduler ejecuta múltiples jobs
+- [ ] Implementar manejo de errores (no crash si un símbolo falla)
+- [ ] Integrar ForexFactory calendar (web scraping o API)
+- [ ] Implementar `is_blocked_by_event()` funcional
+- [ ] Agregar métricas Prometheus básicas
+
+#### Criterios de Aceptación
+
+```
+✅ 12 símbolos programados con stagger
+✅ FundamentalAgent con calendario de eventos macro
+✅ Métricas Prometheus habilitadas
+✅ Manejo de errores (un fallo no detiene todo)
+```
+
+### 7.1 Lo que falta para pipeline funcional
 
 | Componente | Estado Actual | Necesita |
 |------------|---------------|----------|
@@ -541,7 +835,7 @@ def save_model(model, explainer, path: str):
 | Redis | docker-compose | FeatureStore conectado |
 | FundamentalAgent | Código existe | Datos ForexFactory/CoinGecko |
 
-### 6.2 Implementación Semana 1
+### 7.3 Implementación Semana 1
 
 #### Día 1-2: Configuración del scheduler
 
