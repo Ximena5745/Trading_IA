@@ -1,0 +1,37 @@
+{
+  "backtest": {
+    "trades": 3066,
+    "winning": 2841,
+    "losing": 225,
+    "win_rate": 0.9266144814090019,
+    "total_pnl": 1762010.08984375,
+    "avg_pnl": 574.6934409144651,
+    "max_win": 8306.65625,
+    "max_loss": -2207.9296875,
+    "final_capital": 1772010.08984375,
+    "return_pct": 17620.1008984375,
+    "sample_trades_count": 5
+  },
+  "metadata": {
+    "symbol": "BTCUSDT",
+    "timeframe": "1h",
+    "timestamp": "2026-04-06T00:39:41.525936",
+    "data_candles": 17485,
+    "features_count": 81,
+    "signals_count": 17485
+  },
+  "signals": {
+    "buy": 8341,
+    "sell": 8044,
+    "hold": 1100,
+    "score_mean": 0.5071007383666111,
+    "score_std": 0.21752182071340756
+  },
+  "price_data": {
+    "price_min": 49842.5234375,
+    "price_max": 126183.2265625,
+    "price_mean": 86629.35506215149,
+    "price_range": 76340.703125,
+    "volatility": 0.005104420281597406
+  }
+}

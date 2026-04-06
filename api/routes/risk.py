@@ -33,6 +33,24 @@ async def get_risk_status(_: dict = Depends(require_trader)):
     }
 
 
+@router.get("/status/public")
+async def get_risk_status_public():
+    """Public endpoint for dashboard — returns risk metrics."""
+    s = _kill_switch.state
+    return {
+        "kill_switch": {
+            "active": s.active,
+            "triggered_by": s.triggered_by,
+            "triggered_at": s.triggered_at,
+            "reset_at": s.reset_at,
+        },
+        "daily_loss_current": s.daily_loss_current,
+        "daily_loss_limit": s.daily_loss_limit,
+        "consecutive_losses": s.consecutive_losses,
+        "max_consecutive_losses": s.max_consecutive_losses,
+    }
+
+
 @router.post("/kill-switch/activate")
 async def activate_kill_switch(admin: dict = Depends(require_admin)):
     _kill_switch._trigger("manual")

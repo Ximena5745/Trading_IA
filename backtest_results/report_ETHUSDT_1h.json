@@ -1,0 +1,37 @@
+{
+  "backtest": {
+    "trades": 2977,
+    "winning": 2756,
+    "losing": 221,
+    "win_rate": 0.925764192139738,
+    "total_pnl": 84026.20666503906,
+    "avg_pnl": 28.22512820458148,
+    "max_win": 593.60595703125,
+    "max_loss": -87.015869140625,
+    "final_capital": 94026.20666503906,
+    "return_pct": 840.2620666503907,
+    "sample_trades_count": 5
+  },
+  "metadata": {
+    "symbol": "ETHUSDT",
+    "timeframe": "1h",
+    "timestamp": "2026-04-06T00:39:51.387064",
+    "data_candles": 17482,
+    "features_count": 81,
+    "signals_count": 17482
+  },
+  "signals": {
+    "buy": 8447,
+    "sell": 7826,
+    "hold": 1209,
+    "score_mean": 0.5082665112441817,
+    "score_std": 0.2090715070491998
+  },
+  "price_data": {
+    "price_min": 1415.83935546875,
+    "price_max": 4934.7294921875,
+    "price_mean": 2983.8273958739255,
+    "price_range": 3518.89013671875,
+    "volatility": 0.007359314646086805
+  }
+}

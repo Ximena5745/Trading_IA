@@ -65,8 +65,8 @@ Arquitectura de datos y pipeline.
 │                                                                     │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐         │
 │  │   FRONTEND   │    │   BACKEND    │    │   DATABASE   │         │
-│  │  Streamlit   │◄──►│   FastAPI    │◄──►│ TimescaleDB  │         │
-│  │  (7 pages)   │    │  (12 routes) │    │   + Redis    │         │
+│  │ HTML/JS (4p) │◄──►│   FastAPI    │◄──►│ TimescaleDB  │         │
+│  │ Streamlit(7p)│    │  (15+ routes)│    │   + Redis    │         │
 │  └──────────────┘    └──────────────┘    └──────────────┘         │
 │                            │                                        │
 │                            ▼                                        │
@@ -112,6 +112,7 @@ Arquitectura de datos y pipeline.
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │                    DATA SOURCES                              │   │
 │  │  Crypto: Binance    Forex/Indices: MT5 (IC Markets)        │   │
+│  │  Parquet: data/raw/parquet/ (6 símbolos × 3 timeframes)    │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -124,11 +125,13 @@ Arquitectura de datos y pipeline.
 | Métrica | Valor |
 |---------|-------|
 | Símbolos soportados | 12 (2 crypto + 10 MT5) |
-| Indicadores técnicos | 17 |
+| Símbolos con datos reales | 6 (EURUSD, GBPUSD, USDJPY, US30, US500, XAUUSD) |
+| Indicadores técnicos | 20 |
 | Agentes IA | 4 (3 con peso + 1 filtro) |
 | Estrategias builtin | 2 (EMA-RSI, Mean Reversion) |
-| Ruta API | 12 |
-| Páginas Dashboard | 7 |
+| Rutas API | 15+ |
+| Dashboard HTML | 4 páginas (Market View, Signals, Portfolio, Risk) |
+| Dashboard Streamlit | 7 páginas (legacy) |
 | Tests | 76 (39 unit + 37 integration) |
 
 ---
@@ -142,4 +145,4 @@ Arquitectura de datos y pipeline.
 
 ---
 
-*Última actualización: 2026-03-30*
+*Última actualización: 2026-04-04*

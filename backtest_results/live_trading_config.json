@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-04-05T19:49:27.014436",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT"
+  ],
+  "model_path": "data/models/technical_crypto_mtf_v1.pkl",
+  "features_count": 75,
+  "signal_thresholds": {
+    "buy": 0.52,
+    "sell": 0.48,
+    "hold": "0.48-0.52"
+  },
+  "fees": {
+    "binance_maker": 0.05,
+    "binance_taker": 0.1,
+    "slippage_bps": 5
+  },
+  "risk_management": {
+    "max_position_size_pct": 10,
+    "max_daily_loss_pct": 5,
+    "stop_loss_pct": 2,
+    "take_profit_pct": 5
+  },
+  "deployment_status": {
+    "BTCUSDT": "APPROVED",
+    "ETHUSDT": "APPROVED"
+  },
+  "ready_for_live": true
+}

@@ -17,11 +17,17 @@ numpy>=1.26.4
 # ML
 lightgbm>=4.3.0
 xgboost>=2.0.3
+catboost>=1.2.0
 scikit-learn>=1.4,<2.0
 shap>=0.44.1
 # pandas-ta not available for Python 3.11+ on PyPI; indicators use manual fallback
 optuna>=3.5.0
 hmmlearn>=0.3.0
+
+# Deep Learning (optional - for LSTM/Transformer models)
+# tensorflow>=2.15.0
+# pytorch-forecasting>=1.0.0
+# pytorch-lightning>=2.0.0
 
 # Binance
 python-binance==1.0.19

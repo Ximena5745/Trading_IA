@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRADER IA — Crypto Validation</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        :root {
+          /* ── Fondos ──────────────────────────────── */
+          --bg0:    #0a0d11;
+          --bg1:    #0f1318;
+          --bg2:    #151a22;
+          --bg3:    #1c2330;
+          --bg4:    #232c3b;
+
+          /* ── Bordes ──────────────────────────────── */
+          --border:  rgba(255,255,255,0.07);
+          --border2: rgba(255,255,255,0.13);
+
+          /* ── Texto ───────────────────────────────── */
+          --text1: #e8edf5;
+          --text2: #8c99b0;
+          --text3: #4d5a70;
+
+          /* ── Semánticos ──────────────────────────── */
+          --green:  #00d084;
+          --green2: rgba(0,208,132,0.12);
+          --red:    #ff4757;
+          --red2:   rgba(255,71,87,0.12);
+          --blue:   #3d8ef8;
+          --blue2:  rgba(61,142,248,0.12);
+          --amber:  #f5a623;
+          --amber2: rgba(245,166,35,0.12);
+          --purple: #a78bfa;
+
+          /* ── Tipografía ──────────────────────────── */
+          --mono: 'JetBrains Mono', monospace;
+          --sans: 'Syne', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: linear-gradient(135deg, var(--bg0) 0%, var(--bg3) 100%);
+            color: var(--text1);
+            min-height: 100vh;
+        }
+
+        /* ── NAV ─────────────────────────────────────────────────── */
+        .nav {
+            height: 44px;
+            background: var(--bg1);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 24px;
+        }
+
+        .nav-logo {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--blue);
+            letter-spacing: 2px;
+        }
+
+        .nav-title {
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .mode-badge {
+            background: var(--amber2);
+            color: var(--amber);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── MAIN CONTAINER ──────────────────────────────────── */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ── HEADER SECTION ──────────────────────────────────── */
+        .header {
+            margin-bottom: 24px;
+        }
+
+        .header-title {
+            font-family: var(--sans);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text1);
+            margin-bottom: 8px;
+        }
+
+        .header-subtitle {
+            font-family: var(--sans);
+            font-size: 12px;
+            color: var(--text3);
+            margin-bottom: 12px;
+        }
+
+        /* ── METRIC CARDS GRID ──────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .card:hover {
+            border-color: var(--border2);
+        }
+
+        .card-title {
+            font-family: var(--sans);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+        }
+
+        /* ── METRIC (label/value pairs) ──────────────────────── */
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: 11px;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--text3);
+        }
+
+        .metric-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        .metric-value.red {
+            color: var(--red);
+        }
+
+        .metric-value.blue {
+            color: var(--blue);
+        }
+
+        .metric-value.amber {
+            color: var(--amber);
+        }
+
+        /* ── BADGE ──────────────────────────────────────────── */
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 3px;
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.badge-approved {
+            background: var(--green2);
+            color: var(--green);
+        }
+
+        .badge.badge-warning {
+            background: var(--amber2);
+            color: var(--amber);
+        }
+
+        .badge.badge-ok {
+            background: var(--green2);
+            color: var(--green);
+        }
+
+        /* ── CHART CONTAINERS ────────────────────────────────── */
+        .chart-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .chart-header {
+            font-family: var(--sans);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text1);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        canvas {
+            max-height: 250px;
+        }
+
+        /* ── WARNING BOX ────────────────────────────────────── */
+        .warning-box {
+            background: var(--amber2);
+            border: 1px solid rgba(245,166,35,0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+
+        .warning-title {
+            font-family: var(--sans);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--amber);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .warning-content {
+            font-family: var(--sans);
+            font-size: 11px;
+            color: var(--text2);
+            line-height: 1.5;
+        }
+
+        /* ── ERROR BOX ──────────────────────────────────────── */
+        .error-box {
+            background: var(--red2);
+            border: 1px solid rgba(255,71,87,0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+
+        .error-title {
+            font-family: var(--sans);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .error-content {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--red);
+        }
+
+        /* ── FOOTER ────────────────────────────────────────── */
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text3);
+        }
+
+        /* ── LOADING ──────────────────────────────────────── */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text3);
+            font-family: var(--mono);
+        }
+
+        /* ── RESPONSIVE ──────────────────────────────────── */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .chart-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAV -->
+    <div class="nav">
+        <div class="nav-logo">TRADER·IA</div>
+        <div class="nav-title">Crypto Validation Dashboard</div>
+        <div class="nav-right">
+            <div class="live-dot"></div>
+            <span class="mode-badge">PAPER</span>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-title">CRYPTO TRADING VALIDATION</div>
+            <div class="header-subtitle">Walk-Forward Analysis with Realistic Transaction Costs (Binance 0.05% + 5 bps slippage)</div>
+        </div>
+
+        <!-- ERROR BOX -->
+        <div id="errorBox" style="display:none;" class="error-box">
+            <div class="error-title">❌ Error Loading Data</div>
+            <div class="error-content" id="errorContent"></div>
+        </div>
+
+        <!-- WARNING BOX -->
+        <div id="warningBox" style="display:none;" class="warning-box">
+            <div class="warning-title">⚠️ Critical Findings — Overfitting Risk</div>
+            <div class="warning-content" id="warningContent"></div>
+        </div>
+
+        <!-- METRIC CARDS GRID -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">BTCUSDT</div>
+                <div class="metric">
+                    <span class="metric-label">Realistic Return</span>
+                    <span class="metric-value" id="btc-return">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Win Rate</span>
+                    <span class="metric-value amber" id="btc-winrate">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Profit Factor</span>
+                    <span class="metric-value" id="btc-pf">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Sharpe Ratio</span>
+                    <span class="metric-value blue" id="btc-sharpe">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Recovery Factor</span>
+                    <span class="metric-value" id="btc-recovery">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Status</span>
+                    <span class="badge badge-approved" id="btc-status">—</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">ETHUSDT</div>
+                <div class="metric">
+                    <span class="metric-label">Realistic Return</span>
+                    <span class="metric-value" id="eth-return">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Win Rate</span>
+                    <span class="metric-value amber" id="eth-winrate">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Profit Factor</span>
+                    <span class="metric-value" id="eth-pf">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Sharpe Ratio</span>
+                    <span class="metric-value blue" id="eth-sharpe">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Recovery Factor</span>
+                    <span class="metric-value" id="eth-recovery">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Status</span>
+                    <span class="badge badge-approved" id="eth-status">—</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Portfolio Summary</div>
+                <div class="metric">
+                    <span class="metric-label">Avg Return</span>
+                    <span class="metric-value" id="portfolio-return">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Avg Win Rate</span>
+                    <span class="metric-value amber" id="portfolio-winrate">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Avg Sharpe</span>
+                    <span class="metric-value blue" id="portfolio-sharpe">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Models Approved</span>
+                    <span class="metric-value" id="portfolio-approved">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Model Type</span>
+                    <span class="metric-value blue">LightGBM</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Features</span>
+                    <span class="metric-value blue">75 Technical</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="chart-section">
+            <div class="chart-card">
+                <div class="chart-header">💰 Realistic P&L Comparison</div>
+                <canvas id="pnlChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">📊 Quality Metrics (Radar)</div>
+                <canvas id="metricsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            Last Updated: <span id="timestamp">—</span> | Data Source: backtest_results/comprehensive_validation.json
+        </div>
+    </div>
+
+    <script>
+        // Fetch validation data from API
+        async function loadValidationData() {
+            try {
+                const response = await fetch('/backtest/crypto/validation');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error loading validation data:', error);
+                return { error: error.message };
+            }
+        }
+
+        async function renderDashboard() {
+            const validationData = await loadValidationData();
+
+            // Check for errors
+            if (validationData.error) {
+                document.getElementById('errorBox').style.display = 'block';
+                document.getElementById('errorContent').textContent = 
+                    `${validationData.error}\nMake sure FastAPI is running and backtest_results/ exists.`;
+                return;
+            }
+
+            const results = validationData.results || {};
+
+            // Check if results exist
+            if (Object.keys(results).length === 0) {
+                document.getElementById('errorBox').style.display = 'block';
+                document.getElementById('errorContent').textContent = 
+                    'No validation data found. Run backtesting pipeline first.';
+                return;
+            }
+
+            const btc = results.BTCUSDT || {};
+            const eth = results.ETHUSDT || {};
+
+            // Populate BTC card
+            if (btc.realistic_return) {
+                document.getElementById('btc-return').textContent = `${btc.realistic_return.toFixed(0)}%`;
+                document.getElementById('btc-winrate').textContent = `${btc.win_rate.toFixed(1)}%`;
+                document.getElementById('btc-pf').textContent = `${btc.profit_factor.toFixed(2)}x`;
+                document.getElementById('btc-sharpe').textContent = `${btc.sharpe_ratio.toFixed(2)}`;
+                document.getElementById('btc-recovery').textContent = `${btc.recovery_factor.toFixed(0)}x`;
+                document.getElementById('btc-status').textContent = btc.status || 'UNKNOWN';
+            }
+
+            // Populate ETH card
+            if (eth.realistic_return) {
+                document.getElementById('eth-return').textContent = `${eth.realistic_return.toFixed(0)}%`;
+                document.getElementById('eth-winrate').textContent = `${eth.win_rate.toFixed(1)}%`;
+                document.getElementById('eth-pf').textContent = `${eth.profit_factor.toFixed(2)}x`;
+                document.getElementById('eth-sharpe').textContent = `${eth.sharpe_ratio.toFixed(2)}`;
+                document.getElementById('eth-recovery').textContent = `${eth.recovery_factor.toFixed(0)}x`;
+                document.getElementById('eth-status').textContent = eth.status || 'UNKNOWN';
+            }
+
+            // Portfolio summary
+            const avgReturn = ((btc.realistic_return || 0) + (eth.realistic_return || 0)) / 2;
+            const avgWR = ((btc.win_rate || 0) + (eth.win_rate || 0)) / 2;
+            const avgSharpe = ((btc.sharpe_ratio || 0) + (eth.sharpe_ratio || 0)) / 2;
+            const approved = Object.values(results).filter(r => r.status === 'APPROVED').length;
+
+            document.getElementById('portfolio-return').textContent = `${avgReturn.toFixed(0)}%`;
+            document.getElementById('portfolio-winrate').textContent = `${avgWR.toFixed(1)}%`;
+            document.getElementById('portfolio-sharpe').textContent = `${avgSharpe.toFixed(2)}`;
+            document.getElementById('portfolio-approved').textContent = `${approved}/2`;
+
+            // Warnings
+            const warnings = [];
+            if (btc.win_rate > 90) warnings.push(`BTCUSDT win rate ${btc.win_rate.toFixed(1)}% suggests overfitting. Expect 55–70% live.`);
+            if (eth.win_rate > 90) warnings.push(`ETHUSDT win rate ${eth.win_rate.toFixed(1)}% suggests overfitting. Expect 55–70% live.`);
+            if (btc.sharpe_ratio > 5) warnings.push(`BTCUSDT Sharpe ${btc.sharpe_ratio.toFixed(1)} is excellent but may be optimistic.`);
+            if (eth.sharpe_ratio > 5) warnings.push(`ETHUSDT Sharpe ${eth.sharpe_ratio.toFixed(1)} is excellent but may be optimistic.`);
+
+            if (warnings.length > 0) {
+                document.getElementById('warningBox').style.display = 'block';
+                document.getElementById('warningContent').innerHTML = warnings.map(w => `<div>• ${w}</div>`).join('');
+            }
+
+            // Render charts
+            renderCharts(btc, eth);
+
+            // Timestamp
+            if (validationData.timestamp) {
+                const dt = new Date(validationData.timestamp);
+                document.getElementById('timestamp').textContent = dt.toLocaleString();
+            }
+        }
+
+        function renderCharts(btc, eth) {
+            try {
+                // P&L Bar Chart
+                const ctx1 = document.getElementById('pnlChart');
+                if (ctx1) {
+                    new Chart(ctx1, {
+                        type: 'bar',
+                        data: {
+                            labels: ['BTCUSDT', 'ETHUSDT'],
+                            datasets: [{
+                                label: 'Realistic P&L ($)',
+                                data: [btc.realistic_pnl || 0, eth.realistic_pnl || 0],
+                                backgroundColor: [
+                                    'rgba(0, 208, 132, 0.8)',
+                                    'rgba(61, 142, 248, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(0, 208, 132, 1)',
+                                    'rgba(61, 142, 248, 1)'
+                                ],
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        font: { family: "'JetBrains Mono'" },
+                                        color: '#e8edf5'
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    ticks: { color: '#8c99b0', font: { family: "'JetBrains Mono'" } },
+                                    grid: { color: 'rgba(255,255,255,0.04)' },
+                                    beginAtZero: true
+                                },
+                                x: {
+                                    ticks: { color: '#8c99b0', font: { family: "'JetBrains Mono'" } },
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('P&L chart error:', e);
+            }
+
+            try {
+                // Radar Chart
+                const ctx2 = document.getElementById('metricsChart');
+                if (ctx2) {
+                    new Chart(ctx2, {
+                        type: 'radar',
+                        data: {
+                            labels: ['Win Rate %', 'Profit Factor', 'Sharpe Ratio'],
+                            datasets: [
+                                {
+                                    label: 'BTCUSDT',
+                                    data: [
+                                        btc.win_rate || 0,
+                                        (btc.profit_factor || 0) * 20,
+                                        (btc.sharpe_ratio || 0) * 15
+                                    ],
+                                    borderColor: 'rgba(0, 208, 132, 1)',
+                                    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: 'rgba(0, 208, 132, 1)',
+                                    pointBorderColor: '#e8edf5',
+                                    pointBorderWidth: 1
+                                },
+                                {
+                                    label: 'ETHUSDT',
+                                    data: [
+                                        eth.win_rate || 0,
+                                        (eth.profit_factor || 0) * 20,
+                                        (eth.sharpe_ratio || 0) * 15
+                                    ],
+                                    borderColor: 'rgba(61, 142, 248, 1)',
+                                    backgroundColor: 'rgba(61, 142, 248, 0.15)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: 'rgba(61, 142, 248, 1)',
+                                    pointBorderColor: '#e8edf5',
+                                    pointBorderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        font: { family: "'JetBrains Mono'" },
+                                        color: '#e8edf5'
+                                    }
+                                }
+                            },
+                            scales: {
+                                r: {
+                                    grid: { color: 'rgba(255,255,255,0.04)' },
+                                    ticks: { color: '#8c99b0', font: { family: "'JetBrains Mono'" } },
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Radar chart error:', e);
+            }
+        }
+
+        // Load on page ready
+        document.addEventListener('DOMContentLoaded', renderDashboard);
+    </script>
+</body>
+</html>

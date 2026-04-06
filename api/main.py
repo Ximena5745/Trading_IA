@@ -6,17 +6,27 @@ Dependencies: fastapi, slowapi, routes
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.routes.auth import router as auth_router
 from api.routes.backtesting import router as backtesting_router
+from api.routes.dashboard import router as dashboard_router
 from api.routes.execution import router as execution_router
-from api.routes.market import router as market_router
+from api.routes.market import (
+    router as market_router,
+    update_features_cache,
+    update_market_data_cache,
+    update_regime_cache,
+)
 from api.routes.marketplace import router as marketplace_router
 from api.routes.portfolio import router as portfolio_router
 from api.routes.risk import router as risk_router
@@ -28,6 +38,7 @@ from core.config.settings import get_settings
 from core.execution.order_tracker import OrderTracker
 from core.marketplace.strategy_marketplace import StrategyMarketplace
 from core.db.session import close_pool, init_pool
+from core.features.indicators import calculate_all
 from core.monitoring.alert_engine import AlertEngine
 from core.notifications.telegram_bot import TelegramBot
 from core.monitoring.performance_tracker import PerformanceTracker
@@ -44,6 +55,108 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 limiter = Limiter(key_func=get_remote_address)
+
+
+def _map_regime(row: pd.Series) -> str:
+    trend = row.get("trend_direction", "sideways")
+    vol = row.get("volatility_regime", "medium")
+    if trend == "bullish":
+        return "BULL TRENDING"
+    if trend == "bearish":
+        return "BEAR TRENDING"
+    if vol == "extreme":
+        return "VOLATILE_CRASH"
+    return "SIDEWAYS"
+
+
+def _load_parquet_data() -> None:
+    """Load all available parquet files (all timeframes) into market data cache."""
+    base_dir = Path("data/raw/parquet")
+    if not base_dir.exists():
+        logger.warning("parquet_data_dir_not_found", path=str(base_dir))
+        return
+
+    symbol_map = {
+        "eurusd": "EURUSD", "gbpusd": "GBPUSD", "usdjpy": "USDJPY",
+        "us30": "US30", "us500": "US500", "xauusd": "XAUUSD",
+    }
+
+    loaded_count = 0
+
+    # Iterate through all timeframe directories
+    for tf_dir in base_dir.iterdir():
+        if not tf_dir.is_dir():
+            continue
+        
+        tf = tf_dir.name  # Get timeframe from directory name (1wk, 1mo, etc.)
+
+        for file in tf_dir.glob("*.parquet"):
+            # Match filename to symbol (e.g., eurusd_1wk.parquet -> EURUSD)
+            stem = file.stem.lower()  # e.g., "eurusd_1wk"
+            
+            symbol = None
+            for prefix, sym in symbol_map.items():
+                if stem.startswith(prefix):
+                    symbol = sym
+                    break
+            
+            if not symbol:
+                logger.debug("parquet_skipped_unknown", file=file.name)
+                continue
+            
+            try:
+                df = pd.read_parquet(file)
+                
+                # Calculate indicators if not present
+                if "rsi_14" not in df.columns:
+                    df = calculate_all(df)
+
+                records = df.to_dict(orient="records")
+                cleaned = []
+                for r in records:
+                    clean = {}
+                    for k, v in r.items():
+                        if pd.isna(v):
+                            clean[k] = None
+                        elif hasattr(v, "item"):
+                            clean[k] = v.item()
+                        elif isinstance(v, pd.Timestamp):
+                            clean[k] = v.isoformat()
+                        else:
+                            clean[k] = v
+                    cleaned.append(clean)
+
+                update_market_data_cache(symbol, cleaned, timeframe=tf)
+
+                latest = df.iloc[-1]
+                features = {
+                    "rsi_14": float(latest.get("rsi_14", 50)),
+                    "rsi_7": float(latest.get("rsi_7", 50)),
+                    "macd_line": float(latest.get("macd_line", 0)),
+                    "macd_signal": float(latest.get("macd_signal", 0)),
+                    "macd_histogram": float(latest.get("macd_histogram", 0)),
+                    "bb_upper": float(latest.get("bb_upper", 0)),
+                    "bb_lower": float(latest.get("bb_lower", 0)),
+                    "bb_width": float(latest.get("bb_width", 0)),
+                    "atr_14": float(latest.get("atr_14", 0)),
+                    "volume_ratio": float(latest.get("volume_ratio", 1)),
+                    "technical_score": 0.3,
+                    "regime_score": 0.5,
+                    "micro_score": 0.1,
+                    "regime": _map_regime(latest),
+                    "fundamental_status": "CLEAR",
+                    "consensus_score": 0.45,
+                    "sl": float(latest.get("bb_lower", 0)),
+                    "tp": float(latest.get("bb_upper", 0)),
+                }
+                update_features_cache(symbol, features)
+                update_regime_cache(symbol, {"regime": features["regime"]})
+                loaded_count += 1
+                logger.info("parquet_loaded", symbol=symbol, timeframe=tf, rows=len(df))
+            except Exception as exc:
+                logger.error("parquet_load_failed", symbol=symbol, timeframe=tf, file=file.name, error=str(exc))
+
+    logger.info("parquet_data_loading_complete", total_loaded=loaded_count)
 
 
 @asynccontextmanager
@@ -95,6 +208,9 @@ async def lifespan(app: FastAPI):
     app.state.marketplace = marketplace
     app.state.simulator = simulator
     app.state.fundamental_agent = fundamental_agent
+
+    # ── Load real parquet data into cache ───────────────────────────────────
+    _load_parquet_data()
 
     # ── Start FundamentalAgent background refresh task ─────────────────────
     import asyncio as _asyncio
@@ -177,11 +293,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501"],  # Streamlit dev
+    allow_origins=["http://localhost:8501", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Serve static dashboard ──────────────────────────────────────────────────
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ── Register all routers ────────────────────────────────────────────────────
 app.include_router(auth_router)
@@ -189,6 +308,7 @@ app.include_router(risk_router)
 app.include_router(market_router)
 app.include_router(signals_router)
 app.include_router(backtesting_router)
+app.include_router(dashboard_router)
 app.include_router(portfolio_router)
 app.include_router(execution_router)
 app.include_router(strategies_router)
@@ -207,6 +327,6 @@ async def health():
     }
 
 
-@app.get("/", tags=["system"], include_in_schema=False)
+@app.get("/", include_in_schema=False)
 async def root():
-    return {"message": "TRADER AI API v2.0.0 — see /docs"}
+    return FileResponse("static/dashboard.html")

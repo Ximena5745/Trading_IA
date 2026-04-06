@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRADER IA — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <script src="/static/js/components.js"></script>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-logo">TRADER·IA</div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="market">Market View</button>
+            <button class="nav-tab" data-tab="signals">Signals</button>
+            <button class="nav-tab" data-tab="portfolio">Portfolio</button>
+            <button class="nav-tab" data-tab="risk">Risk</button>
+            <button class="nav-tab" data-tab="crypto">CRYPTO 🚀</button>
+        </div>
+        <div class="nav-right"><div class="live-dot"></div><span class="mode-badge">PAPER</span></div>
+    </nav>
+    <div class="ticker-bar" id="tickerBar"></div>
+
+    <!-- PAGE 1: MARKET VIEW -->
+    <div class="page active" id="page-market">
+        <div class="symbol-selector" id="symbolSelector">
+            <div class="tf-selector" id="tfSelector">
+                <button class="tf-btn active" data-tf="1d">1D</button>
+                <button class="tf-btn" data-tf="1wk">1W</button>
+                <button class="tf-btn" data-tf="1mo">1M</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="chart-header">
+                <div><span class="chart-title" id="chartTitle">EURUSD</span><span class="chart-subtitle" id="chartSubtitle">1W · datos reales</span></div>
+                <div class="chart-price" id="chartPrice" style="color:var(--green);">—</div>
+            </div>
+            <div id="candlestickChart" style="height:300px;"></div>
+        </div>
+        <div class="grid3" style="margin-top:12px;">
+            <div class="card">
+                <div class="metric-label">RSI (14)</div>
+                <div id="rsiValue" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);margin-top:4px;">—</div>
+                <div id="rsiChart" style="height:60px;"></div>
+                <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text3);"><span>30</span><span>70</span></div>
+            </div>
+            <div class="card">
+                <div class="metric-label">MACD</div>
+                <div id="macdValue" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);margin-top:4px;">—</div>
+                <div id="macdChart" style="height:60px;"></div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">Hist: <span id="macdHist">—</span></div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Bollinger Bands</div>
+                <div id="bbChart" style="height:60px;"></div>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">
+                    <span style="color:var(--green);">Low <span id="bbLow">—</span></span> &nbsp;
+                    <span style="color:var(--red);">Up <span id="bbUp">—</span></span>
+                </div>
+            </div>
+        </div>
+        <div class="grid2" style="margin-top:12px;">
+            <div class="card">
+                <div class="section-title">Agentes IA</div>
+                <div id="regimeBadge" class="regime-badge regime-sideways">—</div>
+                <div id="agentRows" style="margin-top:12px;"></div>
+            </div>
+            <div class="card" style="text-align:center;">
+                <div class="section-title">Consensus</div>
+                <svg id="consensusGauge" width="120" height="120" viewBox="0 0 120 120" style="margin:0 auto;">
+                    <circle cx="60" cy="60" r="45" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                    <circle id="gaugeArc" cx="60" cy="60" r="45" fill="none" stroke="var(--green)" stroke-width="10"
+                        stroke-dasharray="282.74" stroke-dashoffset="141.37" stroke-linecap="round" transform="rotate(-90 60 60)"
+                        style="transition:stroke-dashoffset 0.5s ease;"/>
+                    <text id="gaugeText" x="60" y="55" text-anchor="middle" fill="var(--text1)" font-family="JetBrains Mono" font-size="20" font-weight="600">+0.00</text>
+                    <text x="60" y="72" text-anchor="middle" fill="var(--text3)" font-family="JetBrains Mono" font-size="9">CONSENSUS</text>
+                </svg>
+                <div style="margin-top:8px;"><span id="signalBadge" class="badge badge-hold">HOLD</span></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;background:var(--bg3);border-radius:6px;padding:8px;">
+                    <div id="slDisplay" style="font-family:var(--mono);font-size:11px;color:var(--red);">SL —</div>
+                    <div id="tpDisplay" style="font-family:var(--mono);font-size:11px;color:var(--green);">TP —</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: SIGNALS -->
+    <div class="page" id="page-signals">
+        <div class="grid4" id="signalMetrics"></div>
+        <div class="card" style="margin-bottom:16px;">
+            <div class="section-title">Señales Recientes</div>
+            <div style="overflow-x:auto;">
+                <table class="signal-table">
+                    <thead><tr><th>Símbolo</th><th>Señal</th><th>Entrada</th><th>SL</th><th>TP</th><th>R:R</th><th>Confianza</th><th>Estado</th></tr></thead>
+                    <tbody id="signalsBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="section-title">Explicabilidad XAI — SHAP Values</div>
+            <div style="font-family:var(--sans);font-size:11px;color:var(--text3);margin-bottom:12px;">
+                Contribución de cada indicador a la señal
+                <span class="badge badge-buy" id="shapSignalBadge">BUY</span>
+                &nbsp;·&nbsp; <span id="shapSymbol">—</span>
+                &nbsp;·&nbsp; <span style="color:var(--blue);">TechnicalAgent</span>
+                <br>(verde = pro-señal, rojo = en contra)
+            </div>
+            <div id="shapBars"></div>
+            <div class="xai-summary" id="xaiSummary" style="display:none;">
+                <div class="xai-summary-label">Resumen XAI</div>
+                <div class="xai-summary-text" id="xaiSummaryText"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: PORTFOLIO -->
+    <div class="page" id="page-portfolio">
+        <div class="grid4" id="portfolioMetrics"></div>
+        <div class="card" style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div class="section-title" style="margin-bottom:0;">Equity Curve</div>
+                <div style="display:flex;gap:16px;">
+                    <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Sortino: <span id="sortinoVal" style="color:var(--green);">—</span></span>
+                    <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">Profit Factor: <span id="pfVal" style="color:var(--green);">—</span></span>
+                </div>
+            </div>
+            <div id="equityChart" style="height:200px;"></div>
+        </div>
+        <div class="grid2">
+            <div class="card">
+                <div class="section-title">Posiciones Abiertas</div>
+                <div id="positionsList"></div>
+                <div id="positionsFooter" style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--border);margin-top:4px;">
+                    <span style="font-family:var(--sans);font-size:11px;color:var(--text3);">P&L Abierto</span>
+                    <span id="totalOpenPnl" style="font-family:var(--mono);font-size:11px;font-weight:600;">$0.00</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-title">P&L por Símbolo</div>
+                <div id="pnlChart" style="height:180px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: RISK -->
+    <div class="page" id="page-risk">
+        <div class="grid4" id="riskMetrics"></div>
+        <div class="grid2" style="margin-top:16px;">
+            <div class="card">
+                <div class="section-title">Kill Switch</div>
+                <div id="killSwitchStatus"></div>
+                <div id="killSwitchTriggers" style="margin-top:12px;"></div>
+            </div>
+            <div class="card">
+                <div class="section-title">Exposición</div>
+                <div id="exposureChart" style="height:200px;"></div>
+            </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+            <div class="section-title">Hard Limits</div>
+            <div style="overflow-x:auto;">
+                <table class="limits-table">
+                    <thead><tr><th>Límite</th><th>Configurado</th><th>Actual</th><th>Uso %</th><th>Estado</th></tr></thead>
+                    <tbody id="limitsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 5: CRYPTO VALIDATION -->
+    <div class="page" id="page-crypto">
+        <div style="height:100%;width:100%;overflow:hidden;border-radius:8px;">
+            <iframe 
+                src="/static/crypto-dashboard.html" 
+                style="width:100%;height:100vh;border:none;border-radius:8px;"
+                title="Crypto Trading Validation Dashboard">
+            </iframe>
+        </div>
+    </div>
+
+    <script>
+        const API_URL='';
+        const REAL_SYMBOLS=['EURUSD','GBPUSD','USDJPY','US30','US500','XAUUSD'];
+        const MOCK_SYMBOLS=['BTCUSDT','ETHUSDT'];
+        const ALL_SYMBOLS=[...REAL_SYMBOLS,...MOCK_SYMBOLS];
+        
+        // ── Initialize API Client ──────────────────────────────
+        const api = new APIClient(API_URL);
+        const TIMEFRAMES=['1d','1wk','1mo'];
+        const TF_LABELS={'1d':'1D','1wk':'1W','1mo':'1M'};
+        let selectedSymbol='EURUSD';
+        let selectedTF='1d';
+
+        const MOCK_CRYPTO={
+            candles:genCandles(250),
+            features:{rsi_14:58.4,rsi_7:62.1,macd_line:124.5,macd_signal:79.3,macd_histogram:45.2,bb_upper:69740,bb_lower:65580,bb_width:0.062,atr_14:1250,volume_ratio:1.3,technical_score:0.45,regime_score:0.65,micro_score:0.12,regime:'BULL TRENDING',fundamental_status:'CLEAR',consensus_score:0.68,sl:65580,tp:69740}
+        };
+
+        function genCandles(n){const c=[];let p=65000;const now=Date.now();for(let i=n;i>=0;i--){const ch=(Math.random()-0.48)*800;const o=p,cl=p+ch,h=Math.max(o,cl)+Math.random()*400,l=Math.min(o,cl)-Math.random()*400;const v=Math.random()*1000+500;c.push({timestamp:new Date(now-i*36e5).toISOString(),open:+o.toFixed(2),high:+h.toFixed(2),low:+l.toFixed(2),close:+cl.toFixed(2),volume:+v.toFixed(0),ema_9:+(cl+(Math.random()-0.5)*200).toFixed(2),ema_21:+(cl+(Math.random()-0.5)*400).toFixed(2),rsi_14:+(30+Math.random()*40).toFixed(1),macd_line:+((Math.random()-0.5)*200).toFixed(2),macd_histogram:+((Math.random()-0.5)*100).toFixed(2),bb_upper:+(cl+1500).toFixed(2),bb_lower:+(cl-1500).toFixed(2)});p=cl}return c}
+        
+        // Generate realistic mock candles for forex/commodities
+        function genForexCandles(n,symbol){
+            const c=[],prices={EURUSD:1.0845,GBPUSD:1.265,USDJPY:151.2,US30:39200,US500:5280,XAUUSD:2340};
+            let p=prices[symbol]||1.0;
+            const now=Date.now();
+            for(let i=n;i>=0;i--){
+                const vol=symbol.includes('30')||symbol.includes('500')?200:0.005;
+                const ch=(Math.random()-0.48)*vol;
+                const o=p,cl=p+ch,h=Math.max(o,cl)+Math.random()*vol*0.5,l=Math.min(o,cl)-Math.random()*vol*0.5;
+                const v=Math.random()*5000+1000;
+                c.push({
+                    timestamp:new Date(now-i*36e5).toISOString(),
+                    open:+o.toFixed(symbol.includes('JPY')?2:4),
+                    high:+h.toFixed(symbol.includes('JPY')?2:4),
+                    low:+l.toFixed(symbol.includes('JPY')?2:4),
+                    close:+cl.toFixed(symbol.includes('JPY')?2:4),
+                    volume:+v.toFixed(0),
+                    ema_9:+(cl+(Math.random()-0.5)*vol*10).toFixed(4),
+                    ema_21:+(cl+(Math.random()-0.5)*vol*20).toFixed(4),
+                    rsi_14:+(30+Math.random()*40).toFixed(1),
+                    macd_line:+((Math.random()-0.5)*vol*100).toFixed(2),
+                    macd_histogram:+((Math.random()-0.5)*vol*50).toFixed(2),
+                    bb_upper:+(cl+vol*10).toFixed(4),
+                    bb_lower:+(cl-vol*10).toFixed(4)
+                });
+                p=cl;
+            }
+            return c;
+        }
+        
+        function genEquity(d){const a=[];let e=1e4;const now=new Date();for(let i=d;i>=0;i--){e+=(Math.random()-0.45)*150;e=Math.max(e,9e3);a.push({timestamp:new Date(now-i*864e5).toISOString(),capital:+e.toFixed(2)})}return a}
+
+        // ── Tab Navigation ────────────────────────────────────
+        document.querySelectorAll('.nav-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));tab.classList.add('active');document.getElementById('page-'+tab.dataset.tab).classList.add('active');if(tab.dataset.tab==='signals')loadSignals();if(tab.dataset.tab==='portfolio')loadPortfolio();if(tab.dataset.tab==='risk')loadRisk();if(tab.dataset.tab==='crypto')console.log('CRYPTO tab activated - iframe loaded')})});
+
+        // ── Ticker Bar ────────────────────────────────────────
+        async function loadTicker(){
+            try{
+                const resp=await fetch(API_URL+'/market/symbols');
+                if(resp.ok){
+                    const symbols=await resp.json();
+                    const items=symbols.map(s=>{
+                        const cache=window._dataCache&&window._dataCache[s];
+                        if(cache&&cache.length>0){
+                            const last=cache[cache.length-1];
+                            const prev=cache.length>1?cache[cache.length-2]:last;
+                            const chg=((last.close-prev.close)/prev.close*100);
+                            return{symbol:s.replace('USDT','/USDT').replace('USD','/USD'),price:last.close,change:+chg.toFixed(2)};
+                        }
+                        return{symbol:s.replace('USDT','/USDT').replace('USD','/USD'),price:0,change:0};
+                    }).filter(t=>t.price>0);
+                    if(items.length>0)renderTicker(items);
+                }
+            }catch(e){}
+            if(!document.getElementById('tickerBar').children.length){
+                renderTicker([
+                    {symbol:'EUR/USD',price:1.0845,change:-0.18},{symbol:'GBP/USD',price:1.2650,change:0.05},
+                    {symbol:'XAU/USD',price:2340,change:0.90},{symbol:'US500',price:5280,change:0.45},
+                    {symbol:'USD/JPY',price:151.20,change:-0.32},{symbol:'US30',price:39200,change:0.30}
+                ]);
+            }
+        }
+
+        function renderTicker(d){document.getElementById('tickerBar').innerHTML=d.map(t=>{const c=t.change>=0?'up':'down',s=t.change>=0?'+':'';return`<div class="ticker-item"><span class="ticker-symbol">${t.symbol}</span><span class="ticker-price">${t.price.toLocaleString()}</span><span class="ticker-change ${c}">${s}${t.change}%</span></div>`}).join('')}
+
+        // ── Symbol Selector ───────────────────────────────────
+        function renderSymbolSelector(){
+            console.log('renderSymbolSelector called');
+            const s=document.getElementById('symbolSelector');
+            if(!s){console.error('symbolSelector element not found!');return;}
+            const symHtml=ALL_SYMBOLS.map(sym=>{
+                const isMock=MOCK_SYMBOLS.includes(sym);
+                return`<button class="symbol-btn ${sym===selectedSymbol?'active':''} ${isMock?'mock':''}" data-symbol="${sym}">${sym}${isMock?' *':''}</button>`;
+            }).join('');
+            s.innerHTML=symHtml+`<div class="tf-selector" id="tfSelector">${TIMEFRAMES.map(tf=>`<button class="tf-btn ${tf===selectedTF?'active':''}" data-tf="${tf}">${TF_LABELS[tf]}</button>`).join('')}</div>`;
+            console.log('Added', ALL_SYMBOLS.length, 'symbol buttons and', TIMEFRAMES.length, 'timeframe buttons');
+            
+            s.querySelectorAll('.symbol-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    console.log('Symbol clicked:', btn.dataset.symbol);
+                    selectedSymbol=btn.dataset.symbol;
+                    s.querySelectorAll('.symbol-btn').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadMarketData(selectedSymbol);
+                })
+            });
+            s.querySelectorAll('.tf-btn').forEach(btn=>{
+                btn.addEventListener('click',()=>{
+                    console.log('Timeframe clicked:', btn.dataset.tf);
+                    selectedTF=btn.dataset.tf;
+                    s.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadMarketData(selectedSymbol);
+                })
+            });
+        }
+
+        // ── Candlestick Chart ─────────────────────────────────
+        function drawCandlestick(data,isMock){
+            console.log('drawCandlestick called with', data.length, 'items, isMock=', isMock);
+            try {
+                const c=data;
+                if(c.length<2){
+                    console.warn('Not enough data');
+                    document.getElementById('candlestickChart').innerHTML='<div class="loading">Datos insuficientes</div>';
+                    return;
+                }
+                
+                // Use all data but let user zoom
+                const displayData = c;
+                console.log('Displaying', displayData.length, 'candles');
+                
+                const tr={
+                    x:displayData.map(x=>x.timestamp),
+                    open:displayData.map(x=>x.open),
+                    high:displayData.map(x=>x.high),
+                    low:displayData.map(x=>x.low),
+                    close:displayData.map(x=>x.close),
+                    type:'candlestick',
+                    increasing:{line:{color:'#00d084'},fillcolor:'rgba(0,208,132,0.9)'},
+                    decreasing:{line:{color:'#ff4757'},fillcolor:'rgba(255,71,87,0.85)'}
+                };
+                const traces=[tr];
+                if(displayData[0].ema_9!==undefined){
+                    traces.push({
+                        x:displayData.map(x=>x.timestamp),
+                        y:displayData.map(x=>x.ema_9),
+                        type:'scatter',mode:'lines',
+                        line:{color:'#3d8ef8',width:1.5},
+                        showlegend:false
+                    });
+                }
+                if(displayData[0].ema_21!==undefined){
+                    traces.push({
+                        x:displayData.map(x=>x.timestamp),
+                        y:displayData.map(x=>x.ema_21),
+                        type:'scatter',mode:'lines',
+                        line:{color:'#a78bfa',width:1.5,dash:'dash'},
+                        showlegend:false
+                    });
+                }
+                
+                const lay={
+                    paper_bgcolor:'#151a22',
+                    plot_bgcolor:'#151a22',
+                    font:{family:'JetBrains Mono',color:'#8c99b0',size:10},
+                    margin:{l:60,r:20,t:10,b:40},
+                    xaxis:{
+                        showgrid:true,
+                        gridcolor:'rgba(255,255,255,0.04)',
+                        rangeslider:{visible:false},
+                        type:'date'
+                    },
+                    yaxis:{
+                        showgrid:true,
+                        gridcolor:'rgba(255,255,255,0.04)',
+                        autorange:true
+                    },
+                    showlegend:false,
+                    hovermode:'x unified'
+                };
+                
+                const config={
+                    displayModeBar:true,
+                    responsive:true,
+                    modeBarButtonsToRemove:['lasso2d','select2d'],
+                    modeBarButtonsToAdd:[
+                        {
+                            name:'Reset Zoom',
+                            icon:{width:500,height:500,path:'M0 0h500v500H0z'},
+                            click:function(gd){Plotly.relayout(gd,{'xaxis.autorange':true,'yaxis.autorange':true})}
+                        }
+                    ],
+                    toImageButtonOptions:{
+                        format:'png',
+                        filename:'chart',
+                        height:600,
+                        width:1200,
+                        scale:2
+                    }
+                };
+                
+                console.log('Calling Plotly.newPlot with', traces.length, 'traces');
+                Plotly.newPlot('candlestickChart',traces,lay,config);
+                
+                const last=c[c.length-1],prev=c[c.length-2],chg=((last.close-prev.close)/prev.close*100);
+                const arrow=chg>=0?'▲':'▼',color=chg>=0?'#00d084':'#ff4757';
+                document.getElementById('chartPrice').innerHTML=`<span style="color:${color}">${last.close.toLocaleString()} ${arrow} ${chg>=0?'+':''}${chg.toFixed(2)}%</span>`;
+                document.getElementById('chartTitle').textContent=selectedSymbol;
+                document.getElementById('chartSubtitle').textContent=isMock?'Mock · datos simulados':`${TF_LABELS[selectedTF]} · datos reales (${displayData.length} velas)`;
+                console.log('Chart rendered successfully');
+            } catch(e) {
+                console.error('Error in drawCandlestick:', e);
+                document.getElementById('candlestickChart').innerHTML='<div class="loading" style="color:red">Error: '+e.message+'</div>';
+            }
+        }
+
+        // ── RSI Mini Chart ────────────────────────────────────
+        function drawRSI(data){
+            try {
+                if(data.length<2)return;
+                
+                const tr={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>x.rsi_14||50),
+                    type:'scatter',
+                    mode:'lines',
+                    line:{color:'#f5a623',width:2},
+                    fill:'tozeroy',
+                    fillcolor:'rgba(245,166,35,0.08)',
+                    name:'RSI(14)'
+                };
+                
+                const lay={
+                    paper_bgcolor:'#151a22',
+                    plot_bgcolor:'#151a22',
+                    font:{family:'JetBrains Mono',color:'#8c99b0',size:10},
+                    margin:{l:60,r:20,t:30,b:40},
+                    xaxis:{showgrid:false,type:'date',autorange:true},
+                    yaxis:{showgrid:true,gridcolor:'rgba(140,153,176,0.1)',visible:true,range:[0,100]},
+                    showlegend:true,
+                    hovermode:'x unified',
+                    shapes:[
+                        {type:'line',x0:'1970-01-01',x1:'2099-12-31',y0:70,y1:70,line:{color:'rgba(255,71,87,0.4)',width:1,dash:'dash'},xref:'x',yref:'y'},
+                        {type:'line',x0:'1970-01-01',x1:'2099-12-31',y0:30,y1:30,line:{color:'rgba(0,208,132,0.4)',width:1,dash:'dash'},xref:'x',yref:'y'}
+                    ]
+                };
+                
+                const config={
+                    displayModeBar:true,
+                    responsive:true,
+                    modeBarButtonsToRemove:['lasso2d','select2d'],
+                    modeBarButtonsToAdd:[
+                        {
+                            name:'Reset Zoom',
+                            icon:{width:500,height:500,path:'M0 0h500v500H0z'},
+                            click:function(gd){Plotly.relayout(gd,{'xaxis.autorange':true,'yaxis.autorange':true})}
+                        }
+                    ]
+                };
+                
+                Plotly.newPlot('rsiChart',[tr],lay,config);
+                const val=data[data.length-1].rsi_14||50;
+                const rc=val>70?'#ff4757':(val<30?'#00d084':'#f5a623');
+                document.getElementById('rsiValue').innerHTML=`<span style="color:${rc}">${val.toFixed(1)}</span>`;
+            } catch(e) { console.error('RSI error:', e); }
+        }
+
+        // ── MACD Mini Chart ───────────────────────────────────
+        function drawMACD(data){
+            try {
+                if(data.length<2)return;
+                
+                // Histogram trace (bars)
+                const colors=data.map(x=>(x.macd_histogram||0)>=0?'rgba(0,208,132,0.6)':'rgba(255,71,87,0.6)');
+                const trHist={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>x.macd_histogram||0),
+                    type:'bar',
+                    marker:{color:colors},
+                    name:'Histogram',
+                    yaxis:'y'
+                };
+                
+                // MACD Line trace
+                const trLine={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>x.macd_line||0),
+                    type:'scatter',
+                    mode:'lines',
+                    line:{color:'#f5a623',width:2},
+                    name:'MACD',
+                    yaxis:'y'
+                };
+                
+                // Signal Line trace
+                const trSignal={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>x.macd_signal||0),
+                    type:'scatter',
+                    mode:'lines',
+                    line:{color:'#00d9ff',width:2,dash:'dash'},
+                    name:'Signal',
+                    yaxis:'y'
+                };
+                
+                const lay={
+                    paper_bgcolor:'#151a22',
+                    plot_bgcolor:'#151a22',
+                    font:{family:'JetBrains Mono',color:'#8c99b0',size:10},
+                    margin:{l:60,r:20,t:30,b:40},
+                    xaxis:{showgrid:false,type:'date',autorange:true},
+                    yaxis:{showgrid:true,gridcolor:'rgba(140,153,176,0.1)',visible:true},
+                    showlegend:true,
+                    hovermode:'x unified'
+                };
+                
+                const config={
+                    displayModeBar:true,
+                    responsive:true,
+                    modeBarButtonsToRemove:['lasso2d','select2d'],
+                    modeBarButtonsToAdd:[
+                        {
+                            name:'Reset Zoom',
+                            icon:{width:500,height:500,path:'M0 0h500v500H0z'},
+                            click:function(gd){Plotly.relayout(gd,{'xaxis.autorange':true,'yaxis.autorange':true})}
+                        }
+                    ]
+                };
+                
+                Plotly.newPlot('macdChart',[trHist,trLine,trSignal],lay,config);
+                const last=data[data.length-1],hist=last.macd_histogram||0,line=last.macd_line||0;
+                const color=hist>=0?'#00d084':'#ff4757';
+                document.getElementById('macdValue').innerHTML=`<span style="color:${color}">${line.toFixed(4)}</span>`;
+                document.getElementById('macdHist').textContent=hist.toFixed(4);
+            } catch(e) { console.error('MACD error:', e); }
+        }
+
+        // ── Bollinger Mini Chart ──────────────────────────────
+        function drawBB(data){
+            try {
+                if(data.length<2)return;
+                
+                // Lower band with fill between
+                const trLower={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>x.bb_lower||0),
+                    type:'scatter',
+                    mode:'lines',
+                    line:{color:'rgba(0,208,132,0.6)',width:1},
+                    fill:'tonexty',
+                    fillcolor:'rgba(0,208,132,0.15)',
+                    showlegend:true,
+                    name:'Lower Band'
+                };
+                
+                // Middle SMA line
+                const trMiddle={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>(x.open+x.close)/2),
+                    type:'scatter',
+                    mode:'lines',
+                    line:{color:'rgba(232,237,245,0.7)',width:1.5,dash:'dash'},
+                    showlegend:true,
+                    name:'SMA(20)'
+                };
+                
+                // Upper band
+                const trUpper={
+                    x:data.map(x=>x.timestamp),
+                    y:data.map(x=>x.bb_upper||0),
+                    type:'scatter',
+                    mode:'lines',
+                    line:{color:'rgba(255,71,87,0.6)',width:1},
+                    fill:'none',
+                    showlegend:true,
+                    name:'Upper Band'
+                };
+                
+                const lay={
+                    paper_bgcolor:'#151a22',
+                    plot_bgcolor:'#151a22',
+                    font:{family:'JetBrains Mono',color:'#8c99b0',size:10},
+                    margin:{l:60,r:20,t:30,b:40},
+                    xaxis:{showgrid:false,type:'date',autorange:true},
+                    yaxis:{showgrid:true,gridcolor:'rgba(140,153,176,0.1)',visible:true},
+                    showlegend:true,
+                    hovermode:'x unified'
+                };
+                
+                const config={
+                    displayModeBar:true,
+                    responsive:true,
+                    modeBarButtonsToRemove:['lasso2d','select2d'],
+                    modeBarButtonsToAdd:[
+                        {
+                            name:'Reset Zoom',
+                            icon:{width:500,height:500,path:'M0 0h500v500H0z'},
+                            click:function(gd){Plotly.relayout(gd,{'xaxis.autorange':true,'yaxis.autorange':true})}
+                        }
+                    ]
+                };
+                
+                Plotly.newPlot('bbChart',[trUpper,trMiddle,trLower],lay,config);
+                const last=data[data.length-1];
+                document.getElementById('bbLow').textContent=(last.bb_lower||0).toFixed(4);
+                document.getElementById('bbUp').textContent=(last.bb_upper||0).toFixed(4);
+            } catch(e) { console.error('BB error:', e); }
+        }
+
+        // ── Agents Panel ──────────────────────────────────────
+        function renderAgents(f){
+            const agents=[{name:'TechnicalAgent',color:'var(--blue)',score:f.technical_score||0.3},{name:'RegimeAgent',color:'var(--purple)',score:f.regime_score||0.5},{name:'MicrostructureAgent',color:'var(--amber)',score:f.micro_score||0.1}];
+            document.getElementById('agentRows').innerHTML=agents.map(a=>{const pct=Math.max(0,Math.min(100,(a.score+1)*50));const color=a.score>0?'var(--green)':'var(--red)';return`<div class="agent-row"><div class="agent-dot" style="background:${a.color};"></div><div class="agent-name">${a.name}</div><div class="agent-score-bar"><div class="agent-score-fill" style="width:${pct}%;background:${a.color};"></div></div><div class="agent-value" style="color:${color};">${a.score>=0?'+':''}${a.score.toFixed(2)}</div></div>`}).join('')+`<div class="agent-row"><div class="agent-dot" style="background:var(--text3);"></div><div class="agent-name">FundamentalAgent</div><span class="badge ${f.fundamental_status==='CLEAR'?'badge-clear':'badge-blocked'}">${f.fundamental_status||'CLEAR'}</span></div>`;
+            const regime=f.regime||'SIDEWAYS';
+            const cls=regime.includes('BULL')?'regime-bull':(regime.includes('BEAR')?'regime-bear':(regime.includes('CRASH')?'regime-crash':'regime-sideways'));
+            document.getElementById('regimeBadge').className=`regime-badge ${cls}`;
+            document.getElementById('regimeBadge').textContent=regime;
+            const score=f.consensus_score||0;
+            const signal=score>0.1?'BUY':(score<-0.1?'SELL':'HOLD');
+            const badgeCls=signal==='BUY'?'badge-buy':(signal==='SELL'?'badge-sell':'badge-hold');
+            const arcColor=signal==='BUY'?'var(--green)':(signal==='SELL'?'var(--red)':'var(--text3)');
+            const circ=2*Math.PI*45;const offset=circ*(1-(score+1)/2);
+            document.getElementById('gaugeArc').setAttribute('stroke',arcColor);
+            document.getElementById('gaugeArc').setAttribute('stroke-dashoffset',offset);
+            document.getElementById('gaugeText').textContent=(score>=0?'+':'')+score.toFixed(2);
+            document.getElementById('signalBadge').className=`badge ${badgeCls}`;
+            document.getElementById('signalBadge').textContent=signal;
+            document.getElementById('slDisplay').textContent=`SL ${(f.sl||0).toLocaleString()}`;
+            document.getElementById('tpDisplay').textContent=`TP ${(f.tp||0).toLocaleString()}`;
+        }
+
+        // ── Signals Page ──────────────────────────────────────
+        function renderSignals(signals){
+            const total=signals.length,exec=signals.filter(s=>s.status==='executed').length,wins=signals.filter(s=>s.status==='executed'&&(s.pnl||0)>0).length,wr=exec>0?(wins/exec*100):0,blocked=signals.filter(s=>['rejected','skipped'].includes(s.status)).length;
+            document.getElementById('signalMetrics').innerHTML=`<div class="metric-card" style="text-align:center;"><div class="metric-label">Señales Hoy</div><div class="metric-value">${total}</div></div><div class="metric-card" style="text-align:center;"><div class="metric-label">Ejecutadas</div><div class="metric-value">${exec}</div></div><div class="metric-card" style="text-align:center;"><div class="metric-label">Win Rate</div><div class="metric-value" style="color:${wr>=50?'var(--green)':'var(--amber)'};">${wr.toFixed(0)}%</div><div class="metric-bar"><div class="metric-bar-fill" style="width:${wr}%;background:${wr>=50?'var(--green)':'var(--amber)'};"></div></div></div><div class="metric-card" style="text-align:center;"><div class="metric-label">Bloqueadas</div><div class="metric-value" style="color:var(--amber);">${blocked}</div></div>`;
+            document.getElementById('signalsBody').innerHTML=signals.map(s=>{const sb=s.action==='BUY'?'badge-buy':(s.action==='SELL'?'badge-sell':'badge-hold');const stb=s.status==='executed'?'badge-executed':(['rejected','cancelled'].includes(s.status)?'badge-reject':(s.status==='skipped'?'badge-skip':'badge-pending'));return`<tr><td class="symbol-cell">${s.symbol}</td><td><span class="badge ${sb}">${s.action}</span></td><td>${s.entry.toLocaleString()}</td><td class="sl-cell">${s.sl.toLocaleString()}</td><td class="tp-cell">${s.tp.toLocaleString()}</td><td class="rr-cell">${s.rr.toFixed(1)}x</td><td>${(s.confidence*100).toFixed(0)}%</td><td><span class="badge ${stb}">${s.status.toUpperCase()}</span></td></tr>`}).join('');
+            if(signals.length>0)renderSHAP(signals[0]);
+        }
+
+        function renderSHAP(sig){
+            if(!sig.explanation||sig.explanation.length===0){document.getElementById('shapBars').innerHTML='<div class="loading">Sin datos SHAP disponibles</div>';return}
+            const factors=[...sig.explanation].sort((a,b)=>Math.abs(b.weight)-Math.abs(a.weight));
+            const maxW=Math.max(...factors.map(f=>Math.abs(f.weight)),0.01);
+            document.getElementById('shapSignalBadge').className=`badge ${sig.action==='BUY'?'badge-buy':'badge-sell'}`;
+            document.getElementById('shapSignalBadge').textContent=sig.action;
+            document.getElementById('shapSymbol').textContent=sig.symbol;
+            document.getElementById('shapBars').innerHTML=factors.map(f=>{const val=f.direction==='bullish'?f.weight:-f.weight;const pct=(Math.abs(f.weight)/maxW)*100;const color=val>0?'var(--green)':'var(--red)';const fc=val>=0?'shap-fill-pos':'shap-fill-neg';return`<div class="shap-row"><div class="shap-label">${f.factor}</div><div class="shap-track"><div class="${fc}" style="width:${pct}%;"></div></div><div class="shap-value" style="color:${color};">${val>=0?'+':''}${val.toFixed(3)}</div></div>`}).join('');
+            if(sig.summary){document.getElementById('xaiSummary').style.display='block';document.getElementById('xaiSummaryText').textContent=sig.summary}else{document.getElementById('xaiSummary').style.display='none'}
+        }
+
+        // ── Portfolio Page ────────────────────────────────────
+        function renderPortfolio(pf,equity,pos){
+            const pc=pf.daily_pnl>=0?'var(--green)':'var(--red)',ps=pf.daily_pnl>=0?'+':'';
+            document.getElementById('portfolioMetrics').innerHTML=`<div class="metric-card" style="text-align:center;"><div class="metric-label">Equity Total</div><div class="metric-value">$${pf.total_capital.toLocaleString()}</div></div><div class="metric-card" style="text-align:center;"><div class="metric-label">P&L Hoy</div><div class="metric-value" style="color:${pc};">${ps}$${pf.daily_pnl.toFixed(2)}</div><div class="metric-sub" style="color:${pc};">${ps}${(pf.daily_pnl_pct*100).toFixed(2)}%</div></div><div class="metric-card" style="text-align:center;"><div class="metric-label">Sharpe Ratio</div><div class="metric-value" style="color:var(--blue);">${pf.sharpe_ratio.toFixed(2)}</div><div class="metric-bar"><div class="metric-bar-fill" style="width:${Math.min(pf.sharpe_ratio/3*100,100)}%;background:var(--blue);"></div></div></div><div class="metric-card" style="text-align:center;"><div class="metric-label">Max Drawdown</div><div class="metric-value" style="color:var(--amber);">${(pf.drawdown_current*100).toFixed(2)}%</div><div class="metric-bar"><div class="metric-bar-fill" style="width:${Math.min(pf.drawdown_current/0.2*100,100)}%;background:var(--amber);"></div></div></div>`;
+            document.getElementById('sortinoVal').textContent=pf.sortino_ratio.toFixed(2);
+            document.getElementById('pfVal').textContent=pf.profit_factor.toFixed(2);
+            drawEquityCurve(equity);renderPositions(pos);drawPnlChart(pos);
+        }
+
+        function drawEquityCurve(data){
+            const tr={x:data.map(d=>d.timestamp),y:data.map(d=>d.capital),type:'scatter',mode:'lines+markers',line:{color:'#3d8ef8',width:2},fill:'tozeroy',fillcolor:'rgba(61,142,248,0.15)',marker:{size:3,color:'#3d8ef8'}};
+            const lay={paper_bgcolor:'#151a22',plot_bgcolor:'#151a22',font:{family:'JetBrains Mono',color:'#8c99b0',size:10},margin:{l:50,r:10,t:0,b:30},xaxis:{showgrid:true,gridcolor:'rgba(255,255,255,0.04)'},yaxis:{showgrid:true,gridcolor:'rgba(255,255,255,0.04)',tickprefix:'$'},showlegend:false};
+            Plotly.newPlot('equityChart',[tr],lay,{displayModeBar:false,responsive:true});
+        }
+
+        function renderPositions(pos){
+            const c=document.getElementById('positionsList');
+            if(!pos||pos.length===0){c.innerHTML='<div class="loading">Sin posiciones abiertas</div>';document.getElementById('totalOpenPnl').textContent='$0.00';document.getElementById('totalOpenPnl').style.color='var(--text3)';return}
+            let tp=0;c.innerHTML=pos.map(p=>{const dc=p.pnl>=0?'var(--green)':'var(--red)',pc=p.pnl>=0?'var(--green)':'var(--red)';tp+=p.pnl;return`<div class="position-row"><div class="position-dot" style="background:${dc};"></div><div class="position-symbol">${p.symbol}</div><div class="position-qty">${p.size} ${p.side}</div><div class="position-pnl" style="color:${pc};">$${p.pnl>=0?'+':''}${p.pnl.toFixed(2)}</div></div>`}).join('');
+            const tc=tp>=0?'var(--green)':'var(--red)';
+            document.getElementById('totalOpenPnl').textContent=`$${tp>=0?'+':''}${tp.toFixed(2)}`;
+            document.getElementById('totalOpenPnl').style.color=tc;
+        }
+
+        function drawPnlChart(pos){
+            if(!pos||pos.length===0){document.getElementById('pnlChart').innerHTML='<div class="loading">Sin datos</div>';return}
+            const colors=pos.map(p=>p.pnl>=0?'rgba(0,208,132,0.7)':'rgba(255,71,87,0.7)');
+            const tr={x:pos.map(p=>p.pnl),y:pos.map(p=>p.symbol),type:'bar',orientation:'h',marker:{color:colors}};
+            const lay={paper_bgcolor:'#151a22',plot_bgcolor:'#151a22',font:{family:'JetBrains Mono',color:'#8c99b0',size:10},margin:{l:80,r:10,t:0,b:20},xaxis:{showgrid:true,gridcolor:'rgba(255,255,255,0.04)',tickprefix:'$'},yaxis:{showgrid:false},showlegend:false};
+            Plotly.newPlot('pnlChart',[tr],lay,{displayModeBar:false,responsive:true});
+        }
+
+        // ── Risk Page ─────────────────────────────────────────
+        function renderRisk(r){
+            const ks=r.kill_switch||{},active=ks.active||false;
+            const ec=getBarColor(r.total_exposure_pct,r.max_portfolio_risk_pct),dc=getBarColor(r.daily_loss_current,r.daily_loss_limit),ddc=getBarColor(r.drawdown_current,r.max_drawdown_pct),cc=r.consecutive_losses>=5?'var(--red)':(r.consecutive_losses>=3?'var(--amber)':'var(--green)');
+            document.getElementById('riskMetrics').innerHTML=`<div class="metric-card"><div class="metric-label">Exposición Total</div><div class="metric-value" style="color:${ec};">${(r.total_exposure_pct*100).toFixed(1)}%</div><div class="progress-bar"><div class="progress-fill" style="width:${getBarWidth(r.total_exposure_pct,r.max_portfolio_risk_pct)}%;background:${ec};"></div></div><div class="metric-sub" style="color:var(--text3);">Límite: ${(r.max_portfolio_risk_pct*100).toFixed(0)}%</div></div><div class="metric-card"><div class="metric-label">Pérdida Diaria</div><div class="metric-value" style="color:${dc};">${(r.daily_loss_current*100).toFixed(1)}%</div><div class="progress-bar"><div class="progress-fill" style="width:${getBarWidth(r.daily_loss_current,r.daily_loss_limit)}%;background:${dc};"></div></div><div class="metric-sub" style="color:var(--text3);">Límite: ${(r.daily_loss_limit*100).toFixed(0)}%</div></div><div class="metric-card"><div class="metric-label">Drawdown</div><div class="metric-value" style="color:${ddc};">${(r.drawdown_current*100).toFixed(1)}%</div><div class="progress-bar"><div class="progress-fill" style="width:${getBarWidth(r.drawdown_current,r.max_drawdown_pct)}%;background:${ddc};"></div></div><div class="metric-sub" style="color:var(--text3);">Límite: ${(r.max_drawdown_pct*100).toFixed(0)}%</div></div><div class="metric-card"><div class="metric-label">Consecutivas</div><div class="metric-value" style="color:${cc};">${r.consecutive_losses}</div><div class="progress-bar"><div class="progress-fill" style="width:${(r.consecutive_losses/7*100)}%;background:${cc};"></div></div><div class="metric-sub" style="color:var(--text3);">Límite: 7</div></div>`;
+            if(active){document.getElementById('killSwitchStatus').innerHTML=`<div class="kill-switch"><div class="kill-dot" style="background:var(--red);"></div><div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--red);">ACTIVO</div></div><div style="font-family:var(--sans);font-size:11px;color:var(--text3);margin-top:8px;">Todas las órdenes bloqueadas.</div>`}else{document.getElementById('killSwitchStatus').innerHTML=`<div class="kill-switch"><div class="kill-dot" style="background:var(--green);"></div><div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);">INACTIVO</div></div><div style="font-family:var(--sans);font-size:11px;color:var(--text3);margin-top:8px;">Sistema operando normalmente. Trading activo.</div>`}
+            document.getElementById('killSwitchTriggers').innerHTML=`<div class="trigger-row"><span class="trigger-label">Pérdida diaria</span><span class="trigger-status" style="color:var(--green);">OK</span></div><div class="trigger-row"><span class="trigger-label">Drawdown</span><span class="trigger-status" style="color:var(--green);">OK</span></div><div class="trigger-row"><span class="trigger-label">Consecutivas</span><span class="trigger-status" style="color:var(--green);">OK</span></div><div class="trigger-row"><span class="trigger-label">Manual</span><span class="trigger-status" style="color:var(--green);">OK</span></div>`;
+            drawExposureDonut(r);renderLimits(r);
+        }
+
+        function drawExposureDonut(r){
+            const labels=[],values=[],colors=[];
+            const sc={BTCUSDT:'rgba(0,208,132,0.8)',ETHUSDT:'rgba(0,208,132,0.6)',EURUSD:'rgba(255,71,87,0.8)',GBPUSD:'rgba(255,71,87,0.6)',XAUUSD:'rgba(245,166,35,0.8)',US500:'rgba(61,142,248,0.8)',USDJPY:'rgba(167,139,250,0.8)',US30:'rgba(167,139,250,0.6)'};
+            if(r.exposure_by_symbol){for(const[sym,pct]of Object.entries(r.exposure_by_symbol)){labels.push(sym);values.push(pct*100);colors.push(sc[sym]||'rgba(255,255,255,0.3)')}}
+            const free=Math.max(0,100-(r.total_exposure_pct||0)*100);
+            if(free>0){labels.push('Libre');values.push(free);colors.push('rgba(28,35,48,0.9)')}
+            if(values.length===0){document.getElementById('exposureChart').innerHTML='<div class="loading">Sin datos</div>';return}
+            const tr={type:'pie',hole:0.72,labels:labels,values:values,marker:{colors:colors},textinfo:'label+percent',textfont:{family:'Syne',size:10,color:'#8c99b0'},hoverinfo:'label+value'};
+            const lay={paper_bgcolor:'#151a22',margin:{l:0,r:0,t:0,b:0},showlegend:false};
+            Plotly.newPlot('exposureChart',[tr],lay,{displayModeBar:false,responsive:true});
+        }
+
+        function renderLimits(r){
+            const limits=[{name:'Exposición total',configured:r.max_portfolio_risk_pct,actual:r.total_exposure_pct},{name:'Pérdida diaria',configured:r.daily_loss_limit,actual:r.daily_loss_current},{name:'Drawdown máximo',configured:r.max_drawdown_pct,actual:r.drawdown_current},{name:'Consecutivas',configured:7,actual:r.consecutive_losses}];
+            document.getElementById('limitsBody').innerHTML=limits.map(l=>{const usage=l.configured>0?(l.actual/l.configured*100):0;const capped=Math.min(usage,100);const bc=capped<50?'var(--green)':(capped<80?'var(--amber)':'var(--red)');const badge=capped<50?'badge-ok':(capped<80?'badge-watch':'badge-danger');const bt=capped<50?'OK':(capped<80?'WATCH':'DANGER');const cs=l.name==='Consecutivas'?l.configured:`${(l.configured*100).toFixed(0)}%`;const as=l.name==='Consecutivas'?l.actual:`${(l.actual*100).toFixed(1)}%`;return`<tr><td style="color:var(--text1);font-weight:500;">${l.name}</td><td>${cs}</td><td>${as}</td><td><div style="display:flex;align-items:center;"><div class="mini-bar"><div class="mini-bar-fill" style="width:${capped}%;background:${bc};"></div></div><span style="font-family:var(--mono);font-size:10px;color:var(--text3);">${capped.toFixed(0)}%</span></div></td><td><span class="badge ${badge}">${bt}</span></td></tr>`}).join('');
+        }
+
+        function getBarColor(c,l){const p=l>0?c/l:0;return p<0.5?'var(--green)':(p<0.8?'var(--amber)':'var(--red)')}
+        function getBarWidth(c,l){return Math.min((l>0?c/l:0)*100,100)}
+
+        // ── Data Loading ──────────────────────────────────────
+        async function fetchAPI(path){
+            try{
+                console.log('Fetching:', API_URL+path);
+                const r=await fetch(API_URL+path);
+                if(r.ok){
+                    const data = await r.json();
+                    console.log('Got response:', path);
+                    return data;
+                } else {
+                    console.error('HTTP error:', path, r.status);
+                }
+            }catch(e){
+                console.error('Fetch failed:', path, e);
+            }
+            return null;
+        }
+
+        async function loadMarketData(sym){
+            console.log('loadMarketData:', sym, 'TF:', selectedTF);
+            const isMock=MOCK_SYMBOLS.includes(sym);
+            let candles=[];
+            let isRealData=false;
+            
+            if(isMock){
+                // For crypto, always use mock data
+                console.log('Using MOCK for', sym);
+                drawCandlestick(MOCK_CRYPTO.candles,true);
+                drawRSI(MOCK_CRYPTO.candles);drawMACD(MOCK_CRYPTO.candles);drawBB(MOCK_CRYPTO.candles);
+                renderAgents(MOCK_CRYPTO.features);
+                return;
+            }
+            
+            // Try loading real data from API
+            const data=await fetchAPI(`/market/${sym}/data?limit=9999&timeframe=${selectedTF}`);
+            const feat=await fetchAPI(`/market/${sym}/features`);
+            
+            console.log('Data received:', data ? 'YES ('+data.count+' items)' : 'NO');
+            
+            if(data && data.data && data.data.length > 0){
+                candles = data.data;
+                isRealData = true;
+                console.log('Using real data:', candles.length, 'candles');
+            } else {
+                // Fallback to simulated data if API returns nothing
+                console.log('No data, generating simulated');
+                candles = genForexCandles(250, sym);
+                isRealData = false;
+            }
+            
+            console.log('Drawing with', candles.length, 'candles');
+            drawCandlestick(candles, !isRealData);
+            drawRSI(candles);
+            drawMACD(candles);
+            drawBB(candles);
+            
+            if(feat){
+                renderAgents(feat);
+            } else {
+                const last=candles[candles.length-1];
+                renderAgents({
+                    technical_score:0.3,
+                    regime_score:0.5,
+                    micro_score:0.1,
+                    regime:'SIDEWAYS',
+                    fundamental_status:'CLEAR',
+                    consensus_score:0,
+                    sl:last.bb_lower||0,
+                    tp:last.bb_upper||0
+                });
+            }
+        }
+
+        async function loadSignals(){
+            const data=await fetchAPI('/signals?limit=50');
+            const signals=data&&data.signals&&data.signals.length>0?data.signals:MOCK_SIGNALS;
+            renderSignals(signals);
+        }
+
+        async function loadPortfolio(){
+            const data=await fetchAPI('/portfolio/public');
+            const hist=await fetchAPI('/portfolio/history/public?limit=500');
+            const pos=await fetchAPI('/portfolio/positions/public');
+            const pf=data||MOCK.portfolio;
+            const eq=(hist&&hist.snapshots&&hist.snapshots.length>0)?hist.snapshots:genEquity(90);
+            const positions=(pos&&pos.positions&&pos.positions.length>0)?pos.positions:MOCK.positions;
+            renderPortfolio(pf,eq,positions);
+        }
+
+        async function loadRisk(){
+            const data=await fetchAPI('/risk/status/public');
+            const risk=data||MOCK.risk;
+            renderRisk(risk);
+        }
+
+        // ── Mock Data ─────────────────────────────────────────
+        const MOCK_SIGNALS=[
+            {symbol:'EURUSD',action:'BUY',entry:1.0845,sl:1.0790,tp:1.0920,rr:1.4,confidence:0.62,status:'pending',
+             explanation:[{factor:'EMA Cross',weight:0.25,direction:'bullish'},{factor:'MACD Hist',weight:0.18,direction:'bullish'},{factor:'RSI 14',weight:0.12,direction:'bearish'},{factor:'Vol Ratio',weight:0.08,direction:'bullish'}],
+             summary:'Cruce alcista de EMAs en gráfico semanal. MACD positivo pero RSI acercándose a zona de sobrecompra.'},
+            {symbol:'XAUUSD',action:'BUY',entry:2340,sl:2280,tp:2420,rr:1.3,confidence:0.55,status:'pending',
+             explanation:[{factor:'EMA Cross',weight:0.20,direction:'bullish'},{factor:'BB Width',weight:0.15,direction:'bullish'},{factor:'RSI 14',weight:0.10,direction:'bearish'}],
+             summary:'Oro en tendencia alcista con bandas de Bollinger expandiéndose. Volumen moderado.'}
+        ];
+
+        const MOCK={
+            portfolio:{total_capital:10482,daily_pnl:125.50,daily_pnl_pct:0.012,drawdown_current:0.035,sharpe_ratio:1.45,sortino_ratio:2.10,profit_factor:1.85,max_drawdown_pct:0.08},
+            positions:[{symbol:'EURUSD',side:'LONG',size:1.0,entry:1.0845,current:1.0860,pnl:15.00},{symbol:'XAUUSD',side:'LONG',size:0.5,entry:2340,current:2355,pnl:7.50}],
+            risk:{kill_switch:{active:false},daily_loss_current:0.02,daily_loss_limit:0.10,drawdown_current:0.035,max_drawdown_pct:0.20,consecutive_losses:2,total_exposure_pct:0.12,max_portfolio_risk_pct:0.15,exposure_by_symbol:{EURUSD:0.07,XAUUSD:0.05}}
+        };
+
+        // ── Init ──────────────────────────────────────────────
+        async function init(){
+            console.log('init() starting, Plotly available:', typeof Plotly !== 'undefined');
+            renderSymbolSelector();
+            await loadTicker();
+            await loadMarketData(selectedSymbol);
+        }
+
+        // Wait for DOM to be ready and Plotly to load
+        if(document.readyState === 'loading'){
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

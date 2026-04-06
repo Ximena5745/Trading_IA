@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-04-05T19:49:27.013846",
+  "validation_type": "realistic_costs_metrics",
+  "binance_fees": "0.05% (maker/taker)",
+  "slippage_estimate": "5 bps",
+  "results": {
+    "BTCUSDT": {
+      "original_pnl": 1762010.08984375,
+      "realistic_pnl": 1222315.14034375,
+      "realistic_return": 12223.1514034375,
+      "win_rate": 92.66144814090019,
+      "profit_factor": 3.7621923818622505,
+      "risk_reward_ratio": 3.762192381862251,
+      "sharpe_ratio": 5.7326584549547475,
+      "recovery_factor": 553.6023847424941,
+      "score": 75,
+      "status": "APPROVED"
+    },
+    "ETHUSDT": {
+      "original_pnl": 84026.20666503906,
+      "realistic_pnl": 65120.5632055664,
+      "realistic_return": 651.2056320556641,
+      "win_rate": 92.57641921397381,
+      "profit_factor": 6.821812652033994,
+      "risk_reward_ratio": 6.8218126520339935,
+      "sharpe_ratio": 7.981253718769134,
+      "recovery_factor": 748.3757140933233,
+      "score": 75,
+      "status": "APPROVED"
+    }
+  }
+}

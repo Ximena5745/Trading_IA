@@ -54,6 +54,9 @@ class TechnicalAgent(AbcAgent):
         self._model_path = model_path
         self._model = None
         self._explainer = None
+        self._use_three_class = False
+        self._n_classes = 2
+        self._feature_names = FEATURE_ORDER
         self._load_model()
 
     def _load_model(self) -> None:
@@ -63,6 +66,9 @@ class TechnicalAgent(AbcAgent):
                     payload = pickle.load(f)
                     self._model = payload.get("model")
                     self._explainer = payload.get("explainer")
+                    self._use_three_class = payload.get("use_three_class", False)
+                    self._n_classes = payload.get("n_classes", 2)
+                    self._feature_names = payload.get("feature_names", FEATURE_ORDER)
                 logger.info("technical_agent_loaded", path=self._model_path)
             except Exception as e:
                 logger.warning("technical_agent_load_failed", error=str(e))
@@ -75,15 +81,14 @@ class TechnicalAgent(AbcAgent):
             feature_vector = self._features_to_array(features)
 
             if self._model is not None:
-                score = self._predict_with_model(feature_vector)
+                score, direction, confidence = self._predict_with_model(feature_vector)
                 shap_values = self._compute_shap(feature_vector)
             else:
                 # Fallback: rule-based score when model not trained yet
                 score = self._rule_based_score(features)
+                direction = self._score_to_direction(score)
+                confidence = min(abs(score) * 1.5, 1.0)
                 shap_values = self._rule_based_shap(features)
-
-            direction = self._score_to_direction(score)
-            confidence = min(abs(score) * 1.5, 1.0)
 
             return AgentOutput(
                 agent_id=self.agent_id,
@@ -92,7 +97,7 @@ class TechnicalAgent(AbcAgent):
                 direction=direction,
                 score=round(score, 4),
                 confidence=round(confidence, 4),
-                features_used=FEATURE_ORDER,
+                features_used=self._feature_names,
                 shap_values=shap_values,
                 model_version=self.model_version,
             )
@@ -100,14 +105,33 @@ class TechnicalAgent(AbcAgent):
             raise AgentPredictionError(f"TechnicalAgent prediction failed: {e}") from e
 
     def _features_to_array(self, features: FeatureSet) -> np.ndarray:
+        # Use model's feature names if available
         return np.array(
-            [[getattr(features, f) for f in FEATURE_ORDER]], dtype=np.float32
+            [[getattr(features, f, 0.0) for f in self._feature_names]], dtype=np.float32
         )
 
-    def _predict_with_model(self, X: np.ndarray) -> float:
+    def _predict_with_model(self, X: np.ndarray) -> tuple[float, str, float]:
+        """Returns (score, direction, confidence)"""
         proba = self._model.predict_proba(X)[0]
-        # Class 0 = SELL, Class 1 = BUY → score in [-1, 1]
-        return float(proba[1] - proba[0])
+        
+        if self._use_three_class:
+            # Three classes: 0=SELL, 1=HOLD, 2=BUY
+            direction_map = {0: 'SELL', 1: 'NEUTRAL', 2: 'BUY'}
+            direction = direction_map[proba.argmax()]
+            confidence = float(proba.max())
+            
+            # Score: -1 to 1 (SELL to BUY)
+            if len(proba) == 3:
+                score = float(proba[2] - proba[0])  # BUY - SELL
+            else:
+                score = float(proba[1] - 0.5) * 2  # Normalize to -1 to 1
+        else:
+            # Binary: 0=SELL, 1=BUY
+            score = float(proba[1] - proba[0])
+            direction = self._score_to_direction(score)
+            confidence = min(abs(score) * 1.5, 1.0)
+        
+        return score, direction, confidence
 
     def _compute_shap(self, X: np.ndarray) -> dict[str, float]:
         if self._explainer is None:
@@ -161,27 +185,43 @@ class TechnicalAgent(AbcAgent):
             return "SELL"
         return "NEUTRAL"
 
-    def train(self, X: np.ndarray, y: np.ndarray) -> None:
+    def train(self, X: np.ndarray, y: np.ndarray, use_three_class: bool = False) -> None:
         """Train a new LightGBM model. Called by AdaptationEngine."""
         try:
             import lightgbm as lgb
             import shap
 
+            # Determine number of classes
+            n_classes = len(np.unique(y))
+            
             self._model = lgb.LGBMClassifier(
-                n_estimators=200,
-                learning_rate=0.05,
-                num_leaves=31,
-                min_child_samples=20,
+                n_estimators=300,
+                learning_rate=0.03,
+                num_leaves=63,
+                min_child_samples=30,
+                reg_alpha=0.1,
+                reg_lambda=0.1,
                 random_state=42,
             )
             self._model.fit(X, y)
             self._explainer = shap.TreeExplainer(self._model)
+            self._use_three_class = use_three_class
+            self._n_classes = n_classes
 
             os.makedirs(os.path.dirname(self._model_path), exist_ok=True)
             with open(self._model_path, "wb") as f:
-                pickle.dump({"model": self._model, "explainer": self._explainer}, f)
+                pickle.dump({
+                    "model": self._model, 
+                    "explainer": self._explainer,
+                    "use_three_class": use_three_class,
+                    "n_classes": n_classes,
+                    "feature_names": getattr(self, '_feature_names', FEATURE_ORDER)
+                }, f)
             logger.info(
-                "technical_agent_trained", samples=len(X), path=self._model_path
+                "technical_agent_trained", 
+                samples=len(X), 
+                n_classes=n_classes,
+                path=self._model_path
             )
         except Exception as e:
             raise AgentPredictionError(f"TechnicalAgent training failed: {e}") from e

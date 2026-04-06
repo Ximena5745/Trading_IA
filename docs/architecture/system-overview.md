@@ -49,14 +49,16 @@ Plataforma de trading algorítmico multi-activo que genera señales de compra/ve
 
 ### 1. Presentation Layer
 
-- **Streamlit Dashboard**: 7 páginas para visualización y control
+- **Dashboard HTML/JS Nativo**: 4 páginas (Market View, Signals, Portfolio, Risk) — servido por FastAPI
+- **Streamlit Dashboard**: 7 páginas (legacy) — para visualización y control
 - **Grafana**: Dashboards de monitoreo y métricas
 
 ### 2. API Layer
 
-- **FastAPI**: 12 rutas REST con autenticación JWT
-- **Rate Limiting**: Protección contra abuso
-- **CORS**: Configurado para Streamlit
+- **FastAPI**: 15+ rutas REST con autenticación JWT
+- **Static Files**: Dashboard HTML servido en `/` + `/static/`
+- **Rate Limiting**: Protección contra abuso (`slowapi`)
+- **CORS**: Configurado para Streamlit y dashboard nativo
 
 ### 3. Core Engine
 
@@ -118,11 +120,13 @@ Plataforma de trading algorítmico multi-activo que genera señales de compra/ve
 | Métrica | Valor |
 |---------|-------|
 | Símbolos | 12 |
+| Símbolos con datos reales | 6 (EURUSD, GBPUSD, USDJPY, US30, US500, XAUUSD) |
 | Agentes IA | 4 |
-| Indicadores | 17 |
+| Indicadores | 20 |
 | Estrategias builtin | 2 |
-| API Endpoints | 12 |
-| Dashboard Pages | 7 |
+| API Endpoints | 15+ |
+| Dashboard HTML | 4 páginas |
+| Dashboard Streamlit | 7 páginas |
 | Tests | 76 |
 
 ---

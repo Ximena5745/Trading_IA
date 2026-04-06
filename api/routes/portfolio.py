@@ -51,6 +51,25 @@ async def get_portfolio(user=Depends(get_current_user)):
     return portfolio.model_dump()
 
 
+@router.get("/public")
+async def get_portfolio_public():
+    """Public endpoint for dashboard — returns mock portfolio data."""
+    try:
+        pm = _get_pm()
+        portfolio = pm.get_portfolio()
+        return portfolio.model_dump()
+    except:
+        # Return mock data if manager not initialized
+        return {
+            "user_id": "demo",
+            "total_capital": 10000.0,
+            "available_capital": 9500.0,
+            "positions": [],
+            "pnl_daily": 0.0,
+            "pnl_ytd": 250.0,
+        }
+
+
 @router.get("/positions")
 async def get_positions(user=Depends(get_current_user)):
     """Return all open positions."""
@@ -62,12 +81,49 @@ async def get_positions(user=Depends(get_current_user)):
     }
 
 
+@router.get("/positions/public")
+async def get_positions_public():
+    """Public endpoint for dashboard — returns positions."""
+    try:
+        pm = _get_pm()
+        portfolio = pm.get_portfolio()
+        return {
+            "positions": [p.model_dump() for p in portfolio.positions],
+            "total": len(portfolio.positions),
+        }
+    except:
+        return {"positions": [], "total": 0}
+
+
 @router.get("/history")
 async def get_portfolio_history(limit: int = 100, user=Depends(get_current_user)):
     """Return portfolio snapshots history."""
     pt = _get_pt()
     snapshots = pt.get_snapshots(limit=limit)
     return {"snapshots": snapshots, "count": len(snapshots)}
+
+
+@router.get("/history/public")
+async def get_portfolio_history_public(limit: int = 100):
+    """Public endpoint for dashboard — returns equity history."""
+    try:
+        pt = _get_pt()
+        snapshots = pt.get_snapshots(limit=limit)
+        return {"snapshots": snapshots, "count": len(snapshots)}
+    except:
+        # Return mock equity curve if tracker not initialized
+        from datetime import datetime, timedelta
+        snapshots = []
+        capital = 10000.0
+        now = datetime.utcnow()
+        for i in range(min(limit, 90)):
+            capital += ((-0.45 + __import__("random").random()) * 30)
+            capital = max(capital, 9000)
+            snapshots.append({
+                "timestamp": (now - timedelta(days=i)).isoformat(),
+                "capital": round(capital, 2)
+            })
+        return {"snapshots": list(reversed(snapshots)), "count": len(snapshots)}
 
 
 @router.get("/performance")

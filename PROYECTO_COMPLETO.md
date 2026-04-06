@@ -2,7 +2,7 @@
 
 > Sistema de Trading Algorítmico Multi-activo con IA Explicable
 > 
-> **Versión:** 2.0.0 | **Fecha:** Marzo 2026 | **Estado:** En desarrollo activo
+> **Versión:** 2.1.0 | **Fecha:** Abril 2026 | **Estado:** En desarrollo activo
 
 ---
 
@@ -710,7 +710,27 @@ Authorization: Bearer eyJ...
 
 ## Dashboard
 
-### Páginas
+### Dashboard HTML/JS Nativo (Activo)
+
+Servido directamente por FastAPI en `http://localhost:8000/`. Sin dependencias externas.
+
+| Página | Contenido |
+|--------|-----------|
+| Market View | Candlestick interactivo (Plotly.js), selector símbolo + temporalidad (1W/1M/6M), RSI/MACD/Bollinger mini-charts, panel Agentes IA + Consensus Gauge SVG |
+| Signals | Señales recientes, tabla con badges, panel SHAP con barras horizontales, resumen XAI |
+| Portfolio | Métricas (Equity, P&L, Sharpe, Drawdown), Equity Curve, Posiciones abiertas, P&L por símbolo |
+| Risk Monitor | Kill Switch status, métricas de riesgo con progress bars, Donut de exposición, Tabla Hard Limits |
+
+**Características técnicas:**
+- Fuentes: Syne (UI) + JetBrains Mono (datos)
+- Tema: Dark mode profesional (tokens CSS `--bg0` a `--bg4`)
+- Gráficos: Plotly.js CDN
+- Datos: API REST FastAPI (endpoints públicos sin auth para lectura)
+- Timeframes: 1wk (262 velas), 1mo, 6mo — selector dinámico
+- Símbolos reales: EURUSD, GBPUSD, USDJPY, US30, US500, XAUUSD
+- Símbolos mock: BTCUSDT, ETHUSDT (marcados con `*`)
+
+### Dashboard Streamlit (Legacy — 7 páginas)
 
 | Página | Archivo | Contenido |
 |--------|---------|-----------|
@@ -882,11 +902,13 @@ TELEGRAM_CHAT_ID=
 | Métrica | Valor |
 |---------|-------|
 | Símbolos soportados | 12 |
+| Símbolos con datos reales | 6 (EURUSD, GBPUSD, USDJPY, US30, US500, XAUUSD) |
 | Agentes IA | 4 |
-| Indicadores técnicos | 17 |
+| Indicadores técnicos | 20 |
 | Estrategias builtin | 2 |
-| API Endpoints | 12 |
-| Dashboard Pages | 7 |
+| API Endpoints | 15+ |
+| Dashboard HTML | 4 páginas |
+| Dashboard Streamlit | 7 páginas (legacy) |
 | Tests totales | 76 (39 unit + 37 integration) |
 | Límites hardcodeados | 7 |
 

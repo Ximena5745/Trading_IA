@@ -22,8 +22,8 @@ async def list_signals(
     symbol: Optional[str] = None,
     signal_status: Optional[str] = Query(default=None, alias="status"),
     limit: int = Query(default=50, le=200),
-    _: dict = Depends(require_trader),
 ):
+    """Public endpoint for dashboard without auth requirement."""
     results = list(_signals.values())
     if symbol:
         results = [s for s in results if s["symbol"] == symbol.upper()]

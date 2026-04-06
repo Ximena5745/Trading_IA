@@ -61,23 +61,102 @@ Authorization: Bearer <token>
 
 ## Market Data
 
-### GET /market/candles/{symbol}
+> **Nota:** Los endpoints GET de `/market/*` son **públicos** (sin auth) para consumo del dashboard HTML nativo.
 
-Obtener velas OHLCV históricas.
+### GET /market/symbols
+
+Obtener lista de símbolos soportados.
 
 **Request:**
 ```http
-GET /market/candles/BTCUSDT?timeframe=1h&limit=100
-Authorization: Bearer <token>
+GET /market/symbols
+```
+
+**Response 200:**
+```json
+["BTCUSDT", "ETHUSDT", "EURUSD", "GBPUSD", "USDJPY", "SPX500", "NAS100", "XAUUSD", "USOIL"]
+```
+
+### GET /market/{symbol}/data
+
+Obtener datos OHLCV con features calculadas desde parquet cargados al startup.
+
+**Request:**
+```http
+GET /market/EURUSD/data?timeframe=1wk&limit=250
 ```
 
 **Parameters:**
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| timeframe | string | 1h | 1m, 5m, 15m, 1h, 4h, 1d |
-| limit | int | 100 | Número de velas (max 1000) |
-| from_ts | datetime | - | Fecha inicio (opcional) |
-| to_ts | datetime | - | Fecha fin (opcional) |
+| timeframe | string | 1wk | 1wk, 1mo, 6mo |
+| limit | int | 100 | Número de registros (max 500) |
+
+**Response 200:**
+```json
+{
+    "symbol": "EURUSD",
+    "timeframe": "1wk",
+    "count": 262,
+    "data": [
+        {
+            "timestamp": "2026-03-23T00:00:00+00:00",
+            "open": 1.1564,
+            "high": 1.1638,
+            "low": 1.1485,
+            "close": 1.1547,
+            "volume": 0,
+            "rsi_14": 39.4,
+            "rsi_7": 35.3,
+            "ema_9": 1.1649,
+            "ema_21": 1.1712,
+            "macd_line": -0.0045,
+            "macd_signal": -0.0032,
+            "macd_histogram": -0.0013,
+            "bb_upper": 1.1780,
+            "bb_lower": 1.1350
+        }
+    ]
+}
+```
+
+### GET /market/{symbol}/features
+
+Obtener las últimas features calculadas para un símbolo.
+
+**Request:**
+```http
+GET /market/EURUSD/features
+```
+
+**Response 200:**
+```json
+{
+    "rsi_14": 39.4,
+    "rsi_7": 35.3,
+    "macd_line": -0.0045,
+    "regime": "BEAR TRENDING",
+    "consensus_score": 0.45,
+    "sl": 1.1350,
+    "tp": 1.1780
+}
+```
+
+### GET /market/{symbol}/regime
+
+Obtener el régimen de mercado actual para un símbolo.
+
+**Request:**
+```http
+GET /market/EURUSD/regime
+```
+
+**Response 200:**
+```json
+{
+    "regime": "BEAR TRENDING"
+}
+```
 
 **Response 200:**
 ```json

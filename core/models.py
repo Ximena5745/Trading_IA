@@ -455,6 +455,10 @@ class Portfolio(BaseModel):
     updated_at: datetime
 
 
+# Rebuild Portfolio model now that Position is fully defined
+Portfolio.model_rebuild()
+
+
 # ---------------------------------------------------------------------------
 # Kill Switch State
 # ---------------------------------------------------------------------------
