@@ -132,7 +132,7 @@ async def run_simulation(
         "simulation_job_submitted",
         job_id=job_id,
         strategy_id=req.strategy_id,
-        user=user.get("sub"),
+        user=user.get("user_id"),
     )
     return {"job_id": job_id, "status": "queued"}
 

@@ -1,0 +1,8 @@
+{
+  "symbol": "ETHUSDT",
+  "strategy": "vol_breakout_v1",
+  "params": {
+    "lookback": 15,
+    "atr_mult": 1.5073145332859128
+  }
+}

@@ -10,6 +10,9 @@ from core.observability.logger import get_logger
 from core.strategies.base_strategy import AbcStrategy
 from core.strategies.builtin.ema_rsi import EmaRsiStrategy
 from core.strategies.builtin.mean_reversion import MeanReversionStrategy
+from core.strategies.builtin.cross_sectional_momentum import CrossSectionalMomentumStrategy
+from core.strategies.builtin.tsmom import TSMOMStrategy
+from core.strategies.builtin.volatility_breakout import VolatilityBreakoutStrategy
 
 logger = get_logger(__name__)
 
@@ -22,6 +25,9 @@ class StrategyRegistry:
     def _load_builtins(self) -> None:
         self.register(EmaRsiStrategy())
         self.register(MeanReversionStrategy())
+        self.register(TSMOMStrategy())
+        self.register(VolatilityBreakoutStrategy())
+        self.register(CrossSectionalMomentumStrategy())
 
     def register(self, strategy: AbcStrategy) -> None:
         self._strategies[strategy.strategy_id] = strategy

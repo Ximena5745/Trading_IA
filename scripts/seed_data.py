@@ -25,7 +25,7 @@ settings = get_settings()
 async def seed(symbol: str, interval: str, days: int) -> None:
     client = BinanceClient(
         api_key=settings.BINANCE_API_KEY,
-        api_secret=settings.BINANCE_API_SECRET,
+        api_secret=settings.BINANCE_SECRET_KEY,
         testnet=settings.BINANCE_TESTNET,
     )
 

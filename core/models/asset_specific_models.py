@@ -53,6 +53,11 @@ class TargetType(str, Enum):
     TERNARY = "ternary"  # Compra/Neutro/Venta
     REGRESSION = "regression"  # Retorno futuro
     PERCENTILE = "percentile"  # Percentiles de retorno
+    DYNAMIC = "dynamic"  # Threshold dinámico por volatilidad
+    MULTI_STEP = "multi_step"  # Multi-step ahead (2, 3, 5 bars)
+    ASYMMETRIC = "asymmetric"  # Diferentes umbrales up/down
+    RISK_ADJUSTED = "risk_adjusted"  # Sharpe-like target
+    VOLATILITY_REGIME = "volatility_regime"  # Aware del régimen de volatilidad
 
 
 class StrategyType(str, Enum):

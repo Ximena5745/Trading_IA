@@ -5,11 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRADER IA — Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/drawing.css">
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <script src="/static/js/components.js"></script>
+    <script src="/static/js/drawing.js"></script>
+    <script src="/static/js/indicators-config.js"></script>
+    <script src="/static/js/indicators-engine.js"></script>
+    <script src="/static/js/lightweight-charts-manager.js"></script>
 </head>
 <body>
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #151a22; display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="text-align: center; color: #8c99b0; font-family: JetBrains Mono;">
+            <div style="font-size: 24px; margin-bottom: 20px;">🚀 TRADER·IA</div>
+            <div style="font-size: 14px; margin-bottom: 10px;">Inicializando dashboard...</div>
+            <div style="animation: spin 1s linear infinite;">⚙️</div>
+        </div>
+    </div>
     <nav class="nav">
         <div class="nav-logo">TRADER·IA</div>
         <div class="nav-tabs">
@@ -25,62 +43,108 @@
 
     <!-- PAGE 1: MARKET VIEW -->
     <div class="page active" id="page-market">
-        <div class="symbol-selector" id="symbolSelector">
-            <div class="tf-selector" id="tfSelector">
-                <button class="tf-btn active" data-tf="1d">1D</button>
-                <button class="tf-btn" data-tf="1wk">1W</button>
-                <button class="tf-btn" data-tf="1mo">1M</button>
-            </div>
-        </div>
-        <div class="card">
-            <div class="chart-header">
-                <div><span class="chart-title" id="chartTitle">EURUSD</span><span class="chart-subtitle" id="chartSubtitle">1W · datos reales</span></div>
-                <div class="chart-price" id="chartPrice" style="color:var(--green);">—</div>
-            </div>
-            <div id="candlestickChart" style="height:300px;"></div>
-        </div>
-        <div class="grid3" style="margin-top:12px;">
-            <div class="card">
-                <div class="metric-label">RSI (14)</div>
-                <div id="rsiValue" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);margin-top:4px;">—</div>
-                <div id="rsiChart" style="height:60px;"></div>
-                <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text3);"><span>30</span><span>70</span></div>
-            </div>
-            <div class="card">
-                <div class="metric-label">MACD</div>
-                <div id="macdValue" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);margin-top:4px;">—</div>
-                <div id="macdChart" style="height:60px;"></div>
-                <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">Hist: <span id="macdHist">—</span></div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Bollinger Bands</div>
-                <div id="bbChart" style="height:60px;"></div>
-                <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">
-                    <span style="color:var(--green);">Low <span id="bbLow">—</span></span> &nbsp;
-                    <span style="color:var(--red);">Up <span id="bbUp">—</span></span>
+        <div style="margin-left: 50px; padding: 16px; height: calc(100vh - 140px); overflow-y: auto;">
+            <div class="symbol-selector" id="symbolSelector">
+                <div class="tf-selector" id="tfSelector">
+                    <button class="tf-btn active" data-tf="1d">1D</button>
+                    <button class="tf-btn" data-tf="1wk">1W</button>
+                    <button class="tf-btn" data-tf="1mo">1M</button>
                 </div>
             </div>
-        </div>
-        <div class="grid2" style="margin-top:12px;">
             <div class="card">
-                <div class="section-title">Agentes IA</div>
-                <div id="regimeBadge" class="regime-badge regime-sideways">—</div>
-                <div id="agentRows" style="margin-top:12px;"></div>
+                <div class="chart-header">
+                    <div><span class="chart-title" id="chartTitle">EURUSD</span><span class="chart-subtitle" id="chartSubtitle">1W · datos reales</span></div>
+                    <div class="chart-price" id="chartPrice" style="color:var(--green);">—</div>
+                </div>
+                <!-- Drawing Toolbar -->
+                <div class="drawing-toolbar" id="drawingToolbar">
+                    <button id="tool-line" title="Línea">/</button>
+                    <button id="tool-rect" title="Rectángulo">▭</button>
+                    <button id="tool-triangle" title="Triángulo">△</button>
+                    <button id="tool-text" title="Texto">T</button>
+                    <button id="tool-parallel" title="Paralela">∥</button>
+                    <button id="tool-curve" title="Curva">≈</button>
+                    <button id="tool-ray" title="Rayo">→</button>
+                    <button id="tool-extend" title="Extendida">↔</button>
+                    <div class="divider"></div>
+                    <button id="tool-undo" title="Deshacer">⎌</button>
+                    <button id="tool-redo" title="Rehacer">⎌⎌</button>
+                    <button id="tool-clear" title="Limpiar">🗑️</button>
+                    <div class="divider"></div>
+                    <button id="showPresetsBtn" title="Presets">▼</button>
+                    <button id="showIndicatorsBtn" title="Indicadores">📊</button>
+                </div>
+                <!-- Presets Context Menu (Flotante) -->
+                <div id="presetsMenu" style="display:none;position:fixed;left:60px;top:140px;background:#1a1f27;border:1px solid #333;border-radius:6px;box-shadow:0 4px 12px #0008;padding:12px 10px;min-width:200px;z-index:2000;">
+                    <label for="presetDropdown" style="display:block;font-size:13px;margin-bottom:6px;">Presets:</label>
+                    <select id="presetDropdown" class="preset-dropdown" style="width:100%;margin-bottom:6px;"></select>
+                    <button id="savePresetBtn" style="width:100%;margin-bottom:4px;background:#333;color:#fff;border:none;border-radius:4px;padding:5px 0;font-size:12px;cursor:pointer;">Guardar preset</button>
+                    <button id="deletePresetBtn" style="width:100%;background:#333;color:#fff;border:none;border-radius:4px;padding:5px 0;font-size:12px;cursor:pointer;">Eliminar preset</button>
+                    <div id="noPresetsMsg" style="color:#aaa;font-size:12px;display:none;margin-top:6px;">No hay presets guardados</div>
+                </div>
+                <!-- Indicators Modal Window -->
+                <div id="indicatorsModal" class="indicators-modal" style="display:none;">
+                    <div class="indicators-modal-content">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid #333;padding-bottom:8px;">
+                            <h3 style="margin:0;font-size:15px;color:#fff;">Indicadores</h3>
+                            <button id="closeIndicatorsBtn" style="background:none;border:none;color:#8c99b0;font-size:20px;cursor:pointer;">&times;</button>
+                        </div>
+                        <div id="indicatorsListModal" style="max-height:400px;overflow-y:auto;"></div>
+                        <div style="margin-top:12px;border-top:1px solid #333;padding-top:8px;">
+                            <button id="applyIndicatorsBtn" style="width:100%;background:#007bff;color:#fff;border:none;border-radius:4px;padding:8px 0;font-size:13px;cursor:pointer;font-weight:600;">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal Overlay -->
+                <div id="indicatorsOverlay" class="indicators-overlay" style="display:none;"></div>
+                <!-- Drawing Canvas Overlay -->
+                <canvas id="drawingCanvas" class="drawing-canvas" width="900" height="300" style="pointer-events:auto;"></canvas>
+                <!-- Candlestick Chart -->
+                <div id="candlestickChart" style="height:300px;"></div>
             </div>
-            <div class="card" style="text-align:center;">
-                <div class="section-title">Consensus</div>
-                <svg id="consensusGauge" width="120" height="120" viewBox="0 0 120 120" style="margin:0 auto;">
-                    <circle cx="60" cy="60" r="45" fill="none" stroke="var(--bg3)" stroke-width="10"/>
-                    <circle id="gaugeArc" cx="60" cy="60" r="45" fill="none" stroke="var(--green)" stroke-width="10"
-                        stroke-dasharray="282.74" stroke-dashoffset="141.37" stroke-linecap="round" transform="rotate(-90 60 60)"
-                        style="transition:stroke-dashoffset 0.5s ease;"/>
-                    <text id="gaugeText" x="60" y="55" text-anchor="middle" fill="var(--text1)" font-family="JetBrains Mono" font-size="20" font-weight="600">+0.00</text>
-                    <text x="60" y="72" text-anchor="middle" fill="var(--text3)" font-family="JetBrains Mono" font-size="9">CONSENSUS</text>
-                </svg>
-                <div style="margin-top:8px;"><span id="signalBadge" class="badge badge-hold">HOLD</span></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;background:var(--bg3);border-radius:6px;padding:8px;">
-                    <div id="slDisplay" style="font-family:var(--mono);font-size:11px;color:var(--red);">SL —</div>
-                    <div id="tpDisplay" style="font-family:var(--mono);font-size:11px;color:var(--green);">TP —</div>
+            <div class="grid3" style="margin-top:12px;">
+                <div class="card">
+                    <div class="metric-label">RSI (14)</div>
+                    <div id="rsiValue" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);margin-top:4px;">—</div>
+                    <div id="rsiChart" style="height:60px;"></div>
+                    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--text3);"><span>30</span><span>70</span></div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">MACD</div>
+                    <div id="macdValue" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);margin-top:4px;">—</div>
+                    <div id="macdChart" style="height:60px;"></div>
+                    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">Hist: <span id="macdHist">—</span></div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Bollinger Bands</div>
+                    <div id="bbChart" style="height:60px;"></div>
+                    <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;">
+                        <span style="color:var(--green);">Low <span id="bbLow">—</span></span> &nbsp;
+                        <span style="color:var(--red);">Up <span id="bbUp">—</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="grid2" style="margin-top:12px;">
+                <div class="card">
+                    <div class="section-title">Agentes IA</div>
+                    <div id="regimeBadge" class="regime-badge regime-sideways">—</div>
+                    <div id="agentRows" style="margin-top:12px;"></div>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <div class="section-title">Consensus</div>
+                    <svg id="consensusGauge" width="120" height="120" viewBox="0 0 120 120" style="margin:0 auto;">
+                        <circle cx="60" cy="60" r="45" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+                        <circle id="gaugeArc" cx="60" cy="60" r="45" fill="none" stroke="var(--green)" stroke-width="10"
+                            stroke-dasharray="282.74" stroke-dashoffset="141.37" stroke-linecap="round" transform="rotate(-90 60 60)"
+                            style="transition:stroke-dashoffset 0.5s ease;"/>
+                        <text id="gaugeText" x="60" y="55" text-anchor="middle" fill="var(--text1)" font-family="JetBrains Mono" font-size="20" font-weight="600">+0.00</text>
+                        <text x="60" y="72" text-anchor="middle" fill="var(--text3)" font-family="JetBrains Mono" font-size="9">CONSENSUS</text>
+                    </svg>
+                    <div style="margin-top:8px;"><span id="signalBadge" class="badge badge-hold">HOLD</span></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;background:var(--bg3);border-radius:6px;padding:8px;">
+                        <div id="slDisplay" style="font-family:var(--mono);font-size:11px;color:var(--red);">SL —</div>
+                        <div id="tpDisplay" style="font-family:var(--mono);font-size:11px;color:var(--green);">TP —</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -232,9 +296,6 @@
         
         function genEquity(d){const a=[];let e=1e4;const now=new Date();for(let i=d;i>=0;i--){e+=(Math.random()-0.45)*150;e=Math.max(e,9e3);a.push({timestamp:new Date(now-i*864e5).toISOString(),capital:+e.toFixed(2)})}return a}
 
-        // ── Tab Navigation ────────────────────────────────────
-        document.querySelectorAll('.nav-tab').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));tab.classList.add('active');document.getElementById('page-'+tab.dataset.tab).classList.add('active');if(tab.dataset.tab==='signals')loadSignals();if(tab.dataset.tab==='portfolio')loadPortfolio();if(tab.dataset.tab==='risk')loadRisk();if(tab.dataset.tab==='crypto')console.log('CRYPTO tab activated - iframe loaded')})});
-
         // ── Ticker Bar ────────────────────────────────────────
         async function loadTicker(){
             try{
@@ -277,139 +338,99 @@
             s.innerHTML=symHtml+`<div class="tf-selector" id="tfSelector">${TIMEFRAMES.map(tf=>`<button class="tf-btn ${tf===selectedTF?'active':''}" data-tf="${tf}">${TF_LABELS[tf]}</button>`).join('')}</div>`;
             console.log('Added', ALL_SYMBOLS.length, 'symbol buttons and', TIMEFRAMES.length, 'timeframe buttons');
             
-            s.querySelectorAll('.symbol-btn').forEach(btn=>{
-                btn.addEventListener('click',()=>{
-                    console.log('Symbol clicked:', btn.dataset.symbol);
-                    selectedSymbol=btn.dataset.symbol;
+            // Symbol buttons
+            const symBtns = s.querySelectorAll('.symbol-btn');
+            console.log('Found', symBtns.length, 'symbol buttons');
+            symBtns.forEach((btn, idx)=>{
+                btn.addEventListener('click',function(){
+                    console.log('Symbol clicked:', this.dataset.symbol);
+                    selectedSymbol = this.dataset.symbol;
                     s.querySelectorAll('.symbol-btn').forEach(b=>b.classList.remove('active'));
-                    btn.classList.add('active');
+                    this.classList.add('active');
+                    console.log('Loading market data for:', selectedSymbol);
                     loadMarketData(selectedSymbol);
-                })
+                });
             });
-            s.querySelectorAll('.tf-btn').forEach(btn=>{
-                btn.addEventListener('click',()=>{
-                    console.log('Timeframe clicked:', btn.dataset.tf);
-                    selectedTF=btn.dataset.tf;
+            
+            // Timeframe buttons
+            const tfBtns = s.querySelectorAll('.tf-btn');
+            console.log('Found', tfBtns.length, 'timeframe buttons');
+            tfBtns.forEach((btn, idx)=>{
+                btn.addEventListener('click', function(){
+                    console.log('Timeframe clicked:', this.dataset.tf);
+                    selectedTF = this.dataset.tf;
                     s.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
-                    btn.classList.add('active');
+                    this.classList.add('active');
+                    console.log('Reloading chart with timeframe:', selectedTF);
                     loadMarketData(selectedSymbol);
-                })
+                });
             });
         }
 
-        // ── Candlestick Chart ─────────────────────────────────
-        function drawCandlestick(data,isMock){
-            console.log('drawCandlestick called with', data.length, 'items, isMock=', isMock);
-            try {
-                const c=data;
-                if(c.length<2){
-                    console.warn('Not enough data');
-                    document.getElementById('candlestickChart').innerHTML='<div class="loading">Datos insuficientes</div>';
-                    return;
-                }
-                
-                // Use all data but let user zoom
-                const displayData = c;
-                console.log('Displaying', displayData.length, 'candles');
-                
-                const tr={
-                    x:displayData.map(x=>x.timestamp),
-                    open:displayData.map(x=>x.open),
-                    high:displayData.map(x=>x.high),
-                    low:displayData.map(x=>x.low),
-                    close:displayData.map(x=>x.close),
-                    type:'candlestick',
-                    increasing:{line:{color:'#00d084'},fillcolor:'rgba(0,208,132,0.9)'},
-                    decreasing:{line:{color:'#ff4757'},fillcolor:'rgba(255,71,87,0.85)'}
-                };
-                const traces=[tr];
-                if(displayData[0].ema_9!==undefined){
-                    traces.push({
-                        x:displayData.map(x=>x.timestamp),
-                        y:displayData.map(x=>x.ema_9),
-                        type:'scatter',mode:'lines',
-                        line:{color:'#3d8ef8',width:1.5},
-                        showlegend:false
-                    });
-                }
-                if(displayData[0].ema_21!==undefined){
-                    traces.push({
-                        x:displayData.map(x=>x.timestamp),
-                        y:displayData.map(x=>x.ema_21),
-                        type:'scatter',mode:'lines',
-                        line:{color:'#a78bfa',width:1.5,dash:'dash'},
-                        showlegend:false
-                    });
-                }
-                
-                const lay={
-                    paper_bgcolor:'#151a22',
-                    plot_bgcolor:'#151a22',
-                    font:{family:'JetBrains Mono',color:'#8c99b0',size:10},
-                    margin:{l:60,r:20,t:10,b:40},
-                    xaxis:{
-                        showgrid:true,
-                        gridcolor:'rgba(255,255,255,0.04)',
-                        rangeslider:{visible:false},
-                        type:'date'
-                    },
-                    yaxis:{
-                        showgrid:true,
-                        gridcolor:'rgba(255,255,255,0.04)',
-                        autorange:true
-                    },
-                    showlegend:false,
-                    hovermode:'x unified'
-                };
-                
-                const config={
-                    displayModeBar:true,
-                    responsive:true,
-                    modeBarButtonsToRemove:['lasso2d','select2d'],
-                    modeBarButtonsToAdd:[
-                        {
-                            name:'Reset Zoom',
-                            icon:{width:500,height:500,path:'M0 0h500v500H0z'},
-                            click:function(gd){Plotly.relayout(gd,{'xaxis.autorange':true,'yaxis.autorange':true})}
-                        }
-                    ],
-                    toImageButtonOptions:{
-                        format:'png',
-                        filename:'chart',
-                        height:600,
-                        width:1200,
-                        scale:2
-                    }
-                };
-                
-                console.log('Calling Plotly.newPlot with', traces.length, 'traces');
-                Plotly.newPlot('candlestickChart',traces,lay,config);
-                
-                const last=c[c.length-1],prev=c[c.length-2],chg=((last.close-prev.close)/prev.close*100);
-                const arrow=chg>=0?'▲':'▼',color=chg>=0?'#00d084':'#ff4757';
-                document.getElementById('chartPrice').innerHTML=`<span style="color:${color}">${last.close.toLocaleString()} ${arrow} ${chg>=0?'+':''}${chg.toFixed(2)}%</span>`;
-                document.getElementById('chartTitle').textContent=selectedSymbol;
-                document.getElementById('chartSubtitle').textContent=isMock?'Mock · datos simulados':`${TF_LABELS[selectedTF]} · datos reales (${displayData.length} velas)`;
-                console.log('Chart rendered successfully');
-            } catch(e) {
-                console.error('Error in drawCandlestick:', e);
-                document.getElementById('candlestickChart').innerHTML='<div class="loading" style="color:red">Error: '+e.message+'</div>';
+        // ── Candlestick Chart con Plotly (Interactivo) ──────────────────
+        window.drawCandlestick = function(data, isMock, indicators) {
+            console.log('[Dashboard] drawCandlestick called with', data.length, 'candles');
+            window._lastCandlestickData = data;
+            if(!Array.isArray(indicators)) indicators = [];
+            const c = data;
+            if(!Array.isArray(c) || c.length<2){
+                console.error('[Dashboard] Invalid data:', c.length, 'items');
+                document.getElementById('candlestickChart').innerHTML='<div class="loading">Datos insuficientes</div>';
+                return;
             }
-        }
+            
+            const displayData = c;
+            const traces=[{
+                x:displayData.map(x=>x.timestamp),
+                open:displayData.map(x=>x.open),
+                high:displayData.map(x=>x.high),
+                low:displayData.map(x=>x.low),
+                close:displayData.map(x=>x.close),
+                type:'candlestick',
+                increasing:{line:{color:'#00d084'},fillcolor:'rgba(0,208,132,0.9)'},
+                decreasing:{line:{color:'#ff4757'},fillcolor:'rgba(255,71,87,0.85)'}}];
+            const emaColors = (indicatorColors.EMA || {});
+            if(selectedIndicators.EMA && displayData[0].ema_9!==undefined){
+                traces.push({x:displayData.map(x=>x.timestamp),y:displayData.map(x=>x.ema_9),type:'scatter',mode:'lines',line:{color:emaColors.ema9||'#3d8ef8',width:1.5},name:'EMA 9',showlegend:true});
+            }
+            if(selectedIndicators.EMA && displayData[0].ema_21!==undefined){
+                traces.push({x:displayData.map(x=>x.timestamp),y:displayData.map(x=>x.ema_21),type:'scatter',mode:'lines',line:{color:emaColors.ema21||'#a78bfa',width:1.5,dash:'dash'},name:'EMA 21',showlegend:true});
+            }
+            let layout={
+                paper_bgcolor:'#151a22',plot_bgcolor:'#151a22',
+                font:{family:'JetBrains Mono',color:'#8c99b0',size:10},
+                margin:{l:60,r:20,t:10,b:40},
+                xaxis:{showgrid:true,gridcolor:'rgba(255,255,255,0.04)',rangeslider:{visible:false},type:'date'},
+                yaxis:{showgrid:true,gridcolor:'rgba(255,255,255,0.04)',autorange:true},
+                showlegend:true,hovermode:'x unified',
+                dragmode:'zoom'
+            };
+            const config={
+                displayModeBar:true,
+                responsive:true,
+                modeBarButtonsToAdd:['pan2d','zoom2d','autoScale2d'],
+                modeBarButtonsToRemove:['lasso2d','select2d'],
+                toImageButtonOptions:{format:'png',filename:'chart',height:600,width:1200,scale:2}
+            };
+            Plotly.newPlot('candlestickChart', traces, layout, config);
+            console.log('[Dashboard] Candlestick rendered with Plotly ✓');
+            try{ if(typeof setupChartSync==='function') setupChartSync(); }catch(e){console.warn('[Dashboard] setupChartSync skipped',e);}
+        };
 
         // ── RSI Mini Chart ────────────────────────────────────
         function drawRSI(data){
             try {
                 if(data.length<2)return;
                 
+                const lineColor = indicatorColors.RSI || '#f5a623';
                 const tr={
                     x:data.map(x=>x.timestamp),
                     y:data.map(x=>x.rsi_14||50),
                     type:'scatter',
                     mode:'lines',
-                    line:{color:'#f5a623',width:2},
+                    line:{color:lineColor,width:2},
                     fill:'tozeroy',
-                    fillcolor:'rgba(245,166,35,0.08)',
+                    fillcolor:lineColor+'14',
                     name:'RSI(14)'
                 };
                 
@@ -443,8 +464,9 @@
                 
                 Plotly.newPlot('rsiChart',[tr],lay,config);
                 const val=data[data.length-1].rsi_14||50;
-                const rc=val>70?'#ff4757':(val<30?'#00d084':'#f5a623');
+                const rc=val>70?'#ff4757':(val<30?'#00d084':lineColor);
                 document.getElementById('rsiValue').innerHTML=`<span style="color:${rc}">${val.toFixed(1)}</span>`;
+                try{ if(typeof setupChartSync==='function') setupChartSync(); }catch(e){console.warn('setupChartSync failed',e)}
             } catch(e) { console.error('RSI error:', e); }
         }
 
@@ -453,13 +475,16 @@
             try {
                 if(data.length<2)return;
                 
-                // Histogram trace (bars)
-                const colors=data.map(x=>(x.macd_histogram||0)>=0?'rgba(0,208,132,0.6)':'rgba(255,71,87,0.6)');
+                const colors = indicatorColors.MACD || { line: '#00d9ff', signal: '#ff6b6b', histogram: '#4ecdc4' };
+                
+                // Histogram trace (bars) - use histogram color
+                const histColor = colors.histogram || '#4ecdc4';
+                const histColors = data.map(x=>(x.macd_histogram||0)>=0?histColor+'99':histColor+'44');
                 const trHist={
                     x:data.map(x=>x.timestamp),
                     y:data.map(x=>x.macd_histogram||0),
                     type:'bar',
-                    marker:{color:colors},
+                    marker:{color:histColors},
                     name:'Histogram',
                     yaxis:'y'
                 };
@@ -470,7 +495,7 @@
                     y:data.map(x=>x.macd_line||0),
                     type:'scatter',
                     mode:'lines',
-                    line:{color:'#f5a623',width:2},
+                    line:{color:colors.line || '#00d9ff',width:2},
                     name:'MACD',
                     yaxis:'y'
                 };
@@ -481,7 +506,7 @@
                     y:data.map(x=>x.macd_signal||0),
                     type:'scatter',
                     mode:'lines',
-                    line:{color:'#00d9ff',width:2,dash:'dash'},
+                    line:{color:colors.signal || '#ff6b6b',width:2,dash:'dash'},
                     name:'Signal',
                     yaxis:'y'
                 };
@@ -515,6 +540,7 @@
                 const color=hist>=0?'#00d084':'#ff4757';
                 document.getElementById('macdValue').innerHTML=`<span style="color:${color}">${line.toFixed(4)}</span>`;
                 document.getElementById('macdHist').textContent=hist.toFixed(4);
+                try{ if(typeof setupChartSync==='function') setupChartSync(); }catch(e){console.warn('setupChartSync failed',e)}
             } catch(e) { console.error('MACD error:', e); }
         }
 
@@ -523,15 +549,17 @@
             try {
                 if(data.length<2)return;
                 
+                const colors = indicatorColors.BB || { upper: '#ff4757', middle: '#a4b0bd', lower: '#00d084' };
+                
                 // Lower band with fill between
                 const trLower={
                     x:data.map(x=>x.timestamp),
                     y:data.map(x=>x.bb_lower||0),
                     type:'scatter',
                     mode:'lines',
-                    line:{color:'rgba(0,208,132,0.6)',width:1},
+                    line:{color:colors.lower || '#00d084',width:1},
                     fill:'tonexty',
-                    fillcolor:'rgba(0,208,132,0.15)',
+                    fillcolor:(colors.lower || '#00d084')+'26',
                     showlegend:true,
                     name:'Lower Band'
                 };
@@ -542,7 +570,7 @@
                     y:data.map(x=>(x.open+x.close)/2),
                     type:'scatter',
                     mode:'lines',
-                    line:{color:'rgba(232,237,245,0.7)',width:1.5,dash:'dash'},
+                    line:{color:colors.middle || '#a4b0bd',width:1.5,dash:'dash'},
                     showlegend:true,
                     name:'SMA(20)'
                 };
@@ -553,7 +581,7 @@
                     y:data.map(x=>x.bb_upper||0),
                     type:'scatter',
                     mode:'lines',
-                    line:{color:'rgba(255,71,87,0.6)',width:1},
+                    line:{color:colors.upper || '#ff4757',width:1},
                     fill:'none',
                     showlegend:true,
                     name:'Upper Band'
@@ -587,7 +615,57 @@
                 const last=data[data.length-1];
                 document.getElementById('bbLow').textContent=(last.bb_lower||0).toFixed(4);
                 document.getElementById('bbUp').textContent=(last.bb_upper||0).toFixed(4);
+                try{ if(typeof setupChartSync==='function') setupChartSync(); }catch(e){console.warn('setupChartSync failed',e)}
             } catch(e) { console.error('BB error:', e); }
+        }
+
+        // ── Chart Sync Utility ─────────────────────────────────────────
+        function setupChartSync(){
+            // Solo para Plotly charts (RSI, MACD, BB)
+            // No aplica a Lightweight Charts (candlestickChart)
+            if(!window.Plotly) return;
+            if(window._chartSyncInitialized) return;
+            console.log('[Sync] Initializing chart sync for Plotly charts only');
+            window._chartSyncInitialized = true;
+            window._syncing = false;
+            const otherIds = ['rsiChart','macdChart','bbChart'];
+
+            function applyRangeTo(id, update){
+                try{ const el=document.getElementById(id); if(el) Plotly.relayout(el, update); }catch(e){console.warn('relayout failed',id,e)}
+            }
+
+            function handleRelayout(sourceId, eventdata){
+                if(window._syncing) return;
+                // handle autorange reset
+                if(eventdata['xaxis.autorange']===true){
+                    window._syncing = true;
+                    otherIds.forEach(id=>applyRangeTo(id, {'xaxis.autorange': true}));
+                    window._syncing = false;
+                    return;
+                }
+                const start = eventdata['xaxis.range[0]'] || eventdata['xaxis.range0'] || null;
+                const end = eventdata['xaxis.range[1]'] || eventdata['xaxis.range1'] || null;
+                if(start && end){
+                    window._syncing = true;
+                    const update = {'xaxis.range': [start,end]};
+                    otherIds.forEach(id=>applyRangeTo(id, update));
+                    window._syncing = false;
+                }
+            }
+
+            try{
+                otherIds.forEach(function(id){
+                    const el = document.getElementById(id);
+                    if(el && !el._syncListener){
+                        el._syncListener = true;
+                        // Use addEventListener for plotly_relayout events (correct for Plotly)
+                        el.addEventListener('plotly_relayout', function(eventdata){ 
+                            handleRelayout(id, eventdata.detail || {}); 
+                        });
+                    }
+                });
+                console.log('[Sync] Chart sync initialized ✓');
+            }catch(e){ console.warn('[Sync] Setup error (non-critical)',e); }
         }
 
         // ── Agents Panel ──────────────────────────────────────
@@ -712,38 +790,46 @@
         }
 
         async function loadMarketData(sym){
-            console.log('loadMarketData:', sym, 'TF:', selectedTF);
+            console.log(`[LoadMarketData] Starting for ${sym}, TF: ${selectedTF}`);
             const isMock=MOCK_SYMBOLS.includes(sym);
             let candles=[];
             let isRealData=false;
             
             if(isMock){
                 // For crypto, always use mock data
-                console.log('Using MOCK for', sym);
+                console.log(`[LoadMarketData] Using MOCK data for ${sym}`);
+                console.log('[LoadMarketData] MOCK candles sample:', MOCK_CRYPTO.candles.slice(0, 2));
                 drawCandlestick(MOCK_CRYPTO.candles,true);
                 drawRSI(MOCK_CRYPTO.candles);drawMACD(MOCK_CRYPTO.candles);drawBB(MOCK_CRYPTO.candles);
                 renderAgents(MOCK_CRYPTO.features);
+                console.log('[LoadMarketData] MOCK data loaded ✓');
                 return;
             }
             
             // Try loading real data from API
+            console.log(`[LoadMarketData] Fetching real data from API...`);
             const data=await fetchAPI(`/market/${sym}/data?limit=9999&timeframe=${selectedTF}`);
             const feat=await fetchAPI(`/market/${sym}/features`);
             
-            console.log('Data received:', data ? 'YES ('+data.count+' items)' : 'NO');
+            console.log('[LoadMarketData] API Response:', {
+                data_count: data ? data.count : 0,
+                data_sample: data && data.data ? data.data.slice(0, 2) : null,
+                features_status: feat ? 'OK' : 'FAIL'
+            });
             
             if(data && data.data && data.data.length > 0){
                 candles = data.data;
                 isRealData = true;
-                console.log('Using real data:', candles.length, 'candles');
+                console.log(`[LoadMarketData] Using real data: ${candles.length} candles`);
             } else {
                 // Fallback to simulated data if API returns nothing
-                console.log('No data, generating simulated');
+                console.log('[LoadMarketData] No API data, generating simulated candles');
                 candles = genForexCandles(250, sym);
                 isRealData = false;
             }
             
-            console.log('Drawing with', candles.length, 'candles');
+            console.log(`[LoadMarketData] Drawing with ${candles.length} candles`);
+            window.currentChartData = candles;
             drawCandlestick(candles, !isRealData);
             drawRSI(candles);
             drawMACD(candles);
@@ -764,6 +850,10 @@
                     tp:last.bb_upper||0
                 });
             }
+            
+            // ✓ RE-RENDER SYMBOL SELECTOR TO RESTORE EVENT LISTENERS
+            console.log('[LoadMarketData] Re-rendering symbol selector to restore event listeners');
+            renderSymbolSelector();
         }
 
         async function loadSignals(){
@@ -804,12 +894,291 @@
             risk:{kill_switch:{active:false},daily_loss_current:0.02,daily_loss_limit:0.10,drawdown_current:0.035,max_drawdown_pct:0.20,consecutive_losses:2,total_exposure_pct:0.12,max_portfolio_risk_pct:0.15,exposure_by_symbol:{EURUSD:0.07,XAUUSD:0.05}}
         };
 
-        // ── Init ──────────────────────────────────────────────
-        async function init(){
-            console.log('init() starting, Plotly available:', typeof Plotly !== 'undefined');
-            renderSymbolSelector();
-            await loadTicker();
-            await loadMarketData(selectedSymbol);
+        // ── Indicators Management ───────────────────────────────────────────────────────
+        let selectedIndicators = { RSI: true, MACD: true, BB: true, EMA: false, SMA: false };
+        let indicatorColors = {
+            RSI: '#f5a623',
+            MACD: { line: '#00d9ff', signal: '#ff6b6b', histogram: '#4ecdc4' },
+            BB: { upper: '#ff4757', middle: '#a4b0bd', lower: '#00d084' },
+            EMA: { ema9: '#3d8ef8', ema21: '#a78bfa' },
+            SMA: { sma20: '#ff9f43' }
+        };
+        
+        function renderIndicatorsModal(){
+            const list = document.getElementById('indicatorsListModal');
+            if(!list) return;
+            
+            let html = '';
+            for(const [key, config] of Object.entries(INDICATORS)){
+                const isSelected = selectedIndicators[key] || false;
+                const indicatorId = `ind-${key}`;
+                
+                html += `
+                    <div class="indicator-item" data-indicator="${key}">
+                        <input type="checkbox" class="indicator-checkbox" id="${indicatorId}" ${isSelected ? 'checked' : ''}>
+                        <span class="indicator-item-name">${config.name}</span>
+                        ${isSelected ? '<button class="indicator-item-delete" data-delete="' + key + '">✕</button>' : ''}
+                    </div>
+                `;
+                
+                // Color pickers for each component
+                if(isSelected){
+                    if(config.colors && typeof config.colors === 'object'){
+                        // Multiple colors (MACD, BB, Stochastic, EMA, SMA, etc.)
+                        html += `<div class="indicator-colors" style="margin:6px 0 8px 26px;padding:8px;background:#262d37;border-radius:3px;">`;
+                        for(const [colorKey, defaultColor] of Object.entries(config.colors)){
+                            const currentColor = (indicatorColors[key] && typeof indicatorColors[key] === 'object') ? (indicatorColors[key][colorKey] || defaultColor) : defaultColor;
+                            const label = colorKey.charAt(0).toUpperCase() + colorKey.slice(1);
+                            html += `
+                                <div style="display:flex;align-items:center;margin-bottom:6px;gap:8px;">
+                                    <label style="font-size:12px;color:#8c99b0;min-width:60px;">${label}:</label>
+                                    <input type="color" class="indicator-color-picker" data-indicator="${key}" data-color="${colorKey}" value="${currentColor}" title="${label}" style="width:40px;height:24px;border:none;border-radius:3px;cursor:pointer;">
+                                </div>
+                            `;
+                        }
+                        html += `</div>`;
+                    } else if(config.color){
+                        // Single color (RSI, ATR, CCI, etc.)
+                        const currentColor = (typeof indicatorColors[key] === 'string') ? indicatorColors[key] : config.color;
+                        html += `<div style="margin:6px 0 8px 26px;display:flex;align-items:center;gap:8px;">
+                            <input type="color" class="indicator-color-picker" data-indicator="${key}" value="${currentColor}" title="Color" style="width:40px;height:24px;border:none;border-radius:3px;cursor:pointer;">
+                            <span style="font-size:12px;color:#8c99b0;">Color</span>
+                        </div>`;
+                    }
+                }
+                
+                // Parameters
+                if(isSelected && config.params && config.params.length > 0){
+                    html += `<div class="indicator-params show" id="params-${key}">`;
+                    config.params.forEach(param => {
+                        const value = selectedIndicators[key + '_' + param.key] || param.default;
+                        html += `
+                            <div class="param-row">
+                                <label class="param-label">${param.label}</label>
+                                <input type="number" class="param-input param-${key}-${param.key}" value="${value}" min="${param.min}" max="${param.max}">
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            }
+            
+            list.innerHTML = html;
+            
+            // Event listeners for checkboxes
+            document.querySelectorAll('.indicator-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function(){
+                    const key = this.parentElement.dataset.indicator;
+                    selectedIndicators[key] = this.checked;
+                    renderIndicatorsModal();
+                });
+            });
+            
+            // Event listeners for color pickers
+            document.querySelectorAll('.indicator-color-picker').forEach(picker => {
+                const key = picker.dataset.indicator;
+                const colorKey = picker.dataset.color;
+                picker.addEventListener('change', function(){
+                    if(colorKey){
+                        // Multiple colors object
+                        if(!indicatorColors[key]) indicatorColors[key] = {};
+                        if(typeof indicatorColors[key] !== 'object') indicatorColors[key] = {};
+                        indicatorColors[key][colorKey] = this.value;
+                    } else {
+                        // Single color string
+                        indicatorColors[key] = this.value;
+                    }
+                });
+            });
+            
+            // Event listeners for delete buttons
+            document.querySelectorAll('.indicator-item-delete').forEach(btn => {
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    const key = this.dataset.delete;
+                    selectedIndicators[key] = false;
+                    renderIndicatorsModal();
+                });
+            });
+        }
+        
+        function toggleIndicatorsModal(){
+            const modal = document.getElementById('indicatorsModal');
+            const overlay = document.getElementById('indicatorsOverlay');
+            const isVisible = modal.style.display !== 'none';
+            
+            if(!isVisible){
+                renderIndicatorsModal();
+                modal.style.display = 'block';
+                overlay.style.display = 'block';
+            } else {
+                modal.style.display = 'none';
+                overlay.style.display = 'none';
+            }
+        }
+        
+        function updateChartsWithIndicators(){
+            // Get current data
+            const data = window.currentChartData || [];
+            if(data.length === 0) return;
+            
+            console.log('Updating charts with indicators:', selectedIndicators, 'Colors:', indicatorColors);
+            
+            // Redraw MAIN candlestick chart with EMA/SMA visibility controlled
+            drawCandlestick(data, false);
+            
+            // Redraw all mini charts based on selection
+            if(selectedIndicators.RSI){
+                drawRSI(data);
+            } else {
+                document.getElementById('rsiChart').innerHTML = '';
+                document.getElementById('rsiValue').innerHTML = '—';
+            }
+            
+            if(selectedIndicators.MACD){
+                drawMACD(data);
+            } else {
+                document.getElementById('macdChart').innerHTML = '';
+                document.getElementById('macdValue').innerHTML = '—';
+                document.getElementById('macdHist').innerHTML = '—';
+            }
+            
+            if(selectedIndicators.BB){
+                drawBB(data);
+            } else {
+                document.getElementById('bbChart').innerHTML = '';
+                document.getElementById('bbLow').innerHTML = '—';
+                document.getElementById('bbUp').innerHTML = '—';
+            }
+        }
+        
+        function setupIndicatorsModal(){
+            const btn = document.getElementById('showIndicatorsBtn');
+            const closeBtn = document.getElementById('closeIndicatorsBtn');
+            const overlay = document.getElementById('indicatorsOverlay');
+            const applyBtn = document.getElementById('applyIndicatorsBtn');
+            
+            if(!btn) return;
+            
+            btn.addEventListener('click', toggleIndicatorsModal);
+            closeBtn?.addEventListener('click', toggleIndicatorsModal);
+            overlay?.addEventListener('click', toggleIndicatorsModal);
+            applyBtn?.addEventListener('click', function(){
+                console.log('Aplicar indicadores:', selectedIndicators);
+                updateChartsWithIndicators();
+                toggleIndicatorsModal();
+            });
+        }
+
+        // ── Render Indicators Panel ─────────────────────────────────────────────────────
+        function renderIndicatorsPanel(){
+            // Deprecated: indicators now use modal instead of fixed panel
+        }
+
+        // ── Presets Menu Toggle ─────────────────────────────────────────────────────────
+        function setupPresetsMenu(){
+            const btn = document.getElementById('showPresetsBtn');
+            const menu = document.getElementById('presetsMenu');
+            if(!btn || !menu) return;
+            
+            // Toggle menu on button click
+            btn.addEventListener('click', function(e){
+                e.stopPropagation();
+                const isVisible = menu.style.display !== 'none';
+                menu.style.display = isVisible ? 'none' : 'block';
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e){
+                if(!btn.contains(e.target) && !menu.contains(e.target)){
+                    menu.style.display = 'none';
+                }
+            });
+        }
+
+        // ── Init ────────────────────────────────────────────────────────────────────────
+        // ── Init ────────────────────────────────────────────────────────────────────────
+        function init(){
+            console.log('========== DASHBOARD INIT STARTING ==========');
+            console.log('Plotly available:', typeof Plotly !== 'undefined');
+            
+            // Inicializar UI inmediatamente (no esperar por librerías)
+            console.log('Initializing UI components...');
+            try {
+                setupIndicatorsModal();
+                setupPresetsMenu();
+                renderSymbolSelector();
+                
+                // ✓ Setup tab navigation listeners
+                console.log('Setting up tab navigation...');
+                const navTabs = document.querySelectorAll('.nav-tab');
+                console.log('Found', navTabs.length, 'nav tabs');
+                
+                navTabs.forEach((tab, idx)=>{
+                    console.log(`Adding listener to tab ${idx}:`, tab.dataset.tab);
+                    tab.addEventListener('click', function(e){
+                        e.preventDefault();
+                        console.log('Tab clicked:', this.dataset.tab);
+                        
+                        // Remove active from all tabs and pages
+                        document.querySelectorAll('.nav-tab').forEach(t=>{
+                            t.classList.remove('active');
+                        });
+                        document.querySelectorAll('.page').forEach(p=>{
+                            p.classList.remove('active');
+                        });
+                        
+                        // Add active to clicked tab and corresponding page
+                        this.classList.add('active');
+                        const pageId = 'page-' + this.dataset.tab;
+                        const page = document.getElementById(pageId);
+                        console.log('Looking for page:', pageId, '→', page ? 'Found' : 'NOT FOUND');
+                        
+                        if(page) {
+                            page.classList.add('active');
+                        }
+                        
+                        // Load content for specific tabs
+                        if(this.dataset.tab === 'signals') {
+                            console.log('Loading signals...');
+                            loadSignals();
+                        }
+                        if(this.dataset.tab === 'portfolio') {
+                            console.log('Loading portfolio...');
+                            loadPortfolio();
+                        }
+                        if(this.dataset.tab === 'risk') {
+                            console.log('Loading risk...');
+                            loadRisk();
+                        }
+                        if(this.dataset.tab === 'crypto') {
+                            console.log('Crypto tab activated - iframe loaded');
+                        }
+                    });
+                });
+                
+                console.log('UI components ready ✓');
+            } catch (e) {
+                console.error('UI initialization error:', e);
+            }
+
+            // Ocultar pantalla de carga
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+
+            // Cargar datos cuando todo esté listo
+            console.log('Scheduling data load...');
+            setTimeout(() => {
+                console.log('Loading ticker data...');
+                loadTicker().catch(e => console.error('loadTicker error:', e));
+                
+                console.log('Loading initial market data for:', selectedSymbol);
+                loadMarketData(selectedSymbol).catch(e => console.error('loadMarketData error:', e));
+            }, 500);
+            
+            console.log('========== DASHBOARD INIT COMPLETE ==========');
         }
 
         // Wait for DOM to be ready and Plotly to load

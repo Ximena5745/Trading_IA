@@ -1,0 +1,8 @@
+{
+  "symbol": "EURUSD",
+  "strategy": "mean_rev_v1",
+  "params": {
+    "rsi_oversold": 25,
+    "rsi_overbought": 71
+  }
+}

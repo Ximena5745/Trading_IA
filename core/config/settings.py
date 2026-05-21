@@ -103,7 +103,8 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET_KEY")
     @classmethod
     def validate_jwt_secret(cls, v: str) -> str:
-        if v == "change-me-in-production" and False:  # skip in dev
+        import os
+        if v == "change-me-in-production" and os.getenv("ENVIRONMENT") == "production":
             raise ValueError("JWT_SECRET_KEY must be set in production")
         return v
 

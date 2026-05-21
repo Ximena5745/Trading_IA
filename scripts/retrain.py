@@ -23,7 +23,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.agents.technical_agent import FEATURE_ORDER, TechnicalAgent
+from core.backtesting.metrics import sharpe_ratio
 from core.features.feature_engineering import FeatureEngine
+from core.ml.model_validation_gate import ModelValidationGate
+from core.ml.target_engine import build_ternary_training_labels
 from core.observability.logger import configure_logging, get_logger
 
 configure_logging()
@@ -79,6 +82,7 @@ def _build_features_and_labels(
     use_mtf: bool = False,
     use_three_class: bool = False,
     threshold: float = 0.0003,
+    forward_bars: int = 6,
 ) -> tuple[np.ndarray, np.ndarray, list[str]]:
     """
     Returns (X, y, feature_names) where:
@@ -87,16 +91,16 @@ def _build_features_and_labels(
         - Binary (use_three_class=False): 1 if next candle close > current close, else 0
         - Three class (use_three_class=True): 0=SELL, 1=HOLD, 2=BUY
       feature_names: list of feature column names used
+
+    QWQ-2: Target ternario con zona muerta basada en ATR% del activo.
     """
     engine = FeatureEngine()
-    
+
     if use_mtf:
-        # Multi-timeframe features
         df_features = engine.calculate_mtf_features(df, symbol)
         feature_names = _get_feature_columns(df_features)
         X = df_features[feature_names].values.astype(np.float32)
     else:
-        # Standard single-timeframe features
         feature_sets = engine.calculate_batch(df, symbol=symbol)
         feature_names = FEATURE_ORDER
         X = np.array(
@@ -107,32 +111,33 @@ def _build_features_and_labels(
     if len(X) < 2:
         raise ValueError("Insufficient data for training (need at least 2 rows)")
 
-    # Create labels
-    if use_three_class:
-        # Three-class: SELL (0), HOLD (1), BUY (2)
-        # Based on return threshold
+    closes = df['close'].values
+    atr_col = df.get('atr_14')
+    has_atr = atr_col is not None
+
+    if use_three_class and has_atr:
+        y = build_ternary_training_labels(df, forward_bars=forward_bars)
+        if len(X) > len(y):
+            X = X[: len(y)]
+        elif len(y) > len(X):
+            y = y[: len(X)]
+    elif use_three_class:
         returns = np.diff(df['close'].values, prepend=np.nan)
-        # We need closes aligned with features (X has n rows, closes has n+1)
-        closes = df['close'].values[:-1] if len(df) > len(X) else df['close'].values
-        
-        # Calculate returns for the next period
+        closes_trimmed = df['close'].values[:-1] if len(df) > len(X) else df['close'].values
+
         next_returns = []
-        for i in range(len(closes) - 1):
-            ret = (closes[i + 1] - closes[i]) / closes[i]
+        for i in range(len(closes_trimmed) - 1):
+            ret = (closes_trimmed[i + 1] - closes_trimmed[i]) / closes_trimmed[i]
             next_returns.append(ret)
         next_returns = np.array(next_returns)
-        
-        # Create 3-class labels
+
         y = np.zeros(len(next_returns), dtype=np.int32)
-        y[next_returns > threshold] = 2   # BUY
-        y[np.abs(next_returns) <= threshold] = 1  # HOLD
-        # SELL remains 0
-        
-        # Adjust X to match y length (X has n rows, y has n-1 rows from next_returns)
+        y[next_returns > threshold] = 2
+        y[np.abs(next_returns) <= threshold] = 1
+
         if len(X) > len(y):
             X = X[:-1]
     else:
-        # Binary: 1 if next close > current close
         closes = df['close'].values
         y = np.array(
             [1 if closes[i + 1] > closes[i] else 0 for i in range(len(closes) - 1)],
@@ -238,6 +243,26 @@ def retrain(
         print(f"\n❌ Training failed: {e}")
         logger.error("training_failed", error=str(e))
         sys.exit(1)
+
+    # M3.2: Model Validation Gate before deployment
+    split = int(len(X_train) * 0.8)
+    if split > 50 and agent.is_ready():
+        X_val, y_val = X_train[split:], y_train[split:]
+        preds = agent._model.predict(X_val)
+        fwd = np.where(preds == 2, 1.0, np.where(preds == 0, -1.0, 0.0))
+        val_returns = pd.Series(fwd * 0.001)
+        new_sharpe = float(sharpe_ratio(val_returns, periods_per_year=252 * 24))
+        gate = ModelValidationGate()
+        result = gate.validate(0.0, new_sharpe, val_returns, preds)
+        print(
+            f"\n🛡️  Validation gate: {'APPROVED' if result.approved else 'REJECTED'} — {result.reason}"
+        )
+        if not result.approved:
+            candidate = model_path.replace(".pkl", ".candidate.pkl")
+            import shutil
+
+            shutil.copy(model_path, candidate)
+            print(f"   Model kept as candidate only: {candidate}")
 
     print(f"\n✅ Model saved to {model_path}")
     print(f"   Features: {len(feature_names)}")

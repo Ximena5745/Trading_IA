@@ -57,8 +57,7 @@ from core.models import (
 from core.monitoring.alert_engine import AlertEngine
 from core.notifications.telegram_bot import TelegramBot
 from core.observability.logger import configure_logging, get_logger
-from core.portfolio.portfolio_manager import PortfolioManager
-from core.risk.kill_switch import KillSwitch
+from core.bootstrap import create_kill_switch, create_order_tracker, create_portfolio_manager
 from core.risk.risk_manager import RiskManager
 from core.signals.signal_engine import SignalEngine
 
@@ -324,7 +323,7 @@ async def _build_components(settings) -> dict:
                 "mt5_connected", server=settings.MT5_SERVER, login=settings.MT5_LOGIN
             )
 
-            kill_switch_temp = KillSwitch(settings)
+            kill_switch_temp = create_kill_switch(settings)
             mt5_executor = MT5Executor(settings, kill_switch_temp, mt5_client)
 
         except Exception as exc:
@@ -349,8 +348,9 @@ async def _build_components(settings) -> dict:
     feature_store = FeatureStore(redis_url=settings.REDIS_URL)
     await feature_store.connect()
 
-    kill_switch = KillSwitch(settings)
-    portfolio = PortfolioManager(settings=settings, initial_capital=10_000.0)
+    kill_switch = create_kill_switch(settings)
+    portfolio = create_portfolio_manager(settings, use_redis=True)
+    order_tracker = create_order_tracker(use_redis=True)
     risk = RiskManager(settings=settings, kill_switch=kill_switch)
 
     telegram = TelegramBot(
@@ -380,6 +380,7 @@ async def _build_components(settings) -> dict:
         "risk": risk,
         "executor_paper": PaperExecutor(),
         "portfolio": portfolio,
+        "order_tracker": order_tracker,
         "feature_store": feature_store,
         "repo": TradingRepository(),
         "alert": alert,

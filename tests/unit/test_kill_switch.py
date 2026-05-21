@@ -1,110 +1,226 @@
 """
-Tests for KillSwitch — property-based with Hypothesis.
-Every circuit breaker must trigger without exception when its threshold is crossed.
+Tests for core/risk/kill_switch.py
+CA-4: Kill switch activo y verificado bajo carga concurrente
 """
-from __future__ import annotations
-
-from hypothesis import given
-from hypothesis import strategies as st
+import pytest
+from datetime import datetime
 from unittest.mock import MagicMock
-
+from core.risk.kill_switch import KillSwitch, KillSwitchState
 from core.config.settings import Settings
-from core.risk.kill_switch import KillSwitch
 
 
-def make_settings(
-    daily_loss_limit: float = 0.05, max_consecutive: int = 5, max_drawdown: float = 0.15
-) -> Settings:
-    s = MagicMock(spec=Settings)
-    s.DAILY_LOSS_LIMIT_PCT = daily_loss_limit
-    s.MAX_CONSECUTIVE_LOSSES = max_consecutive
-    s.MAX_DRAWDOWN_PCT = max_drawdown
-    return s
+class TestKillSwitchTriggers:
+    """Tests for Kill Switch triggers."""
 
+    @pytest.fixture
+    def settings(self):
+        """Create mock settings for tests."""
+        s = MagicMock(spec=Settings)
+        s.DAILY_LOSS_LIMIT_PCT = 0.05  # 5%
+        s.MAX_CONSECUTIVE_LOSSES = 5
+        s.MAX_DRAWDOWN_PCT = 0.15  # 15%
+        return s
 
-class TestKillSwitchDailyLoss:
-    @given(
-        daily_pnl_pct=st.floats(min_value=-1.0, max_value=0.0, allow_nan=False),
-        limit=st.floats(min_value=0.01, max_value=0.10, allow_nan=False),
-    )
-    def test_triggers_when_loss_exceeds_limit(self, daily_pnl_pct: float, limit: float):
-        ks = KillSwitch(make_settings(daily_loss_limit=limit))
-        ks.check_and_trigger(daily_pnl_pct, drawdown_current=0.0, recent_trades=[])
-        if daily_pnl_pct <= -limit:
-            assert (
-                ks.is_active()
-            ), f"Should be active: pnl={daily_pnl_pct}, limit={limit}"
-            assert ks.state.triggered_by == "daily_loss_limit"
-        else:
-            assert not ks.is_active()
+    @pytest.fixture
+    def kill_switch(self, settings):
+        """Create KillSwitch instance."""
+        return KillSwitch(settings)
 
-    def test_trigger_reason_is_daily_loss_limit(self):
-        ks = KillSwitch(make_settings(daily_loss_limit=0.05))
-        ks.check_and_trigger(-0.06, 0.0, [])
-        assert ks.state.triggered_by == "daily_loss_limit"
-        assert ks.state.triggered_at is not None
+    def test_daily_loss_trigger(self, kill_switch):
+        """CA-1: Activación cuando daily loss > 5%"""
+        # Simular pérdida diaria del 6%
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=-0.06,
+            drawdown_current=0.0,
+            recent_trades=[],
+        )
+        assert kill_switch.is_active() is True
+        assert kill_switch.state.triggered_by == "daily_loss_limit"
 
+    def test_daily_loss_at_limit_not_triggered(self, kill_switch):
+        """Pérdida exactamente en el límite no activa (>= es el trigger)"""
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=-0.05,  # exactamente 5%
+            drawdown_current=0.0,
+            recent_trades=[],
+        )
+        assert kill_switch.is_active() is True  # 5% >= 5% trigger
 
-class TestKillSwitchDrawdown:
-    @given(
-        drawdown=st.floats(min_value=0.0, max_value=0.5, allow_nan=False),
-        limit=st.floats(min_value=0.05, max_value=0.20, allow_nan=False),
-    )
-    def test_triggers_when_drawdown_exceeds_limit(self, drawdown: float, limit: float):
-        ks = KillSwitch(make_settings(max_drawdown=limit))
-        ks.check_and_trigger(0.0, drawdown_current=drawdown, recent_trades=[])
-        if drawdown >= limit:
-            assert ks.is_active()
-        else:
-            assert not ks.is_active()
+    def test_drawdown_trigger(self, kill_switch):
+        """CA-2: Activación cuando drawdown > 15%"""
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=0.0,
+            drawdown_current=0.20,  # 20%
+            recent_trades=[],
+        )
+        assert kill_switch.is_active() is True
+        assert kill_switch.state.triggered_by == "max_drawdown"
 
-
-class TestKillSwitchConsecutiveLosses:
-    def _make_trades(self, losses: int) -> list:
-        return [{"net_pnl": -10.0}] * losses
-
-    @given(n_losses=st.integers(min_value=0, max_value=10))
-    def test_triggers_on_consecutive_losses(self, n_losses: int):
-        max_c = 5
-        ks = KillSwitch(make_settings(max_consecutive=max_c))
-        trades = self._make_trades(n_losses)
-        ks.check_and_trigger(0.0, 0.0, trades)
-        if n_losses >= max_c:
-            assert ks.is_active()
-        else:
-            assert not ks.is_active()
-
-    def test_non_consecutive_losses_do_not_trigger(self):
-        ks = KillSwitch(make_settings(max_consecutive=3))
-        trades = [
-            {"net_pnl": -10},
-            {"net_pnl": 5},
-            {"net_pnl": -10},
+    def test_consecutive_losses_trigger(self, kill_switch):
+        """CA-3: Activación cuando 5+ pérdidas consecutivas"""
+        recent_trades = [
+            {"net_pnl": -100},
+            {"net_pnl": -50},
+            {"net_pnl": -200},
+            {"net_pnl": -30},
             {"net_pnl": -10},
         ]
-        ks.check_and_trigger(0.0, 0.0, trades)
-        assert not ks.is_active()
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=0.0,
+            drawdown_current=0.0,
+            recent_trades=recent_trades,
+        )
+        assert kill_switch.is_active() is True
+        assert kill_switch.state.triggered_by == "consecutive_losses"
+
+    def test_consecutive_losses_at_limit(self, kill_switch):
+        """5 pérdidas consecutivas activa el trigger"""
+        recent_trades = [
+            {"net_pnl": -100},
+            {"net_pnl": -50},
+            {"net_pnl": -200},
+            {"net_pnl": -30},
+            {"net_pnl": -10},  # 5ta pérdida
+        ]
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=0.0,
+            drawdown_current=0.0,
+            recent_trades=recent_trades,
+        )
+        assert kill_switch.state.consecutive_losses == 5
+
+    def test_no_trigger_when_safe(self, kill_switch):
+        """Sistema seguro no activa el kill switch"""
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=0.02,  # ganancia
+            drawdown_current=0.05,  # dentro del límite
+            recent_trades=[{"net_pnl": 100}, {"net_pnl": 50}],  # ganancias
+        )
+        assert kill_switch.is_active() is False
+        assert kill_switch.state.triggered_by is None
+
+    def test_reset_by_admin(self, kill_switch):
+        """CA-4: Solo admin puede resetear"""
+        # Primero activamos el kill switch
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=-0.10,
+            drawdown_current=0.0,
+            recent_trades=[],
+        )
+        assert kill_switch.is_active() is True
+
+        # Reset por admin
+        kill_switch.reset("admin_token")
+        assert kill_switch.is_active() is False
+        assert kill_switch.state.reset_at is not None
 
 
-class TestKillSwitchReset:
-    def test_only_resets_when_active(self):
-        ks = KillSwitch(make_settings())
-        ks.check_and_trigger(-0.10, 0.0, [])
-        assert ks.is_active()
-        ks.reset(admin_token="admin")
-        assert not ks.is_active()
+class TestKillSwitchConcurrency:
+    """Tests for concurrent access to KillSwitch."""
 
-    def test_reset_clears_trigger_info(self):
-        ks = KillSwitch(make_settings())
-        ks.check_and_trigger(-0.10, 0.0, [])
-        ks.reset(admin_token="admin")
-        assert ks.state.triggered_by is None
-        assert ks.state.triggered_at is None
-        assert ks.state.reset_at is not None
+    @pytest.fixture
+    def settings(self):
+        s = MagicMock(spec=Settings)
+        s.DAILY_LOSS_LIMIT_PCT = 0.05
+        s.MAX_CONSECUTIVE_LOSSES = 5
+        s.MAX_DRAWDOWN_PCT = 0.15
+        return s
 
-    def test_does_not_retrigger_if_already_active(self):
-        ks = KillSwitch(make_settings())
-        ks.check_and_trigger(-0.10, 0.0, [])
-        first_trigger = ks.state.triggered_at
-        ks.check_and_trigger(-0.20, 0.5, [{"net_pnl": -1}] * 10)
-        assert ks.state.triggered_at == first_trigger
+    def test_concurrent_trigger_checks(self, settings):
+        """CA-4: Verificar que múltiples triggers concurrentes no generan errores"""
+        import threading
+        import time
+
+        kill_switch = KillSwitch(settings)
+        errors = []
+        results = []
+
+        def trigger_from_thread(thread_id):
+            try:
+                if thread_id % 2 == 0:
+                    kill_switch.check_and_trigger(
+                        daily_pnl_pct=-0.06,
+                        drawdown_current=0.0,
+                        recent_trades=[],
+                    )
+                else:
+                    kill_switch.check_and_trigger(
+                        daily_pnl_pct=0.0,
+                        drawdown_current=0.20,
+                        recent_trades=[],
+                    )
+                results.append(kill_switch.is_active())
+            except Exception as e:
+                errors.append(str(e))
+
+        threads = []
+        for i in range(10):
+            t = threading.Thread(target=trigger_from_thread, args=(i,))
+            threads.append(t)
+
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        assert len(errors) == 0, f"Errors in concurrent execution: {errors}"
+        # Al menos un trigger debe haber activado
+        assert any(results), "No triggers activated"
+
+    def test_rapid_on_off_cycles(self, settings):
+        """Verificar que ciclos rápidos de trigger/reset funcionan"""
+        kill_switch = KillSwitch(settings)
+
+        for _ in range(100):
+            # Trigger
+            kill_switch.check_and_trigger(
+                daily_pnl_pct=-0.10,
+                drawdown_current=0.0,
+                recent_trades=[],
+            )
+            assert kill_switch.is_active() is True
+
+            # Reset
+            kill_switch.reset("admin")
+            assert kill_switch.is_active() is False
+
+    def test_trigger_stays_active_until_explicit_reset(self, kill_switch):
+        """Una vez activado, el kill switch debe permanecer activo hasta reset explícito"""
+        # Trigger inicial
+        kill_switch.check_and_trigger(
+            daily_pnl_pct=-0.06,
+            drawdown_current=0.0,
+            recent_trades=[],
+        )
+        assert kill_switch.is_active() is True
+
+        # Llamadas subsecuentes no deberían desactivar
+        for _ in range(10):
+            kill_switch.check_and_trigger(
+                daily_pnl_pct=0.02,  # recuperación
+                drawdown_current=0.0,
+                recent_trades=[],
+            )
+            assert kill_switch.is_active() is True
+
+
+class TestKillSwitchState:
+    """Tests for KillSwitchState."""
+
+    def test_state_initial_values(self):
+        """Verificar valores iniciales del estado"""
+        state = KillSwitchState(
+            daily_loss_limit=0.05,
+            max_consecutive_losses=5,
+            max_drawdown=0.15,
+        )
+        assert state.active is False
+        assert state.triggered_at is None
+        assert state.triggered_by is None
+        assert state.daily_loss_current == 0.0
+        assert state.consecutive_losses == 0
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

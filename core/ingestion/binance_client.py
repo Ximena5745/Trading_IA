@@ -8,7 +8,10 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from binance.client import AsyncClient
+try:
+    from binance import AsyncClient
+except ImportError:
+    from binance.client import AsyncClient
 from binance.exceptions import BinanceAPIException
 
 from core.exceptions import DataValidationError, ExecutionError

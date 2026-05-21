@@ -47,7 +47,7 @@ async def get_portfolio(user=Depends(get_current_user)):
     """Return current portfolio state."""
     pm = _get_pm()
     portfolio = pm.get_portfolio()
-    logger.info("api_portfolio_requested", user=user.get("sub"))
+    logger.info("api_portfolio_requested", user=user.get("user_id"))
     return portfolio.model_dump()
 
 
@@ -147,5 +147,5 @@ async def reset_daily(user=Depends(get_current_user)):
     """Reset daily P&L counters (called at session start)."""
     pm = _get_pm()
     pm.reset_daily()
-    logger.info("api_portfolio_daily_reset", user=user.get("sub"))
+    logger.info("api_portfolio_daily_reset", user=user.get("user_id"))
     return {"status": "ok", "message": "Daily counters reset"}

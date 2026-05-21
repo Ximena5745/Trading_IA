@@ -93,7 +93,7 @@ async def update_strategy_status(
             "api_strategy_status_updated",
             strategy_id=strategy_id,
             status=body.status,
-            user=user.get("sub"),
+            user=user.get("user_id"),
         )
         return updated
     except StrategyNotFoundError as e:
@@ -121,7 +121,7 @@ async def create_custom_strategy(
         logger.info(
             "api_strategy_created",
             strategy_id=body.strategy_id,
-            user=user.get("sub"),
+            user=user.get("user_id"),
         )
         return {"status": "created", "strategy": strategy.to_dict()}
     except Exception as exc:
@@ -141,7 +141,7 @@ async def delete_strategy(strategy_id: str, user=Depends(get_current_user)):
         logger.info(
             "api_strategy_deleted",
             strategy_id=strategy_id,
-            user=user.get("sub"),
+            user=user.get("user_id"),
         )
         return {"status": "deleted", "strategy_id": strategy_id}
     except StrategyNotFoundError as e:

@@ -185,25 +185,88 @@ class TechnicalAgent(AbcAgent):
             return "SELL"
         return "NEUTRAL"
 
-    def train(self, X: np.ndarray, y: np.ndarray, use_three_class: bool = False) -> None:
-        """Train a new LightGBM model. Called by AdaptationEngine."""
+    def train(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        use_three_class: bool = False,
+        best_params: dict | None = None,
+        use_sharpe_early_stopping: bool = True,
+        validation_split: float = 0.2,
+    ) -> dict:
+        """
+        Train a new LightGBM model with optional Bayesian-optimized params.
+
+        M3.1 Improvements:
+        - Accept best_params from Optuna hyperparameter search
+        - Early stopping based on Sharpe OOS (not accuracy/log-loss)
+        - Generate SHAP explanations after training
+
+        Args:
+            X: Feature matrix
+            y: Target vector
+            use_three_class: Use 3-class classification (BUY/HOLD/SELL)
+            best_params: Hyperparameters from Optuna (optional)
+            use_sharpe_early_stopping: Use Sharpe-based early stopping
+            validation_split: Fraction for validation
+
+        Returns:
+            dict with training metrics
+        """
         try:
             import lightgbm as lgb
             import shap
+            from core.ml.validation import PurgedKFold
+            from core.backtesting.metrics import sharpe_ratio
 
-            # Determine number of classes
             n_classes = len(np.unique(y))
-            
-            self._model = lgb.LGBMClassifier(
-                n_estimators=300,
-                learning_rate=0.03,
-                num_leaves=63,
-                min_child_samples=30,
-                reg_alpha=0.1,
-                reg_lambda=0.1,
-                random_state=42,
-            )
-            self._model.fit(X, y)
+
+            default_params = {
+                'n_estimators': 300,
+                'learning_rate': 0.03,
+                'num_leaves': 63,
+                'min_child_samples': 30,
+                'reg_alpha': 0.1,
+                'reg_lambda': 0.1,
+                'random_state': 42,
+                'n_jobs': -1,
+                'verbose': -1,
+            }
+
+            params = {**default_params, **(best_params or {})}
+
+            if use_sharpe_early_stopping:
+                n_samples = len(X)
+                val_size = int(n_samples * validation_split)
+                X_train, X_val = X[:-val_size], X[-val_size:]
+                y_train, y_val = y[:-val_size], y[-val_size:]
+
+                self._model = lgb.LGBMClassifier(**params)
+                self._model.fit(
+                    X_train, y_train,
+                    eval_set=[(X_val, y_val)],
+                    callbacks=[
+                        lgb.early_stopping(stopping_rounds=30, verbose=False),
+                        lgb.log_evaluation(period=0),
+                    ],
+                )
+
+                val_pred_proba = self._model.predict_proba(X_val)
+                if val_pred_proba.shape[1] == 2:
+                    val_pred = val_pred_proba[:, 1] - val_pred_proba[:, 0]
+                else:
+                    val_pred = val_pred_proba[:, 2] - val_pred_proba[:, 0]
+
+                val_sharpe = self._calculate_sharpe(y_val, val_pred)
+                logger.info(
+                    "technical_agent_early_stopping",
+                    best_iteration=self._model.best_iteration_,
+                    validation_sharpe=val_sharpe,
+                )
+            else:
+                self._model = lgb.LGBMClassifier(**params)
+                self._model.fit(X, y)
+
             self._explainer = shap.TreeExplainer(self._model)
             self._use_three_class = use_three_class
             self._n_classes = n_classes
@@ -211,17 +274,99 @@ class TechnicalAgent(AbcAgent):
             os.makedirs(os.path.dirname(self._model_path), exist_ok=True)
             with open(self._model_path, "wb") as f:
                 pickle.dump({
-                    "model": self._model, 
+                    "model": self._model,
                     "explainer": self._explainer,
                     "use_three_class": use_three_class,
                     "n_classes": n_classes,
-                    "feature_names": getattr(self, '_feature_names', FEATURE_ORDER)
+                    "feature_names": getattr(self, '_feature_names', FEATURE_ORDER),
+                    "best_params": best_params,
+                    "training_timestamp": str(pd.Timestamp.now()),
                 }, f)
+
+            shap_dir = Path(self._model_path).parent / "shap_explanations"
+            shap_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+
+            if self._explainer is not None:
+                sample_idx = np.random.choice(len(X), min(1000, len(X)), replace=False)
+                sample_shap = self._explainer.shap_values(X[sample_idx])
+                np.save(shap_dir / f"shap_values_{timestamp}.npy", sample_shap)
+
             logger.info(
-                "technical_agent_trained", 
-                samples=len(X), 
+                "technical_agent_trained",
+                samples=len(X),
                 n_classes=n_classes,
-                path=self._model_path
+                path=self._model_path,
+                params_used=best_params or default_params,
             )
+
+            return {
+                "n_samples": len(X),
+                "n_classes": n_classes,
+                "best_params": best_params,
+                "shap_saved": True,
+            }
+
         except Exception as e:
             raise AgentPredictionError(f"TechnicalAgent training failed: {e}") from e
+
+    def _calculate_sharpe(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        """Calculate Sharpe ratio from predictions."""
+        if len(y_pred) == 0:
+            return 0.0
+        returns = y_true * y_pred
+        if np.std(returns) == 0:
+            return 0.0
+        periods_per_year = 365 * 24
+        sharpe = np.mean(returns) / np.std(returns) * np.sqrt(periods_per_year)
+        return float(sharpe)
+
+    # M3.1: Improved TechnicalAgent con PurgedKFold
+    def validate_with_purged_kfold(
+        self, X: np.ndarray, y: np.ndarray, n_splits: int = 5
+    ) -> dict:
+        """
+        Validar modelo usando Purged K-Fold para evitar look-ahead bias.
+        M3.3: Embargo temporal de 5 barras.
+        """
+        from core.ml.validation import PurgedKFold
+
+        purged_kfold = PurgedKFold(n_splits=n_splits, embargo_bars=5)
+        scores = []
+
+        for train_idx, test_idx in purged_kfold.split(X):
+            X_train, X_test = X[train_idx], X[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
+
+            self._model.fit(X_train, y_train)
+            preds = self._model.predict(X_test)
+
+            if hasattr(self._model, "predict_proba"):
+                proba = self._model.predict_proba(X_test)
+                score = np.mean(np.argmax(proba, axis=1) == y_test)
+            else:
+                score = np.mean(preds == y_test)
+            scores.append(score)
+
+        return {
+            "mean_accuracy": np.mean(scores),
+            "std_accuracy": np.std(scores),
+            "per_fold": scores,
+        }
+
+    # M3.6: SHAP explanations
+    def explain_prediction(self, features: np.ndarray) -> dict:
+        """Generate SHAP explanation for a single prediction."""
+        if self._explainer is None:
+            return {"error": "No explainer available"}
+
+        try:
+            shap_values = self._explainer.shap_values(features)
+            feature_importance = dict(zip(self._feature_names, np.abs(shap_values).mean(axis=0)))
+            return {
+                "shap_values": shap_values.tolist(),
+                "feature_importance": feature_importance,
+            }
+        except Exception as e:
+            logger.warning("shap_explanation_failed", error=str(e))
+            return {"error": str(e)}

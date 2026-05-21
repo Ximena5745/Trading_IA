@@ -20,15 +20,17 @@ class TradingRepository:
     """Handles all DB writes for the trading pipeline."""
 
     async def save_signal(self, signal: Signal) -> None:
+        ts = signal.timestamp or datetime.now(timezone.utc)
+        regime_val = signal.regime.value if signal.regime else None
         sql = """
             INSERT INTO signals (
-                id, idempotency_key, created_at, symbol, action,
+                id, idempotency_key, timestamp, symbol, asset_class, action,
                 entry_price, stop_loss, take_profit, risk_reward_ratio,
-                confidence, explanation, summary, status, strategy_id, regime
+                confidence, summary, regime, strategy_id, status
             ) VALUES (
-                $1, $2, $3, $4, $5,
-                $6, $7, $8, $9,
-                $10, $11, $12, $13, $14, $15
+                $1, $2, $3, $4, $5, $6,
+                $7, $8, $9, $10,
+                $11, $12, $13, $14, $15
             )
             ON CONFLICT (idempotency_key) DO NOTHING
         """
@@ -37,19 +39,19 @@ class TradingRepository:
                 sql,
                 signal.id,
                 signal.idempotency_key,
-                signal.timestamp,
+                ts,
                 signal.symbol,
+                getattr(signal, "asset_class", "crypto"),
                 signal.action,
                 signal.entry_price,
                 signal.stop_loss,
                 signal.take_profit,
                 signal.risk_reward_ratio,
                 signal.confidence,
-                json.dumps([f.model_dump() for f in signal.explanation]),
-                signal.summary,
-                signal.status,
+                signal.summary or "",
+                regime_val,
                 signal.strategy_id,
-                signal.regime.value if signal.regime else None,
+                signal.status,
             )
             logger.debug("signal_saved", signal_id=signal.id, symbol=signal.symbol)
         except Exception as e:
@@ -58,38 +60,38 @@ class TradingRepository:
     async def save_order(self, order: dict) -> None:
         sql = """
             INSERT INTO orders (
-                id, idempotency_key, signal_id, symbol, side,
-                order_type, quantity, fill_price, fill_quantity,
-                commission, slippage, status, execution_mode,
-                error_message, created_at, updated_at
+                id, idempotency_key, signal_id, symbol, asset_class, side,
+                order_type, quantity, stop_loss, take_profit,
+                fill_price, fill_quantity, commission, slippage,
+                status, execution_mode, error_message
             ) VALUES (
-                $1, $2, $3, $4, $5,
-                $6, $7, $8, $9,
-                $10, $11, $12, $13,
-                $14, $15, $16
+                $1, $2, $3, $4, $5, $6,
+                $7, $8, $9, $10,
+                $11, $12, $13, $14,
+                $15, $16, $17
             )
             ON CONFLICT (idempotency_key) DO NOTHING
         """
         try:
-            now = datetime.now(timezone.utc)
             await get_pool().execute(
                 sql,
                 order.get("id"),
-                order.get("idempotency_key"),
+                order.get("idempotency_key") or order.get("id"),
                 order.get("signal_id"),
                 order.get("symbol"),
+                order.get("asset_class", "crypto"),
                 order.get("side"),
                 order.get("order_type", "MARKET"),
                 order.get("quantity"),
+                order.get("stop_loss", 0),
+                order.get("take_profit", 0),
                 order.get("fill_price"),
-                order.get("fill_quantity"),
+                order.get("fill_quantity", order.get("quantity")),
                 order.get("commission"),
                 order.get("slippage"),
                 order.get("status", "filled"),
                 order.get("execution_mode", "paper"),
                 order.get("error_message"),
-                now,
-                now,
             )
             logger.debug("order_saved", order_id=order.get("id"))
         except Exception as e:

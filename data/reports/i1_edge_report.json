@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-05-17T03:54:27.297620+00:00",
+  "investigation": "I1",
+  "methodology": {
+    "strategies": [
+      "MA_10_30",
+      "BB_ZScore",
+      "Momentum"
+    ],
+    "signal_lag": "1 bar",
+    "costs_bps": 10,
+    "bootstrap": 1000,
+    "oos_holdout_fraction": 0.2,
+    "criterion": "sharpe_net > 0.8 AND p_value < 0.05"
+  },
+  "symbols": [
+    {
+      "symbol": "BTCUSDT",
+      "sharpe_oos": -0.2656,
+      "sharpe_net": -0.8767,
+      "sharpe_oos_holdout": -1.6584,
+      "sharpe_net_holdout": -2.2904,
+      "p_value": 0.671,
+      "edge_exists": false,
+      "n_trades": 17483,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "sharpe_oos": 0.1499,
+      "sharpe_net": -0.2659,
+      "sharpe_oos_holdout": -1.8077,
+      "sharpe_net_holdout": -2.2506,
+      "p_value": 0.405,
+      "edge_exists": false,
+      "n_trades": 17480,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "EURUSD",
+      "sharpe_oos": 0.8238,
+      "sharpe_net": -2.2028,
+      "sharpe_oos_holdout": 1.6807,
+      "sharpe_net_holdout": -1.5366,
+      "p_value": 0.078,
+      "edge_exists": false,
+      "n_trades": 17220,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "GBPUSD",
+      "sharpe_oos": 0.1508,
+      "sharpe_net": -2.9974,
+      "sharpe_oos_holdout": 0.204,
+      "sharpe_net_holdout": -3.0382,
+      "p_value": 0.396,
+      "edge_exists": false,
+      "n_trades": 17222,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "USDJPY",
+      "sharpe_oos": 0.8153,
+      "sharpe_net": -1.4704,
+      "sharpe_oos_holdout": 3.9563,
+      "sharpe_net_holdout": 1.2477,
+      "p_value": 0.105,
+      "edge_exists": false,
+      "n_trades": 17123,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "US500",
+      "sharpe_oos": -0.4139,
+      "sharpe_net": -1.2249,
+      "sharpe_oos_holdout": -2.8349,
+      "sharpe_net_holdout": -3.8217,
+      "p_value": 0.653,
+      "edge_exists": false,
+      "n_trades": 5066,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "US30",
+      "sharpe_oos": -0.1849,
+      "sharpe_net": -1.0535,
+      "sharpe_oos_holdout": -3.0524,
+      "sharpe_net_holdout": -3.9885,
+      "p_value": 0.585,
+      "edge_exists": false,
+      "n_trades": 5066,
+      "recommendation": "NO_EDGE - Do not proceed, redesign strategy",
+      "best_strategy": "MA_10_30"
+    },
+    {
+      "symbol": "XAUUSD",
+      "sharpe_oos": 2.0326,
+      "sharpe_net": 1.0349,
+      "sharpe_oos_holdout": 3.2104,
+      "sharpe_net_holdout": 2.6212,
+      "p_value": 0.0,
+      "edge_exists": true,
+      "n_trades": 13706,
+      "recommendation": "STRONG_EDGE - Proceed to live trading",
+      "best_strategy": "MA_10_30"
+    }
+  ],
+  "summary": {
+    "symbols_tested": 8,
+    "symbols_with_edge": 1,
+    "mean_sharpe_net": -1.1320875
+  }
+}

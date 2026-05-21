@@ -281,6 +281,8 @@ class FeatureSet(BaseModel):
     bb_lower: float
     bb_width: float
     volatility_regime: str  # "low" | "medium" | "high" | "extreme"
+    adx_14: float = 20.0  # M3.3: ADX for HMM regime detection
+    hurst_exponent: float = 0.5  # M3.5: Hurst for strategy selection
 
     # Volume
     vwap: float
@@ -369,7 +371,7 @@ class SignalExplanationFactor(BaseModel):
 class Signal(BaseModel):
     id: str
     idempotency_key: str
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
     symbol: str
     asset_class: str = "crypto"
     action: str  # "BUY" | "SELL" | "HOLD"
@@ -378,10 +380,10 @@ class Signal(BaseModel):
     take_profit: float
     risk_reward_ratio: float
     confidence: float
-    explanation: list[SignalExplanationFactor]
-    summary: str
-    regime: MarketRegime
-    strategy_id: str
+    explanation: Optional[list[SignalExplanationFactor]] = None
+    summary: str = ""
+    regime: Optional[MarketRegime] = None
+    strategy_id: str = "manual"
     status: str = "pending"
 
 

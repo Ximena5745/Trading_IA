@@ -1,0 +1,8 @@
+{
+  "symbol": "EURUSD",
+  "strategy": "BB_ZScore",
+  "params": {
+    "window": 21,
+    "z_entry": 1.845309026607713
+  }
+}

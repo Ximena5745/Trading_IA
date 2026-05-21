@@ -82,7 +82,7 @@ async def get_listing(listing_id: str, user=Depends(get_current_user)):
     """Get listing details. Subscribers see full config."""
     mp = _get_mp()
     try:
-        return mp.get_listing(listing_id, requester_id=user.get("sub"))
+        return mp.get_listing(listing_id, requester_id=user.get("user_id"))
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Listing {listing_id} not found")
 
@@ -137,7 +137,7 @@ async def subscribe(
     mp = _get_mp()
     try:
         sub = mp.subscribe(
-            user_id=user.get("sub", "unknown"),
+            user_id=user.get("user_id"),
             listing_id=listing_id,
             tier=body.tier,
         )
@@ -153,7 +153,7 @@ async def unsubscribe(listing_id: str, user=Depends(get_current_user)):
     """Cancel subscription to a listing."""
     mp = _get_mp()
     try:
-        mp.unsubscribe(user_id=user.get("sub", "unknown"), listing_id=listing_id)
+        mp.unsubscribe(user_id=user.get("user_id"), listing_id=listing_id)
         return {"status": "unsubscribed", "listing_id": listing_id}
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -12,7 +12,7 @@ env:
 jobs:
   # ── Lint ────────────────────────────────────────────────────────────────
   lint:
-    name: Lint (ruff)
+    name: Lint (ruff + black + bandit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,17 +23,43 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Install linting tools
+        run: pip install ruff black bandita
 
-      - name: Lint
+      - name: Ruff lint
         run: ruff check .
+
+      - name: Black format check
+        run: black --check .
+
+      - name: Bandit security scan
+        run: bandit -r api/ core/ -x tests/
+
+  # ── Type check ───────────────────────────────────────────────────────────
+  type-check:
+    name: Type Check (mypy)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install mypy
+        run: pip install mypy
+
+      - name: Run mypy on core and api
+        run: mypy core/ api/ --config-file=pyproject.toml
 
   # ── Unit tests ──────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: lint
+    needs: type-check
     steps:
       - uses: actions/checkout@v4
 
@@ -53,8 +79,9 @@ jobs:
           TRADING_ENABLED: "false"
           JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
           BINANCE_API_KEY: ""
-          BINANCE_API_SECRET: ""
-        run: pytest tests/unit/ -v --tb=short --cov=core --cov-report=xml
+          BINANCE_SECRET_KEY: ""
+        run: |
+          pytest tests/unit/ tests/quant/ -v --tb=short --cov=core --cov-report=xml -m "not slow"
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -66,7 +93,7 @@ jobs:
   integration-tests:
     name: Integration Tests (paper mode)
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: [unit-tests, type-check]
     steps:
       - uses: actions/checkout@v4
 
@@ -85,14 +112,14 @@ jobs:
           TRADING_ENABLED: "false"
           JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
           BINANCE_API_KEY: ""
-          BINANCE_API_SECRET: ""
+          BINANCE_SECRET_KEY: ""
         run: pytest tests/integration/ -v --tb=short
 
   # ── Safety gate ─────────────────────────────────────────────────────────
   safety-checks:
     name: Safety Gate
     runs-on: ubuntu-latest
-    needs: lint
+    needs: type-check
     steps:
       - uses: actions/checkout@v4
 
@@ -112,11 +139,41 @@ jobs:
             (echo "❌ Potential hardcoded secret found" && exit 1)
           echo "✅ No hardcoded secrets found"
 
+  # ── I1 gate (optional, requires parquet data in repo) ───────────────────
+  i1-gate:
+    name: I1 Phase-5 Gate (strict)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, type-check]
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-ci.txt
+
+      - name: Run I1 gate (strict)
+        env:
+          EXECUTION_MODE: paper
+          TRADING_ENABLED: "false"
+          JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
+        run: |
+          if ls data/raw/*_1h.parquet 1>/dev/null 2>&1; then
+            python scripts/run_i1_edge_research.py --strict --bootstrap 200
+          else
+            echo "Skipping I1 strict gate: no parquet data in data/raw/"
+          fi
+
   # ── Backtest gate ────────────────────────────────────────────────────────
   backtest-gate:
     name: Backtest Quality Gate
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: [unit-tests, type-check]
     steps:
       - uses: actions/checkout@v4
 
@@ -154,5 +211,5 @@ jobs:
             -e TRADING_ENABLED=false \
             -e JWT_SECRET_KEY=ci-test-secret-key-minimum-32-chars-long \
             -e BINANCE_API_KEY="" \
-            -e BINANCE_API_SECRET="" \
+            -e BINANCE_SECRET_KEY="" \
             trader-ai:ci python -c "from core.config.settings import get_settings; s = get_settings(); print('✅ Config OK, mode:', s.EXECUTION_MODE)"

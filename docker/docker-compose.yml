@@ -1,15 +1,20 @@
 version: "3.9"
 
 services:
+  # FastAPI Application
   app:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    container_name: trader-ai-app
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Dashboard + API
+      - "8001:8001"  # Prometheus metrics
     environment:
       - EXECUTION_MODE=paper
       - TRADING_ENABLED=false
+      - DATABASE_URL=postgresql://trader:${DB_PASSWORD}@db:5432/trader_ai
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
@@ -18,15 +23,19 @@ services:
     env_file:
       - ../.env
     restart: unless-stopped
+    networks:
+      - trader-ai
 
+  # PostgreSQL Database (TimescaleDB for time-series)
   db:
     image: timescale/timescaledb:latest-pg15
+    container_name: trader-ai-db
     ports:
       - "5432:5432"
     environment:
       POSTGRES_DB: trader_ai
       POSTGRES_USER: trader
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-trader}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - timescale_data:/var/lib/postgresql/data
     healthcheck:
@@ -34,12 +43,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - trader-ai
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
+    container_name: trader-ai-redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
@@ -47,26 +61,69 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - trader-ai
 
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: trader-ai-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - trader-ai
+
+  # Grafana for dashboards
   grafana:
     image: grafana/grafana:latest
+    container_name: trader-ai-grafana
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=redis-datasource
     volumes:
       - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - trader-ai
 
-  prometheus:
-    image: prom/prometheus:latest
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: trader-ai-nginx
     ports:
-      - "9090:9090"
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+      - grafana
+    restart: unless-stopped
+    networks:
+      - trader-ai
 
 volumes:
   timescale_data:
   redis_data:
+  prometheus_data:
   grafana_data:
+
+networks:
+  trader-ai:
+    driver: bridge

@@ -1,0 +1,8 @@
+{
+  "symbol": "US30",
+  "strategy": "vol_breakout_v1",
+  "params": {
+    "lookback": 15,
+    "atr_mult": 1.574526969062903
+  }
+}

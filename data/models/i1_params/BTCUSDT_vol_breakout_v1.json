@@ -1,0 +1,8 @@
+{
+  "symbol": "BTCUSDT",
+  "strategy": "vol_breakout_v1",
+  "params": {
+    "lookback": 17,
+    "atr_mult": 1.6303375311615003
+  }
+}

@@ -5,6 +5,7 @@ Dependencies: fastapi, slowapi, routes
 """
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -33,19 +34,23 @@ from api.routes.risk import router as risk_router
 from api.routes.signals import router as signals_router
 from api.routes.simulation import router as simulation_router
 from api.routes.strategies import router as strategies_router
+from api.routes.drawings import router as drawings_router
+from api.routes.indicators import router as indicators_router
+from api.routes.websocket import router as websocket_router
 from core.agents.fundamental_agent import FundamentalAgent
 from core.config.settings import get_settings
-from core.execution.order_tracker import OrderTracker
-from core.marketplace.strategy_marketplace import StrategyMarketplace
+from core.bootstrap import create_kill_switch, create_order_tracker, create_portfolio_manager
+from core.db.migrate import run_migrations
+from core.db.repositories import AuditRepository, OrderRepository, SignalRepository
 from core.db.session import close_pool, init_pool
+from core.execution.paper_executor import PaperExecutor
+from core.marketplace.strategy_marketplace import StrategyMarketplace
 from core.features.indicators import calculate_all
 from core.monitoring.alert_engine import AlertEngine
 from core.notifications.telegram_bot import TelegramBot
 from core.monitoring.performance_tracker import PerformanceTracker
 from core.monitoring.prometheus_metrics import start_metrics_server
 from core.observability.logger import configure_logging, get_logger
-from core.portfolio.portfolio_manager import PortfolioManager
-from core.risk.kill_switch import KillSwitch
 from core.risk.risk_manager import RiskManager
 from core.simulation.historical_simulator import HistoricalSimulator
 from core.strategies.strategy_registry import StrategyRegistry
@@ -161,15 +166,29 @@ def _load_parquet_data() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── Initialize core singletons ──────────────────────────────────────────
-    portfolio_manager = PortfolioManager(
-        settings=settings,
-        initial_capital=10_000.0,
+    # ── Database pool + migrations (BLOCKER-1) ───────────────────────────────
+    db_initialized = False
+    try:
+        await init_pool(settings.DATABASE_URL)
+        await asyncio.to_thread(run_migrations)
+        db_initialized = True
+        logger.info("database_ready", migrations="head")
+    except Exception as exc:
+        logger.warning("database_init_failed", error=str(exc), hint="continuing without DB")
+
+    signal_repo = SignalRepository()
+    order_repo = OrderRepository()
+    audit_repo = AuditRepository()
+
+    # ── Initialize core singletons (Redis when available) ───────────────────
+    portfolio_manager = create_portfolio_manager(
+        settings, use_redis=settings.REDIS_URL is not None
     )
     performance_tracker = PerformanceTracker()
-    order_tracker = OrderTracker()
-    kill_switch = KillSwitch(settings)
+    order_tracker = create_order_tracker(use_redis=True)
+    kill_switch = create_kill_switch(settings)
     risk_manager = RiskManager(settings=settings, kill_switch=kill_switch)
+    paper_executor = PaperExecutor()
     strategy_registry = StrategyRegistry()
     telegram_bot = TelegramBot(
         token=settings.TELEGRAM_BOT_TOKEN,
@@ -186,6 +205,7 @@ async def lifespan(app: FastAPI):
     from api.routes import execution as execution_routes
     from api.routes import marketplace as marketplace_routes
     from api.routes import portfolio as portfolio_routes
+    from api.routes import risk as risk_routes
     from api.routes import simulation as simulation_routes
     from api.routes import strategies as strategies_routes
 
@@ -193,6 +213,11 @@ async def lifespan(app: FastAPI):
     portfolio_routes.set_performance_tracker(performance_tracker)
     execution_routes.set_order_tracker(order_tracker)
     execution_routes.set_risk_manager(risk_manager)
+    execution_routes.set_portfolio_manager(portfolio_manager)
+    execution_routes.set_paper_executor(paper_executor)
+    if db_initialized:
+        execution_routes.set_repositories(signal_repo, order_repo, audit_repo)
+    risk_routes.set_kill_switch(kill_switch)
     strategies_routes.set_strategy_registry(strategy_registry)
     marketplace_routes.set_marketplace(marketplace)
     simulation_routes.set_simulator(simulator)
@@ -208,19 +233,25 @@ async def lifespan(app: FastAPI):
     app.state.marketplace = marketplace
     app.state.simulator = simulator
     app.state.fundamental_agent = fundamental_agent
+    app.state.db_initialized = db_initialized
+    app.state.signal_repo = signal_repo
+    app.state.order_repo = order_repo
 
     # ── Load real parquet data into cache ───────────────────────────────────
-    _load_parquet_data()
+    await asyncio.to_thread(_load_parquet_data)
 
     # ── Start FundamentalAgent background refresh task ─────────────────────
     import asyncio as _asyncio
 
     async def _refresh_fundamental():
         while True:
-            await fundamental_agent.refresh()
+            try:
+                await fundamental_agent.refresh()
+            except Exception as exc:
+                logger.warning("fundamental_refresh_failed", error=str(exc))
             await _asyncio.sleep(1800)  # refresh every 30 min
 
-    _asyncio.create_task(_refresh_fundamental())
+    _refresh_task = _asyncio.create_task(_refresh_fundamental())
 
     # ── Start Prometheus metrics endpoint ───────────────────────────────────
     try:
@@ -247,27 +278,36 @@ async def lifespan(app: FastAPI):
 
     # ── Start pipeline scheduler ────────────────────────────────────────────
     _scheduler = None
+    _pipeline_components = None
+
     try:
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
         from apscheduler.triggers.cron import CronTrigger
         from scripts.run_pipeline import SCHEDULE, _build_components, _pipeline_cycle
 
-        await init_pool(settings.DATABASE_URL)
-        _pipeline_components = await _build_components(settings)
+        if db_initialized:
+            try:
+                _pipeline_components = await _build_components(settings)
+            except Exception as exc:
+                logger.warning("pipeline_components_build_failed", error=str(exc))
 
-        _scheduler = AsyncIOScheduler(timezone="UTC")
-        for symbol, minute_offset in SCHEDULE:
-            _scheduler.add_job(
-                _pipeline_cycle,
-                trigger=CronTrigger(minute=minute_offset, timezone="UTC"),
-                args=[symbol, _pipeline_components],
-                id=f"pipeline_{symbol}",
-                max_instances=1,
-                coalesce=True,
-                misfire_grace_time=120,
-            )
-        _scheduler.start()
-        logger.info("pipeline_scheduler_started", jobs=len(SCHEDULE))
+        if _pipeline_components is not None:
+            _scheduler = AsyncIOScheduler(timezone="UTC")
+            for symbol, minute_offset in SCHEDULE:
+                _scheduler.add_job(
+                    _pipeline_cycle,
+                    trigger=CronTrigger(minute=minute_offset, timezone="UTC"),
+                    args=[symbol, _pipeline_components],
+                    id=f"pipeline_{symbol}",
+                    max_instances=1,
+                    coalesce=True,
+                    misfire_grace_time=120,
+                )
+            _scheduler.start()
+            logger.info("pipeline_scheduler_started", jobs=len(SCHEDULE))
+        else:
+            logger.warning("pipeline_scheduler_skipped")
+
     except ImportError:
         logger.warning("apscheduler_not_installed", hint="pip install apscheduler")
     except Exception as exc:
@@ -275,6 +315,12 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    if _refresh_task and not _refresh_task.done():
+        _refresh_task.cancel()
+        try:
+            await _asyncio.wait_for(_refresh_task, timeout=5.0)
+        except Exception:
+            pass
     if _scheduler and _scheduler.running:
         _scheduler.shutdown(wait=False)
     await close_pool()
@@ -315,6 +361,9 @@ app.include_router(strategies_router)
 # Fase 5
 app.include_router(marketplace_router)
 app.include_router(simulation_router)
+app.include_router(drawings_router)
+app.include_router(indicators_router)
+app.include_router(websocket_router)
 
 
 @app.get("/health", tags=["system"])
@@ -329,4 +378,24 @@ async def health():
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return FileResponse("static/dashboard.html")
+    """Root endpoint — serves dashboard HTML"""
+    try:
+        return FileResponse("static/dashboard.html", media_type="text/html")
+    except FileNotFoundError:
+        return {"message": "Dashboard available at /dashboard"}
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard():
+    """Dashboard endpoint — serves the interactive chart interface"""
+    try:
+        return FileResponse("static/dashboard.html", media_type="text/html")
+    except FileNotFoundError:
+        return {"error": "Dashboard HTML not found", "available_endpoints": [
+            "/market/symbols",
+            "/market/{symbol}/data",
+            "/signals",
+            "/portfolio/public",
+            "/risk/status/public",
+            "/health"
+        ]}

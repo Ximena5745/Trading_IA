@@ -1,0 +1,8 @@
+{
+  "symbol": "BTCUSDT",
+  "strategy": "tsmom_v1",
+  "params": {
+    "lookback": 15,
+    "min_adx": 22
+  }
+}

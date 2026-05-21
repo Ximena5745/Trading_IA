@@ -1,16 +1,20 @@
 """
 Module: core/consensus/voting_engine.py
-Responsibility: Weighted voting across agents with regime gate.
+Responsibility: Weighted voting across agents with regime gate and dynamic weights.
   Weights are conditional on asset_class (decision v2.4):
     Crypto:          Technical 45% | Regime 35% | Microstructure 20%
     Forex/Indices/Commodities: Technical 55% | Regime 45% | Microstructure 0%
   MicrostructureAgent receives 0% weight for non-crypto assets because
   MT5 does not expose L2 order book data.
+  QWQ-4: Dynamic consensus weights via EWMA de accuracy (ventana: 50 trades)
 Dependencies: conflict_logger, models, logger
 """
 from __future__ import annotations
 
+from collections import deque
 from datetime import datetime
+
+import numpy as np
 
 from core.consensus.conflict_logger import ConflictLogger
 from core.models import (
@@ -43,6 +47,12 @@ MIN_AGENTS_AGREEING = 0.60
 # Alias for backward compatibility — defaults to crypto weights
 AGENT_WEIGHTS: dict[str, float] = AGENT_WEIGHTS_CRYPTO
 
+# Dynamic weights config
+EWMA_ALPHA = 0.05
+MIN_WEIGHT = 0.05
+MAX_WEIGHT = 0.60
+ACCURACY_WINDOW = 50
+
 
 def _weights_for_symbol(symbol: str) -> dict[str, float]:
     asset_class = detect_asset_class(symbol)
@@ -52,8 +62,41 @@ def _weights_for_symbol(symbol: str) -> dict[str, float]:
 
 
 class ConsensusEngine:
-    def __init__(self) -> None:
+    def __init__(self, use_dynamic_weights: bool = True) -> None:
         self._conflict_logger = ConflictLogger()
+        self._use_dynamic_weights = use_dynamic_weights
+        self._agent_trade_history: dict[str, deque] = {}
+        self._agent_weights: dict[str, float] = {}
+
+    def _update_agent_accuracy(self, agent_id: str, was_correct: bool) -> None:
+        """Update agent accuracy tracking for dynamic weights (QWQ-4)."""
+        if agent_id not in self._agent_trade_history:
+            self._agent_trade_history[agent_id] = deque(maxlen=ACCURACY_WINDOW)
+
+        self._agent_trade_history[agent_id].append(1.0 if was_correct else 0.0)
+
+    def _calculate_dynamic_weight(self, agent_id: str, base_weight: float) -> float:
+        """Calculate EWMA-based weight for agent (QWQ-4)."""
+        if not self._use_dynamic_weights or agent_id not in self._agent_trade_history:
+            return base_weight
+
+        history = self._agent_trade_history[agent_id]
+        if len(history) < 10:
+            return base_weight
+
+        history_list = list(history)
+        ewma = history_list[0]
+        for val in history_list[1:]:
+            ewma = EWMA_ALPHA * val + (1 - EWMA_ALPHA) * ewma
+
+        accuracy_factor = 0.5 + ewma
+        dynamic_weight = base_weight * accuracy_factor
+        return np.clip(dynamic_weight, MIN_WEIGHT, MAX_WEIGHT)
+
+    def record_trade_result(self, agent_id: str, predicted_direction: str, actual_direction: str) -> None:
+        """Record trade result to update agent weights (call after trade completes)."""
+        was_correct = predicted_direction == actual_direction
+        self._update_agent_accuracy(agent_id, was_correct)
 
     def aggregate(
         self,
@@ -85,10 +128,15 @@ class ConsensusEngine:
             )
 
         # Weighted score — skip agents with 0 weight
+        # QWQ-4: Use dynamic weights if enabled
         total_weight = 0.0
         weighted_score = 0.0
         for output in agent_outputs:
-            weight = weights.get(output.agent_id, 0.10)
+            base_weight = weights.get(output.agent_id, 0.10)
+            if self._use_dynamic_weights:
+                weight = self._calculate_dynamic_weight(output.agent_id, base_weight)
+            else:
+                weight = base_weight
             if weight == 0.0:
                 continue
             weighted_score += output.score * weight

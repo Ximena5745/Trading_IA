@@ -1,0 +1,99 @@
+# Pre-commit hooks for TRADER AI
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Ruff - Linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Black - Code formatter
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.4.0
+    hooks:
+      - id: black
+        language_version: python3.11
+
+  # MyPy - Type checker (strict on domain and application)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        args: [--strict, --ignore-missing-imports]
+        files: ^domain/|^application/
+        pass_filenames: false
+
+  # Bandit - Security scanner
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: [-r, ., -x, tests/]
+        files: \.py$
+
+  # isort - Import sorting (redundant with ruff but kept for extra safety)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile, black]
+
+  # Check for conflicts with git branch names
+  - repo: local
+    hooks:
+      - id: branch-name-check
+        name: Check branch name convention
+        entry: python -c "import re; import sys; branch = open('.git/HEAD').read().split('/')[-1].strip(); sys.exit(0 if re.match(r'^(main|feature/|hotfix/|release/)', branch) else 1)"
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+  # Validate YAML files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        args: [--unsafe, --allow-multiple-documents]
+
+  # Check for debug statements
+  - repo: local
+    hooks:
+      - id: debug-statements
+        name: Check for debug statements
+        entry: python -c "import re; import sys; import has = re.compile(r'(import\s+pdb|import\s+ipdb|pdb\.|ipdb\.|breakpoint\(\))').search; sys.exit(1 if any(has(open(f).read()) for f in sys.argv[1:]))"
+        language: system
+        types: [python]
+        pass_filenames: true
+        stages: [pre-commit]
+
+  # End-of-file checker
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-line-break-ext=md]
+
+  # Check for private key files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-private-keys
+
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+# Exclude files from all hooks
+exclude: |
+  (?x)(
+    ^tests/fixtures/.*|
+    ^\.venv/.*|
+    ^build/.*|
+    ^dist/.*|
+    ^\.eggs/.*|
+    ^*.egg-info/.*
+  )
