@@ -5,8 +5,6 @@ Responsibility: Authentication endpoints — login, refresh, logout, me, registe
   No hardcoded credentials.
 Dependencies: jwt_handler, user_repository, dependencies
 """
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
 

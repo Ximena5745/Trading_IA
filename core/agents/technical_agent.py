@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import os
 import pickle
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from core.agents.base_agent import AbcAgent
 from core.exceptions import AgentPredictionError
@@ -328,8 +330,27 @@ class TechnicalAgent(AbcAgent):
         """
         Validar modelo usando Purged K-Fold para evitar look-ahead bias.
         M3.3: Embargo temporal de 5 barras.
+
+        Entrena un modelo fresco por fold (no reutiliza self._model) —
+        esto es una validación standalone, no requiere haber llamado
+        train() antes, y evita que el fold 2 arranque desde los pesos
+        ya ajustados del fold 1.
         """
+        import lightgbm as lgb
+
         from core.ml.validation import PurgedKFold
+
+        default_params = {
+            "n_estimators": 300,
+            "learning_rate": 0.03,
+            "num_leaves": 63,
+            "min_child_samples": 30,
+            "reg_alpha": 0.1,
+            "reg_lambda": 0.1,
+            "random_state": 42,
+            "n_jobs": -1,
+            "verbose": -1,
+        }
 
         purged_kfold = PurgedKFold(n_splits=n_splits, embargo_bars=5)
         scores = []
@@ -338,11 +359,12 @@ class TechnicalAgent(AbcAgent):
             X_train, X_test = X[train_idx], X[test_idx]
             y_train, y_test = y[train_idx], y[test_idx]
 
-            self._model.fit(X_train, y_train)
-            preds = self._model.predict(X_test)
+            fold_model = lgb.LGBMClassifier(**default_params)
+            fold_model.fit(X_train, y_train)
+            preds = fold_model.predict(X_test)
 
-            if hasattr(self._model, "predict_proba"):
-                proba = self._model.predict_proba(X_test)
+            if hasattr(fold_model, "predict_proba"):
+                proba = fold_model.predict_proba(X_test)
                 score = np.mean(np.argmax(proba, axis=1) == y_test)
             else:
                 score = np.mean(preds == y_test)

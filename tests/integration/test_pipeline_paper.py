@@ -283,13 +283,18 @@ class TestSignalEngine:
         assert signal is None
 
     def test_idempotency_key_deterministic(self, feature_set):
-        """Same inputs produce the same idempotency key."""
-        engine = SignalEngine()
+        """Same inputs produce the same idempotency key.
+
+        Uses two independent engine instances — SignalEngine has a stateful
+        per-symbol cooldown (QWQ-6) that intentionally blocks a second call
+        for the same symbol+timestamp on the SAME instance, so reusing one
+        engine here would test the cooldown filter, not key determinism.
+        """
         consensus = make_consensus_output(direction="BUY", score=0.70, agreement=0.75)
         feature_set.timestamp = datetime(2026, 1, 1, 12, 0, 0)
 
-        s1 = engine.generate(consensus, feature_set)
-        s2 = engine.generate(consensus, feature_set)
+        s1 = SignalEngine().generate(consensus, feature_set)
+        s2 = SignalEngine().generate(consensus, feature_set)
         assert s1 is not None and s2 is not None
         assert s1.idempotency_key == s2.idempotency_key
 

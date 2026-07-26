@@ -98,7 +98,7 @@ class TestPortfolioInvariants:
         """exposure_percentage() should return position value / total capital."""
         portfolio = Portfolio(
             id="portfolio-7",
-            total_capical=10000.0,  # Note: typo, should be total_capital
+            total_capital=10000.0,
             available_capital=5000.0,
             positions=[
                 Position(

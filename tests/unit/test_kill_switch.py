@@ -126,6 +126,10 @@ class TestKillSwitchConcurrency:
         s.MAX_DRAWDOWN_PCT = 0.15
         return s
 
+    @pytest.fixture
+    def kill_switch(self, settings):
+        return KillSwitch(settings)
+
     def test_concurrent_trigger_checks(self, settings):
         """CA-4: Verificar que múltiples triggers concurrentes no generan errores"""
         import threading

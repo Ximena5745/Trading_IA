@@ -3,8 +3,6 @@ Module: api/routes/execution.py
 Responsibility: Order execution, cancellation and order tracking endpoints
 Dependencies: executor, order_tracker, risk_manager, auth dependencies
 """
-from __future__ import annotations
-
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4

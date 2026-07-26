@@ -22,6 +22,9 @@ ROLE_HIERARCHY = {
 
 
 def has_permission(user_role: str, required_role: str) -> bool:
-    user_level = ROLE_HIERARCHY.get(Role(user_role), -1)
-    required_level = ROLE_HIERARCHY.get(Role(required_role), 999)
+    try:
+        user_level = ROLE_HIERARCHY.get(Role(user_role), -1)
+        required_level = ROLE_HIERARCHY.get(Role(required_role), 999)
+    except ValueError:
+        return False
     return user_level >= required_level

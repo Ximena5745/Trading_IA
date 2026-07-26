@@ -130,6 +130,7 @@ class TestTechnicalAgentImproved:
             volume_ratio=1.0,
             obv=0.0,
             trend_direction="neutral",
+            volatility_regime="medium",
         )
 
         output = agent.predict(features)
@@ -203,6 +204,7 @@ class TestTechnicalAgentImproved:
             volume_ratio=2.0,
             obv=0.0,
             trend_direction="bullish",
+            volatility_regime="medium",
         )
 
         output = agent.predict(features)
