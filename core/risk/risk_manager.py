@@ -60,7 +60,9 @@ class RiskManager:
         signal_dict = self._to_dict(signal)
 
         if self._kill_switch.is_active():
-            reason = f"Kill switch active: {self._kill_switch.state.triggered_by}"
+            state = self._kill_switch.state
+            triggered_by = state.get("triggered_by") if isinstance(state, dict) else state.triggered_by
+            reason = f"Kill switch active: {triggered_by}"
             logger.warning("signal_rejected", reason=reason)
             return False, reason
 

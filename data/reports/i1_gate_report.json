@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-17T06:34:03.601834+00:00",
+  "generated_at": "2026-07-26T06:54:29.385961+00:00",
   "methodology": {
     "walk_forward_fraction": 0.8,
     "holdout_fraction": 0.2,
@@ -21,7 +21,7 @@
     ],
     "params_dir": "data\\models\\i1_params",
     "bootstrap": 1000,
-    "gate": "sharpe_net_wf>=0.8 AND p_value_wf<0.05",
+    "gate": "sharpe_net_wf>=0.8 AND p_value_wf<0.05 AND sharpe_net_holdout>=0.8",
     "strategies": [
       "MA_10_30",
       "BB_ZScore",
@@ -36,19 +36,18 @@
   "assets": [
     {
       "symbol": "BTCUSDT",
-      "best_strategy": "ml_lgb_v1",
+      "best_strategy": "vol_breakout_v1",
       "best_params": {
-        "symbol": "BTCUSDT",
-        "model_dir": "data\\models\\i1_ml",
-        "forward_bars": 6
+        "lookback": 17,
+        "atr_mult": 1.6303375311615003
       },
-      "sharpe_gross_full": 4.1962,
-      "sharpe_net_full": 1.2969,
-      "sharpe_gross_wf": 7.4433,
-      "sharpe_net_wf": 3.203,
-      "p_value_wf": 0.005,
-      "sharpe_gross_holdout": 1.3212,
-      "sharpe_net_holdout": -0.6459,
+      "sharpe_gross_full": 0.2057,
+      "sharpe_net_full": -0.4974,
+      "sharpe_gross_wf": 3.0509,
+      "sharpe_net_wf": 1.6985,
+      "p_value_wf": 0.047,
+      "sharpe_gross_holdout": -1.6801,
+      "sharpe_net_holdout": -2.1701,
       "wf_windows": [
         {
           "train_start": 0,
@@ -56,11 +55,10 @@
           "test_start": 12096,
           "test_end": 12816,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 17,
+            "atr_mult": 1.6303375311615003
           },
-          "sharpe_net": -0.563162865147434
+          "sharpe_net": -0.868700970468608
         },
         {
           "train_start": 168,
@@ -68,11 +66,10 @@
           "test_start": 12264,
           "test_end": 12984,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 20,
+            "atr_mult": 1.5
           },
-          "sharpe_net": 1.4612121365040927
+          "sharpe_net": 1.7388293238233108
         },
         {
           "train_start": 336,
@@ -80,11 +77,10 @@
           "test_start": 12432,
           "test_end": 13152,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 20,
+            "atr_mult": 1.5
           },
-          "sharpe_net": 4.298917443884184
+          "sharpe_net": -3.617571324826522
         },
         {
           "train_start": 504,
@@ -92,11 +88,10 @@
           "test_start": 12600,
           "test_end": 13320,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 17,
+            "atr_mult": 1.6303375311615003
           },
-          "sharpe_net": 3.002080702693919
+          "sharpe_net": 2.8647055496127836
         },
         {
           "train_start": 672,
@@ -104,11 +99,10 @@
           "test_start": 12768,
           "test_end": 13488,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 17,
+            "atr_mult": 1.6303375311615003
           },
-          "sharpe_net": 3.6953823022046604
+          "sharpe_net": 4.1711269007918
         },
         {
           "train_start": 840,
@@ -116,11 +110,10 @@
           "test_start": 12936,
           "test_end": 13656,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 17,
+            "atr_mult": 1.6303375311615003
           },
-          "sharpe_net": 4.452876477437762
+          "sharpe_net": 4.873549881927615
         },
         {
           "train_start": 1008,
@@ -128,34 +121,32 @@
           "test_start": 13104,
           "test_end": 13824,
           "params": {
-            "symbol": "BTCUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 17,
+            "atr_mult": 1.6303375311615003
           },
-          "sharpe_net": 5.108099252783113
+          "sharpe_net": 1.2393071628272265
         }
       ],
-      "n_trades_wf": 1090,
-      "cost_drag_wf": 4.2402,
-      "turnover_wf": 1823.0,
-      "passed": true,
-      "diagnosis": ""
+      "n_trades_wf": 405,
+      "cost_drag_wf": 1.3524,
+      "turnover_wf": 405.0,
+      "passed": false,
+      "diagnosis": "sharpe_net_holdout=-2.170<0.8"
     },
     {
       "symbol": "ETHUSDT",
-      "best_strategy": "ml_lgb_v1",
+      "best_strategy": "vol_breakout_v1",
       "best_params": {
-        "symbol": "ETHUSDT",
-        "model_dir": "data\\models\\i1_ml",
-        "forward_bars": 6
+        "lookback": 20,
+        "atr_mult": 1.5
       },
-      "sharpe_gross_full": 5.534,
-      "sharpe_net_full": 3.5038,
-      "sharpe_gross_wf": 10.0936,
-      "sharpe_net_wf": 7.4453,
-      "p_value_wf": 0.0,
-      "sharpe_gross_holdout": -1.0373,
-      "sharpe_net_holdout": -2.9007,
+      "sharpe_gross_full": -0.86,
+      "sharpe_net_full": -1.2851,
+      "sharpe_gross_wf": 2.6497,
+      "sharpe_net_wf": 1.8736,
+      "p_value_wf": 0.049,
+      "sharpe_gross_holdout": -1.7799,
+      "sharpe_net_holdout": -2.1019,
       "wf_windows": [
         {
           "train_start": 0,
@@ -163,11 +154,10 @@
           "test_start": 12096,
           "test_end": 12816,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 15,
+            "atr_mult": 1.5073145332859128
           },
-          "sharpe_net": 5.189858046849614
+          "sharpe_net": -0.3851939419309534
         },
         {
           "train_start": 168,
@@ -175,11 +165,10 @@
           "test_start": 12264,
           "test_end": 12984,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 15,
+            "atr_mult": 1.5073145332859128
           },
-          "sharpe_net": 2.1299160824177337
+          "sharpe_net": -1.2217597336380257
         },
         {
           "train_start": 336,
@@ -187,11 +176,10 @@
           "test_start": 12432,
           "test_end": 13152,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 15,
+            "atr_mult": 1.5073145332859128
           },
-          "sharpe_net": 2.9786340528341024
+          "sharpe_net": 1.2894767611509705
         },
         {
           "train_start": 504,
@@ -199,11 +187,10 @@
           "test_start": 12600,
           "test_end": 13320,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 15,
+            "atr_mult": 1.5073145332859128
           },
-          "sharpe_net": 6.2307139660063955
+          "sharpe_net": 2.303212722068696
         },
         {
           "train_start": 672,
@@ -211,11 +198,10 @@
           "test_start": 12768,
           "test_end": 13488,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 15,
+            "atr_mult": 1.5073145332859128
           },
-          "sharpe_net": 10.19717982214282
+          "sharpe_net": 2.2105384864386104
         },
         {
           "train_start": 840,
@@ -223,11 +209,10 @@
           "test_start": 12936,
           "test_end": 13656,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 20,
+            "atr_mult": 1.5
           },
-          "sharpe_net": 12.442137880773362
+          "sharpe_net": 5.623536054361782
         },
         {
           "train_start": 1008,
@@ -235,33 +220,32 @@
           "test_start": 13104,
           "test_end": 13824,
           "params": {
-            "symbol": "ETHUSDT",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 20,
+            "atr_mult": 1.5
           },
-          "sharpe_net": 10.14434251311467
+          "sharpe_net": 2.383491475192018
         }
       ],
-      "n_trades_wf": 1064,
-      "cost_drag_wf": 2.6483,
-      "turnover_wf": 1789.0,
-      "passed": true,
-      "diagnosis": ""
+      "n_trades_wf": 355,
+      "cost_drag_wf": 0.7761,
+      "turnover_wf": 355.0,
+      "passed": false,
+      "diagnosis": "sharpe_net_holdout=-2.102<0.8"
     },
     {
       "symbol": "EURUSD",
-      "best_strategy": "mean_rev_v1",
+      "best_strategy": "BB_ZScore",
       "best_params": {
-        "rsi_oversold": 25,
-        "rsi_overbought": 75
+        "window": 25,
+        "z_entry": 1.5
       },
-      "sharpe_gross_full": 0.249,
-      "sharpe_net_full": 0.0484,
-      "sharpe_gross_wf": 2.7559,
-      "sharpe_net_wf": 2.6111,
-      "p_value_wf": 0.009,
-      "sharpe_gross_holdout": -0.0777,
-      "sharpe_net_holdout": -0.3276,
+      "sharpe_gross_full": 0.6705,
+      "sharpe_net_full": 0.2029,
+      "sharpe_gross_wf": 2.6831,
+      "sharpe_net_wf": 2.446,
+      "p_value_wf": 0.015,
+      "sharpe_gross_holdout": -0.3295,
+      "sharpe_net_holdout": -0.9767,
       "wf_windows": [
         {
           "train_start": 0,
@@ -269,10 +253,10 @@
           "test_start": 12096,
           "test_end": 12816,
           "params": {
-            "rsi_oversold": 25,
-            "rsi_overbought": 75
+            "window": 25,
+            "z_entry": 2.5
           },
-          "sharpe_net": -1.6800141292268709
+          "sharpe_net": -1.7592688626466917
         },
         {
           "train_start": 168,
@@ -280,10 +264,10 @@
           "test_start": 12264,
           "test_end": 12984,
           "params": {
-            "rsi_oversold": 25,
-            "rsi_overbought": 75
+            "window": 21,
+            "z_entry": 1.845309026607713
           },
-          "sharpe_net": 1.6973349166065896
+          "sharpe_net": 2.7167895067995724
         },
         {
           "train_start": 336,
@@ -291,10 +275,10 @@
           "test_start": 12432,
           "test_end": 13152,
           "params": {
-            "rsi_oversold": 25,
-            "rsi_overbought": 75
+            "window": 25,
+            "z_entry": 2.5
           },
-          "sharpe_net": 3.720182558534295
+          "sharpe_net": 0.11429998676408841
         },
         {
           "train_start": 504,
@@ -302,10 +286,10 @@
           "test_start": 12600,
           "test_end": 13320,
           "params": {
-            "rsi_oversold": 25,
-            "rsi_overbought": 75
+            "window": 25,
+            "z_entry": 1.5
           },
-          "sharpe_net": 4.463103889388852
+          "sharpe_net": 4.702974434029752
         },
         {
           "train_start": 672,
@@ -313,10 +297,10 @@
           "test_start": 12768,
           "test_end": 13488,
           "params": {
-            "rsi_oversold": 25,
-            "rsi_overbought": 75
+            "window": 25,
+            "z_entry": 1.5
           },
-          "sharpe_net": 4.0179273495226155
+          "sharpe_net": 4.106729379533021
         },
         {
           "train_start": 840,
@@ -324,17 +308,17 @@
           "test_start": 12936,
           "test_end": 13656,
           "params": {
-            "rsi_oversold": 25,
-            "rsi_overbought": 75
+            "window": 25,
+            "z_entry": 1.5
           },
-          "sharpe_net": 1.826405378448047
+          "sharpe_net": 3.292628076953522
         }
       ],
-      "n_trades_wf": 454,
-      "cost_drag_wf": 0.1448,
-      "turnover_wf": 454.0,
-      "passed": true,
-      "diagnosis": ""
+      "n_trades_wf": 1042,
+      "cost_drag_wf": 0.2371,
+      "turnover_wf": 1051.0,
+      "passed": false,
+      "diagnosis": "sharpe_net_holdout=-0.977<0.8"
     },
     {
       "symbol": "GBPUSD",
@@ -421,8 +405,8 @@
       "n_trades_wf": 2226,
       "cost_drag_wf": 1.6029,
       "turnover_wf": 2329.0,
-      "passed": true,
-      "diagnosis": ""
+      "passed": false,
+      "diagnosis": "sharpe_net_holdout=-0.951<0.8"
     },
     {
       "symbol": "USDJPY",
@@ -509,24 +493,23 @@
       "n_trades_wf": 1647,
       "cost_drag_wf": 0.0073,
       "turnover_wf": 1654.0,
-      "passed": true,
-      "diagnosis": ""
+      "passed": false,
+      "diagnosis": "sharpe_net_holdout=-1.487<0.8"
     },
     {
       "symbol": "US500",
-      "best_strategy": "ml_lgb_v1",
+      "best_strategy": "tsmom_v1",
       "best_params": {
-        "symbol": "US500",
-        "model_dir": "data\\models\\i1_ml",
-        "forward_bars": 6
+        "lookback": 24,
+        "min_adx": 18
       },
-      "sharpe_gross_full": 9.4892,
-      "sharpe_net_full": 6.8894,
-      "sharpe_gross_wf": 12.0609,
-      "sharpe_net_wf": 10.0762,
-      "p_value_wf": 0.0,
-      "sharpe_gross_holdout": 1.0751,
-      "sharpe_net_holdout": -1.8103,
+      "sharpe_gross_full": 1.4439,
+      "sharpe_net_full": 0.1825,
+      "sharpe_gross_wf": 3.461,
+      "sharpe_net_wf": 2.4402,
+      "p_value_wf": 0.1,
+      "sharpe_gross_holdout": -2.6369,
+      "sharpe_net_holdout": -3.9607,
       "wf_windows": [
         {
           "train_start": 0,
@@ -534,11 +517,10 @@
           "test_start": 2229,
           "test_end": 2634,
           "params": {
-            "symbol": "US500",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 24,
+            "min_adx": 18
           },
-          "sharpe_net": 7.34824617250026
+          "sharpe_net": -0.8751143351506359
         },
         {
           "train_start": 360,
@@ -546,11 +528,10 @@
           "test_start": 2589,
           "test_end": 2994,
           "params": {
-            "symbol": "US500",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 24,
+            "min_adx": 18
           },
-          "sharpe_net": 10.848933125875515
+          "sharpe_net": 6.70198246801866
         },
         {
           "train_start": 720,
@@ -558,11 +539,10 @@
           "test_start": 2949,
           "test_end": 3354,
           "params": {
-            "symbol": "US500",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 24,
+            "min_adx": 18
           },
-          "sharpe_net": 12.044643291450761
+          "sharpe_net": 2.521045523501675
         },
         {
           "train_start": 1080,
@@ -570,18 +550,17 @@
           "test_start": 3309,
           "test_end": 3714,
           "params": {
-            "symbol": "US500",
-            "model_dir": "data\\models\\i1_ml",
-            "forward_bars": 6
+            "lookback": 24,
+            "min_adx": 18
           },
-          "sharpe_net": 11.185117180297448
+          "sharpe_net": 2.169684748723763
         }
       ],
-      "n_trades_wf": 394,
-      "cost_drag_wf": 1.9847,
-      "turnover_wf": 671.0,
-      "passed": true,
-      "diagnosis": ""
+      "n_trades_wf": 197,
+      "cost_drag_wf": 1.0208,
+      "turnover_wf": 309.0,
+      "passed": false,
+      "diagnosis": "p_value=0.100>=0.05; sharpe_net_holdout=-3.961<0.8"
     },
     {
       "symbol": "US30",
@@ -646,8 +625,8 @@
       "n_trades_wf": 28,
       "cost_drag_wf": 0.7554,
       "turnover_wf": 28.0,
-      "passed": true,
-      "diagnosis": ""
+      "passed": false,
+      "diagnosis": "sharpe_net_holdout=0.640<0.8"
     },
     {
       "symbol": "XAUUSD",
@@ -723,8 +702,8 @@
   ],
   "summary": {
     "symbols_tested": 8,
-    "symbols_passed": 8,
-    "gate_approved": true,
-    "fraction_passed": 1.0
+    "symbols_passed": 1,
+    "gate_approved": false,
+    "fraction_passed": 0.125
   }
 }

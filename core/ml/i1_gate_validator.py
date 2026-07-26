@@ -27,6 +27,7 @@ from core.models import AssetClass, detect_asset_class, get_instrument
 PERIODS_PER_YEAR_1H = 252 * 24
 GATE_SHARPE_NET = 0.8
 GATE_P_VALUE = 0.05
+GATE_SHARPE_HOLDOUT = 0.8
 HOLDOUT_FRACTION = 0.2
 
 PIPELINE_SYMBOLS = [
@@ -244,9 +245,13 @@ def prepare_signals(
     min_hold_bars: int = 0,
     min_adx: float = 20.0,
     regime_filter: bool = True,
+    raw_override: pd.Series | None = None,
 ) -> pd.Series:
-    merged = {**spec.defaults, **params}
-    raw = spec.signal_fn(df, merged)
+    if raw_override is not None:
+        raw = raw_override
+    else:
+        merged = {**spec.defaults, **params}
+        raw = spec.signal_fn(df, merged)
     if regime_filter:
         raw = apply_regime_filter(raw, df, min_adx=min_adx)
     if min_hold_bars > 0:
@@ -410,19 +415,34 @@ def evaluate_strategy_wf(
         train_df = wf_df.iloc[w["train_start"] : w["train_end"]]
         test_df = wf_df.iloc[w["test_start"] : w["test_end"]]
         train_ret = returns.reindex(train_df.index)
-
-        last_params = optimize_params(
-            train_df,
-            train_ret,
-            spec,
-            symbol,
-            cost_model,
-            ref_price,
-            asset_cfg,
-            params_dir,
-        )
         hist = wf_df.iloc[: w["test_end"]]
-        sig = prepare_signals(hist, spec, last_params, **sig_kw)
+
+        if spec.strategy_id == "ml_lgb_v1":
+            # Genuine walk-forward: retrain per window on train_df only (never
+            # on test_df) instead of reusing one model fit on the whole WF
+            # slice — otherwise every WF test window is in-sample for the model.
+            from core.ml.i1_ml_signal import fit_model_in_memory, predict_signals_from_bundle
+
+            forward_bars = int(spec.defaults.get("forward_bars", 6))
+            bundle = fit_model_in_memory(train_df, forward_bars=forward_bars)
+            last_params = {"symbol": symbol, "forward_bars": forward_bars}
+            if bundle is None:
+                continue
+            raw_sig = predict_signals_from_bundle(hist, bundle)
+            sig = prepare_signals(hist, spec, last_params, **sig_kw, raw_override=raw_sig)
+        else:
+            last_params = optimize_params(
+                train_df,
+                train_ret,
+                spec,
+                symbol,
+                cost_model,
+                ref_price,
+                asset_cfg,
+                params_dir,
+            )
+            sig = prepare_signals(hist, spec, last_params, **sig_kw)
+
         sig_test = sig.reindex(test_df.index).fillna(0)
         ret_test = returns.reindex(test_df.index).dropna()
 
@@ -550,13 +570,27 @@ class I1GateValidator:
             turnover = signal_turnover(sig_wf)
             drag = cost_drag(sharpe_gross_wf, sharpe_net_wf)
 
-            passed = sharpe_net_wf >= GATE_SHARPE_NET and p_val < GATE_P_VALUE
+            sharpe_net_holdout = (
+                sharpe_ratio(net_h.tolist(), periods_per_year=PERIODS_PER_YEAR_1H)
+                if len(net_h) > 1
+                else 0.0
+            )
+
+            passed = (
+                sharpe_net_wf >= GATE_SHARPE_NET
+                and p_val < GATE_P_VALUE
+                and sharpe_net_holdout >= GATE_SHARPE_HOLDOUT
+            )
             diagnosis = ""
             if not passed:
                 if sharpe_net_wf < GATE_SHARPE_NET:
                     diagnosis = f"sharpe_net_wf={sharpe_net_wf:.3f}<{GATE_SHARPE_NET}"
                 if p_val >= GATE_P_VALUE:
                     diagnosis += f"; p_value={p_val:.3f}>={GATE_P_VALUE}"
+                if sharpe_net_holdout < GATE_SHARPE_HOLDOUT:
+                    diagnosis += (
+                        f"; sharpe_net_holdout={sharpe_net_holdout:.3f}<{GATE_SHARPE_HOLDOUT}"
+                    )
 
             candidate = I1AssetResult(
                 symbol=symbol,
@@ -580,12 +614,7 @@ class I1GateValidator:
                 )
                 if len(gross_h) > 1
                 else 0.0,
-                sharpe_net_holdout=round(
-                    sharpe_ratio(net_h.tolist(), periods_per_year=PERIODS_PER_YEAR_1H),
-                    4,
-                )
-                if len(net_h) > 1
-                else 0.0,
+                sharpe_net_holdout=round(sharpe_net_holdout, 4),
                 n_trades_wf=n_trades,
                 cost_drag_wf=drag,
                 turnover_wf=round(turnover, 2),
@@ -664,7 +693,10 @@ class I1GateValidator:
                 "asset_overrides": list(I1_ASSET_OVERRIDES.keys()),
                 "params_dir": str(self.params_dir),
                 "bootstrap": self.n_bootstrap,
-                "gate": f"sharpe_net_wf>={GATE_SHARPE_NET} AND p_value_wf<{GATE_P_VALUE}",
+                "gate": (
+                    f"sharpe_net_wf>={GATE_SHARPE_NET} AND p_value_wf<{GATE_P_VALUE} "
+                    f"AND sharpe_net_holdout>={GATE_SHARPE_HOLDOUT}"
+                ),
                 "strategies": list(I1_STRATEGY_REGISTRY.keys()),
             },
             assets=assets,

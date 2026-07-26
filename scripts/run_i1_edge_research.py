@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.ml.i1_gate_validator import (
     GATE_P_VALUE,
+    GATE_SHARPE_HOLDOUT,
     GATE_SHARPE_NET,
     I1GateValidator,
     PIPELINE_SYMBOLS,
@@ -37,11 +38,12 @@ def _write_markdown(report_dict: dict, path: Path) -> None:
         "## Gate criteria",
         f"- `sharpe_net_wf >= {GATE_SHARPE_NET}`",
         f"- `p_value_wf < {GATE_P_VALUE}`",
+        f"- `sharpe_net_holdout >= {GATE_SHARPE_HOLDOUT}` (unseen 20% holdout, never used in WF param search)",
         "",
-        "| Symbol | Strategy | Sharpe gross WF | Sharpe net WF | Cost drag | Turnover | "
-        "p-value WF | Trades | PASS |",
-        "|--------|----------|-----------------|---------------|-----------|----------|"
-        "-----------|--------|------|",
+        "| Symbol | Strategy | Sharpe gross WF | Sharpe net WF | Sharpe net Holdout | Cost drag | "
+        "Turnover | p-value WF | Trades | PASS |",
+        "|--------|----------|-----------------|---------------|---------------------|-----------|"
+        "----------|-----------|--------|------|",
     ]
     for a in report_dict["assets"]:
         status = "PASS" if a["passed"] else "FAIL"
@@ -49,8 +51,8 @@ def _write_markdown(report_dict: dict, path: Path) -> None:
         turnover = a.get("turnover_wf", 0)
         lines.append(
             f"| {a['symbol']} | {a['best_strategy']} | {a['sharpe_gross_wf']:.3f} | "
-            f"{a['sharpe_net_wf']:.3f} | {drag:.3f} | {turnover:.1f} | "
-            f"{a['p_value_wf']:.4f} | {a['n_trades_wf']} | {status} |"
+            f"{a['sharpe_net_wf']:.3f} | {a['sharpe_net_holdout']:.3f} | {drag:.3f} | "
+            f"{turnover:.1f} | {a['p_value_wf']:.4f} | {a['n_trades_wf']} | {status} |"
         )
     summary = report_dict["summary"]
     gate = "APPROVED" if summary.get("gate_approved") else "BLOCKED"
@@ -110,13 +112,14 @@ def _write_phase5_gate(report_dict: dict, path: Path) -> None:
         "",
         f"Date: {report_dict['generated_at']}",
         "",
-        "| Symbol | sharpe_net_wf | p_value | PASS |",
-        "|--------|---------------|---------|------|",
+        "| Symbol | sharpe_net_wf | p_value | sharpe_net_holdout | PASS |",
+        "|--------|---------------|---------|---------------------|------|",
     ]
     for a in report_dict["assets"]:
         status = "YES" if a["passed"] else "NO"
         lines.append(
-            f"| {a['symbol']} | {a['sharpe_net_wf']:.4f} | {a['p_value_wf']:.4f} | {status} |"
+            f"| {a['symbol']} | {a['sharpe_net_wf']:.4f} | {a['p_value_wf']:.4f} | "
+            f"{a['sharpe_net_holdout']:.4f} | {status} |"
         )
     lines.append("")
     lines.append(

@@ -19,10 +19,17 @@ settings = get_settings()
 KILLSWITCH_KEY = "trader:kill_switch:state"
 
 
+class KillSwitchRedisUnavailableError(RuntimeError):
+    """Raised when Redis cannot be reached — callers must fail closed (block trading)."""
+
+
 class KillSwitchRedis:
     """
     KillSwitch con estado persistido en Redis.
     Permite múltiples workers sin race conditions.
+
+    Fail-safe by default (P4): si Redis no responde, el kill switch se
+    considera ACTIVO (trading bloqueado) en lugar de inactivo.
     """
 
     def __init__(self, redis_client: Optional[redis.Redis] = None):
@@ -36,15 +43,7 @@ class KillSwitchRedis:
             self._redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
         return self._redis
 
-    def _load_state(self) -> dict:
-        """Carga estado desde Redis."""
-        try:
-            data = self._get_redis().get(KILLSWITCH_KEY)
-            if data:
-                return json.loads(data)
-        except Exception as e:
-            logger.warning("kill_switch_redis_load_error", error=str(e))
-
+    def _default_state(self) -> dict:
         return {
             "active": False,
             "triggered_at": None,
@@ -57,6 +56,25 @@ class KillSwitchRedis:
             "reset_at": None,
         }
 
+    def _load_state(self) -> dict:
+        """Carga estado desde Redis.
+
+        Raises KillSwitchRedisUnavailableError si Redis no responde — el
+        caller decide la política fail-safe (nunca asumir active=False aquí).
+        """
+        try:
+            data = self._get_redis().get(KILLSWITCH_KEY)
+        except Exception as e:
+            raise KillSwitchRedisUnavailableError(str(e)) from e
+
+        if not data:
+            return self._default_state()
+        try:
+            return json.loads(data)
+        except json.JSONDecodeError as e:
+            logger.warning("kill_switch_redis_corrupt_state", error=str(e))
+            return self._default_state()
+
     def _save_state(self, state: dict) -> None:
         """Guarda estado en Redis."""
         try:
@@ -65,8 +83,16 @@ class KillSwitchRedis:
             logger.error("kill_switch_redis_save_error", error=str(e))
 
     def is_active(self) -> bool:
-        """Retorna True si el kill switch está activo."""
-        state = self._load_state()
+        """Retorna True si el kill switch está activo.
+
+        Fail-safe: si Redis no responde, se asume activo (bloquea trading)
+        en lugar de asumir inactivo. Ver P4 (Fail-Safe by Default).
+        """
+        try:
+            state = self._load_state()
+        except KillSwitchRedisUnavailableError as e:
+            logger.critical("kill_switch_fail_closed_redis_unavailable", error=str(e))
+            return True
         return state.get("active", False)
 
     def check_and_trigger(
@@ -75,8 +101,18 @@ class KillSwitchRedis:
         drawdown_current: float,
         recent_trades: list,
     ) -> None:
-        """Evalúa condiciones y activa el kill switch si es necesario."""
-        state = self._load_state()
+        """Evalúa condiciones y activa el kill switch si es necesario.
+
+        Si Redis no responde no se puede evaluar ni persistir el estado —
+        se registra como crítico y se aborta. `is_active()` sigue siendo la
+        garantía de fail-safe: cualquier caída de Redis bloquea trading ahí,
+        independientemente de si este chequeo pudo correr.
+        """
+        try:
+            state = self._load_state()
+        except KillSwitchRedisUnavailableError as e:
+            logger.critical("kill_switch_check_skipped_redis_unavailable", error=str(e))
+            return
 
         # Si ya está activo, no volver a activar
         if state.get("active"):
@@ -127,7 +163,12 @@ class KillSwitchRedis:
         return count
 
     def activate(self, reason: str = "manual") -> None:
-        """Activación manual del kill switch."""
+        """Activación manual del kill switch.
+
+        Propaga KillSwitchRedisUnavailableError si Redis no responde — un
+        admin activando manualmente necesita saber que no se persistió,
+        no recibir un falso "activated".
+        """
         state = self._load_state()
         if state.get("active"):
             return
@@ -138,7 +179,13 @@ class KillSwitchRedis:
         logger.critical("kill_switch_activated_redis", reason=reason)
 
     def reset(self, admin_token: str) -> None:
-        """Reinicia el kill switch (solo admin)."""
+        """Reinicia el kill switch (solo admin).
+
+        Propaga KillSwitchRedisUnavailableError si Redis no responde — un
+        reset silencioso que en realidad no persistió dejaría al sistema
+        creyendo que está desbloqueado cuando `is_active()` lo seguirá
+        reportando activo (fail-safe) en la próxima consulta.
+        """
         state = self._load_state()
         state["active"] = False
         state["triggered_by"] = None
@@ -149,8 +196,20 @@ class KillSwitchRedis:
 
     @property
     def state(self) -> dict:
-        """Retorna estado actual."""
-        return self._load_state()
+        """Retorna estado actual.
+
+        Fail-safe: si Redis no responde, reporta el switch como activo
+        (`triggered_by="redis_unavailable"`) en vez de propagar o mentir
+        con `active=False`.
+        """
+        try:
+            return self._load_state()
+        except KillSwitchRedisUnavailableError as e:
+            logger.critical("kill_switch_fail_closed_redis_unavailable", error=str(e))
+            fallback = self._default_state()
+            fallback["active"] = True
+            fallback["triggered_by"] = "redis_unavailable"
+            return fallback
 
 
 def get_kill_switch_redis() -> KillSwitchRedis:

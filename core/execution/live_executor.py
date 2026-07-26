@@ -137,6 +137,6 @@ class LiveExecutor(AbcExecutor):
                 "TRADING_ENABLED is False — set to True to allow live trading"
             )
         if self._kill_switch.is_active():
-            raise KillSwitchActiveError(
-                f"Kill switch active: {self._kill_switch.state.triggered_by}"
-            )
+            state = self._kill_switch.state
+            triggered_by = state.get("triggered_by") if isinstance(state, dict) else state.triggered_by
+            raise KillSwitchActiveError(f"Kill switch active: {triggered_by}")

@@ -109,13 +109,6 @@ async def get_regime(
     return regime
 
 
-def get_market_data_cache(symbol: str, timeframe: str = "1wk") -> list:
-    """Latest cached candles for WebSocket streaming."""
-    symbol = symbol.upper()
-    tf_data = _market_data_cache.get(symbol, {})
-    return tf_data.get(timeframe, [])
-
-
 def update_market_data_cache(symbol: str, data: list, timeframe: str = "1wk") -> None:
     if symbol not in _market_data_cache:
         _market_data_cache[symbol] = {}

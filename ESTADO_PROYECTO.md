@@ -1,9 +1,11 @@
 # TRADER AI — Estado del Proyecto y Hoja de Ruta
 
-> Documento funcional actualizado: 2026-04-04
+> Documento funcional actualizado: 2026-04-04 — **desactualizado, ver nota abajo**
 > Qué existe hoy, qué falta, y la ruta concreta hacia producción real.
-> **Plan de trabajo detallado con tareas accionables: [PLAN_TRABAJO.md](PLAN_TRABAJO.md)**
+> **Plan de trabajo vigente (consolidado 2026-07-25): [PLAN_MAESTRO.md](PLAN_MAESTRO.md)**
 > **Spec maestro con todas las decisiones arquitecturales: PROYECTO.md (v2.4)**
+>
+> ⚠️ Este documento no se actualizó tras el commit de mayo 2026 que amplió sustancialmente el código (auth, compliance, RL, arquitectura hexagonal, risk 2.0). Para el estado real verificado, usar `PLAN_MAESTRO.md`.
 
 ---
 

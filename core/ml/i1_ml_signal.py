@@ -38,20 +38,34 @@ def _feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
     return df[cols].replace([np.inf, -np.inf], np.nan).fillna(0)
 
 
-def train_ml_signal_model(
+def _is_enriched(df: pd.DataFrame) -> bool:
+    return "adx_14" in df.columns and "rsi_14" in df.columns and "atr_14" in df.columns
+
+
+def fit_model_in_memory(
     df: pd.DataFrame,
-    symbol: str,
     *,
     forward_bars: int = 6,
-    model_dir: Path | None = None,
-) -> Path:
-    """Train LightGBM ternary classifier and persist joblib bundle."""
+    min_rows: int = 500,
+) -> dict[str, Any] | None:
+    """Train LightGBM ternary classifier on `df` only, no persistence.
+
+    Returns None (instead of raising) when there is not enough data —
+    callers doing per-window walk-forward training expect to skip early
+    windows rather than abort the whole run.
+
+    If `df` already carries indicator columns (as produced upstream by
+    `core.features.indicators.calculate_all`), skips recomputing them —
+    critical for walk-forward loops that call this once per window:
+    recomputing indicators on each truncated window slice is both wasteful
+    and less correct (rolling indicators lose real warm-up history).
+    """
     import lightgbm as lgb
 
-    enriched = calculate_all(df.copy())
+    enriched = df if _is_enriched(df) else calculate_all(df.copy())
     labels = build_ternary_training_labels(enriched, forward_bars=forward_bars)
-    if len(labels) < 500:
-        raise ValueError(f"Insufficient labeled rows for {symbol}: {len(labels)}")
+    if len(labels) < min_rows:
+        return None
 
     n = len(labels)
     X = _feature_matrix(enriched.iloc[:n])
@@ -71,36 +85,19 @@ def train_ml_signal_model(
     )
     model.fit(X, y)
 
-    bundle = {
+    return {
         "model": model,
         "feature_columns": list(X.columns),
         "forward_bars": forward_bars,
-        "symbol": symbol.upper(),
     }
-    out = model_path_for(symbol, model_dir)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with out.open("wb") as f:
-        pickle.dump(bundle, f)
-    logger.info("i1_ml_model_saved", symbol=symbol, path=str(out), rows=n)
-    return out
 
 
-def predict_signals(
-    df: pd.DataFrame,
-    symbol: str,
-    model_dir: Path | None = None,
-) -> pd.Series:
-    """Map model output {0,1,2} -> signals {-1,0,1}."""
-    path = model_path_for(symbol, model_dir)
-    if not path.exists():
-        return pd.Series(0, index=df.index)
-
-    with path.open("rb") as f:
-        bundle = pickle.load(f)
+def predict_signals_from_bundle(df: pd.DataFrame, bundle: dict[str, Any]) -> pd.Series:
+    """Map model output {0,1,2} -> signals {-1,0,1} using an in-memory bundle."""
     model = bundle["model"]
     feature_columns: list[str] = bundle["feature_columns"]
 
-    enriched = calculate_all(df.copy())
+    enriched = df if _is_enriched(df) else calculate_all(df.copy())
     X = _feature_matrix(enriched).reindex(columns=feature_columns, fill_value=0)
     preds = model.predict(X)
 
@@ -109,6 +106,41 @@ def predict_signals(
         preds == 2, 1.0, np.where(preds == 0, -1.0, 0.0)
     )
     return sig
+
+
+def train_ml_signal_model(
+    df: pd.DataFrame,
+    symbol: str,
+    *,
+    forward_bars: int = 6,
+    model_dir: Path | None = None,
+) -> Path:
+    """Train LightGBM ternary classifier and persist joblib bundle."""
+    bundle = fit_model_in_memory(df, forward_bars=forward_bars)
+    if bundle is None:
+        raise ValueError(f"Insufficient labeled rows for {symbol}")
+
+    out = model_path_for(symbol, model_dir)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("wb") as f:
+        pickle.dump({**bundle, "symbol": symbol.upper()}, f)
+    logger.info("i1_ml_model_saved", symbol=symbol, path=str(out))
+    return out
+
+
+def predict_signals(
+    df: pd.DataFrame,
+    symbol: str,
+    model_dir: Path | None = None,
+) -> pd.Series:
+    """Map model output {0,1,2} -> signals {-1,0,1} using the persisted model."""
+    path = model_path_for(symbol, model_dir)
+    if not path.exists():
+        return pd.Series(0, index=df.index)
+
+    with path.open("rb") as f:
+        bundle = pickle.load(f)
+    return predict_signals_from_bundle(df, bundle)
 
 
 def signal_ml_lgb(df: pd.DataFrame, params: dict[str, Any]) -> pd.Series:

@@ -222,5 +222,62 @@ class TestKillSwitchState:
         assert state.consecutive_losses == 0
 
 
+class TestKillSwitchRedisFailClosed:
+    """Kill switch must fail closed (block trading) when Redis is unreachable — P4."""
+
+    @pytest.fixture
+    def broken_redis(self):
+        client = MagicMock()
+        client.get.side_effect = ConnectionError("redis unreachable")
+        client.set.side_effect = ConnectionError("redis unreachable")
+        return client
+
+    @pytest.fixture
+    def kill_switch_redis(self, broken_redis):
+        from core.risk.kill_switch_redis import KillSwitchRedis
+
+        return KillSwitchRedis(redis_client=broken_redis)
+
+    def test_is_active_true_when_redis_down(self, kill_switch_redis):
+        """Redis unreachable must be reported as active=True, never False."""
+        assert kill_switch_redis.is_active() is True
+
+    def test_state_reports_active_when_redis_down(self, kill_switch_redis):
+        state = kill_switch_redis.state
+        assert state["active"] is True
+        assert state["triggered_by"] == "redis_unavailable"
+
+    def test_check_and_trigger_does_not_raise_when_redis_down(self, kill_switch_redis):
+        """Cannot persist/evaluate, but must not crash the caller either."""
+        kill_switch_redis.check_and_trigger(
+            daily_pnl_pct=0.01,
+            drawdown_current=0.0,
+            recent_trades=[],
+        )
+        assert kill_switch_redis.is_active() is True
+
+    def test_activate_raises_when_redis_down(self, kill_switch_redis):
+        """Admin must be told the manual activation was NOT persisted."""
+        from core.risk.kill_switch_redis import KillSwitchRedisUnavailableError
+
+        with pytest.raises(KillSwitchRedisUnavailableError):
+            kill_switch_redis.activate("manual")
+
+    def test_reset_raises_when_redis_down(self, kill_switch_redis):
+        """Admin must be told the reset was NOT persisted (stays fail-closed active)."""
+        from core.risk.kill_switch_redis import KillSwitchRedisUnavailableError
+
+        with pytest.raises(KillSwitchRedisUnavailableError):
+            kill_switch_redis.reset("admin_token")
+
+    def test_is_active_reflects_real_state_when_redis_up(self):
+        from core.risk.kill_switch_redis import KillSwitchRedis
+
+        healthy_redis = MagicMock()
+        healthy_redis.get.return_value = None
+        ks = KillSwitchRedis(redis_client=healthy_redis)
+        assert ks.is_active() is False
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
