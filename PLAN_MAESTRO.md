@@ -115,7 +115,7 @@ Esta tabla reemplaza al "semáforo" del plan de mayo y a los checklists contradi
 | Componentes de frontend reutilizables (`app/components/`) | ❌ **no existe** | — | Declarado como entregable en el plan de abril pero nunca se creó |
 | `data/processed/` (features cacheados) | ❌ **no existe** | — | Entregable de FASE 1 (abril) nunca generado |
 | Suite de tests | 🟢 (30 archivos, no 34) | 🟡 **[EJECUTADO] 329 passed / 35 failed / 1 error** | `pytest -q --ignore=test_api_execution.py` corrido hoy: 107s, 329 passed, 35 failed, 1 skipped. Además `tests/integration/test_api_execution.py` **no colecta** (`PydanticUndefinedAnnotation: RegisterRequest`). El claim histórico de "160 tests pasando" no se puede confirmar ni refutar tal cual, pero la suite **no pasa limpia hoy** |
-| WebSocket streaming al dashboard | 🟢 | 🔴 **[EJECUTADO] sin autenticación** | `api/routes/websocket.py:23-31` acepta la conexión sin verificar token — cualquiera con la URL puede streamear precios en vivo. Severidad alta, explotable externamente |
+| WebSocket streaming al dashboard | 🟢 | 🟢 **[CORREGIDO 2026-07-26]** autenticado | `api/routes/websocket.py` exige un JWT válido (`?token=`) antes de `accept()`; conexión sin token o con token inválido se cierra con código 1008. 7 tests nuevos en `tests/unit/test_websocket_auth.py`. De paso se arregló un `ImportError` real que rompía el arranque de toda la API (`get_market_data_cache` había sido eliminado de `market.py` sin actualizar este import). Nota: no se encontró ningún cliente frontend que use este endpoint hoy. |
 | IDOR en endpoints de órdenes | — | 🔴 **[EJECUTADO] hallazgo nuevo** | `api/routes/execution.py:211-250`: `get_order`/`cancel_order` no verifican que la orden pertenezca al usuario autenticado |
 | Interfaz de exchange (LSP) | 🟢 código, 🔴 diseño | 🔴 **[EJECUTADO] hallazgo nuevo** | Dos jerarquías incompatibles (`ExchangeClient` vs `ExchangeAdapter`, distinto nombre de método y tipo de retorno de balance); `exchange_registry.py:224` recurre a `hasattr()` duck-typing para compensar |
 
@@ -146,7 +146,7 @@ BLOCKER-4: JWT secret sin validación (and False) → RESUELTO y VERIFICADO (sin
 | 4 | Rate limiting declarado pero sin confirmar aplicado en endpoints críticos | 🟢 **cerrado** — verificado: `slowapi` aplicado con `@limiter.limit()` en `execution.py` y `risk.py` | — |
 | 5 | Resultado de I1 no documentado — bloquea decisión de avanzar a estrategias avanzadas (Fase 4+) | 🔴 **peor de lo esperado** — sí está documentado ("APPROVED 8/8") pero el criterio de aprobación es metodológicamente inválido (ignora holdout negativo en 6/8 activos) | 4-8h para corregir el gate + re-correr |
 | 6 | **[nuevo]** Kill switch falla abierto si Redis no responde | 🟢 **corregido 2026-07-26** — fail-closed, tests de simulación de caída de Redis agregados | — |
-| 7 | **[nuevo]** WebSocket sin autenticación (`api/routes/websocket.py:23-31`) | 🔴 confirmado, explotable externamente | 2-4h |
+| 7 | **[nuevo]** WebSocket sin autenticación (`api/routes/websocket.py:23-31`) | 🟢 **corregido 2026-07-26** — requiere JWT válido, 7 tests agregados | — |
 | 8 | **[nuevo]** Interfaz de exchange con violación de LSP (`ExchangeClient` vs `ExchangeAdapter`) | 🔴 confirmado, compensado con duck-typing en `exchange_registry.py:224` | 16-24h |
 | 9 | **[nuevo]** IDOR en `api/routes/execution.py:211-250` (get_order/cancel_order sin check de ownership) | 🔴 confirmado, explotable con token de bajo privilegio | 4h |
 | 10 | **[nuevo]** ATR duplicado entre `core/features/indicators.py` y `core/risk/mtf_sl_tp_manager.py` | 🔴 confirmado, riesgo de divergencia numérica entre señal y sizing | 4h |
@@ -275,7 +275,7 @@ Actualizado tras la auditoría con ejecución real del 2026-07-25. Los que ya se
 
 1. ~~Corregir el criterio de Gate I1 para que dependa del Sharpe holdout~~ → 🟢 **hecho 2026-07-26**: gate re-evaluado contra los 8 activos reales, resultado **BLOCKED (1/8)**, solo XAUUSD pasa. Sigue sin haber edge demostrado para avanzar a Fase 4.
 2. ~~Arreglar el fail-open del kill switch~~ → 🟢 **hecho 2026-07-26**: `kill_switch_redis.py` ahora falla cerrado (bloquea trading) si Redis no responde; 6 tests nuevos simulando la caída lo verifican.
-3. **Autenticar el WebSocket de streaming** (`api/routes/websocket.py`).
+3. ~~Autenticar el WebSocket de streaming~~ → 🟢 **hecho 2026-07-26**: requiere JWT válido vía `?token=`, cierra con código 1008 si falta o es inválido. De paso se corrigió un `ImportError` que rompía el arranque de la API entera.
 4. **Arreglar la suite de tests**: 35 fallos + `test_api_execution.py` sin colectar (fix del forward-ref `RegisterRequest`). Meta: `pytest -q` completo con 0 fallos o cada fallo documentado con causa raíz.
 5. **Cerrar el IDOR de `execution.py`**: verificar ownership del usuario antes de `get_order`/`cancel_order`.
 6. **Confirmar que el pipeline corre un ciclo completo end-to-end** en paper mode con Postgres+Redis reales disponibles (no se pudo en este entorno de auditoría) y registrar evidencia (logs, filas en DB).
