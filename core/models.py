@@ -407,6 +407,7 @@ class Order(BaseModel):
     exchange_order_id: Optional[str] = None
     idempotency_key: str
     signal_id: str
+    user_id: Optional[str] = None
     symbol: str
     asset_class: str = "crypto"
     side: str

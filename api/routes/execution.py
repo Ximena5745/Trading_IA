@@ -13,6 +13,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from api.dependencies import get_current_user, require_trader
+from core.auth.permissions import Role, has_permission
 from core.db.repositories import AuditRepository, OrderRepository, SignalRepository
 from core.db.session import get_pool
 from core.execution.order_tracker import OrderTracker
@@ -160,6 +161,10 @@ async def execute_signal(
         quantity = 0.01
 
     order = await executor.execute(signal.model_dump(), quantity)
+    # PaperExecutor caches orders by idempotency_key and returns the same
+    # dict on a replay -- never overwrite an already-set owner, or a
+    # colliding key from a second user would silently reassign ownership.
+    order.setdefault("user_id", user.get("user_id"))
 
     if _portfolio_manager is not None:
         try:
@@ -206,13 +211,32 @@ async def execute_signal(
     }
 
 
+def _is_admin(user: dict) -> bool:
+    return has_permission(user.get("role", ""), Role.ADMIN)
+
+
+def _owns_order(order: dict, user: dict) -> bool:
+    """Admins can see/cancel any order; everyone else only their own.
+
+    Orders created before user_id was tracked (or by internal/automated
+    flows with no owner) have user_id=None -- treat those as nobody's
+    to view/cancel rather than everybody's.
+    """
+    if _is_admin(user):
+        return True
+    owner = order.get("user_id")
+    return owner is not None and owner == user.get("user_id")
+
+
 @router.get("/orders")
 async def get_orders(symbol: Optional[str] = None, user=Depends(get_current_user)):
-    """Return open orders, optionally filtered by symbol."""
+    """Return open orders, optionally filtered by symbol. Non-admins only see their own."""
     ot = _get_ot()
     orders = ot.get_open_orders() if hasattr(ot, "get_open_orders") else []
     if symbol:
         orders = [o for o in orders if o.get("symbol") == symbol.upper()]
+    if not _is_admin(user):
+        orders = [o for o in orders if o.get("user_id") == user.get("user_id")]
     return {
         "orders": [o.model_dump() if hasattr(o, "model_dump") else o for o in orders],
         "total": len(orders),
@@ -221,26 +245,33 @@ async def get_orders(symbol: Optional[str] = None, user=Depends(get_current_user
 
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, user=Depends(get_current_user)):
-    """Return a specific order by ID."""
+    """Return a specific order by ID. 404s (not 403) if it isn't yours, to avoid confirming existence."""
     ot = _get_ot()
     try:
         order = ot.get(order_id)
     except (KeyError, AttributeError):
         if _db_available() and _order_repo:
             row = await _order_repo.get_by_id(order_id)
-            if row:
+            if row and _owns_order(row, user):
                 return row
         raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
-    return order.model_dump() if hasattr(order, "model_dump") else order
+
+    order_dict = order.model_dump() if hasattr(order, "model_dump") else order
+    if not _owns_order(order_dict, user):
+        raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
+    return order_dict
 
 
 @router.delete("/orders/{order_id}", dependencies=[Depends(require_trader)])
 async def cancel_order(order_id: str, user=Depends(get_current_user)):
-    """Cancel a pending order."""
+    """Cancel a pending order. 404s (not 403) if it isn't yours, to avoid confirming existence."""
     ot = _get_ot()
     try:
-        ot.get(order_id)
+        order = ot.get(order_id)
     except KeyError:
+        raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
+
+    if not _owns_order(order, user):
         raise HTTPException(status_code=404, detail=f"Order {order_id} not found")
 
     ot.update_status(order_id, "cancelled")

@@ -21,7 +21,7 @@ class OrderRepository:
 
     async def get_by_id(self, order_id: str) -> dict | None:
         sql = """
-            SELECT id, signal_id, symbol, side, quantity, fill_price,
+            SELECT id, signal_id, user_id, symbol, side, quantity, fill_price,
                    commission, slippage, status, execution_mode, created_at
             FROM orders WHERE id = $1
         """
@@ -34,7 +34,7 @@ class OrderRepository:
 
     async def get_open_orders(self) -> list[dict]:
         sql = """
-            SELECT id, signal_id, symbol, side, quantity, fill_price, status, created_at
+            SELECT id, signal_id, user_id, symbol, side, quantity, fill_price, status, created_at
             FROM orders
             WHERE status IN ('pending', 'submitted', 'partial')
             ORDER BY created_at DESC

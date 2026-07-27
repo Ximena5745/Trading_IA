@@ -60,7 +60,7 @@ class TradingRepository:
     async def save_order(self, order: dict) -> None:
         sql = """
             INSERT INTO orders (
-                id, idempotency_key, signal_id, symbol, asset_class, side,
+                id, idempotency_key, signal_id, user_id, symbol, asset_class, side,
                 order_type, quantity, stop_loss, take_profit,
                 fill_price, fill_quantity, commission, slippage,
                 status, execution_mode, error_message
@@ -68,7 +68,7 @@ class TradingRepository:
                 $1, $2, $3, $4, $5, $6,
                 $7, $8, $9, $10,
                 $11, $12, $13, $14,
-                $15, $16, $17
+                $15, $16, $17, $18
             )
             ON CONFLICT (idempotency_key) DO NOTHING
         """
@@ -78,6 +78,7 @@ class TradingRepository:
                 order.get("id"),
                 order.get("idempotency_key") or order.get("id"),
                 order.get("signal_id"),
+                order.get("user_id"),
                 order.get("symbol"),
                 order.get("asset_class", "crypto"),
                 order.get("side"),
