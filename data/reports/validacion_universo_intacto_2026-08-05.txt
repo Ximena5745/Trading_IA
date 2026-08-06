@@ -1,0 +1,15 @@
+VALIDACION SOBRE UNIVERSO INTACTO — SPY, QQQ, DIA
+Configuracion congelada: 7 votos (5 tendencia + 2 divergencias), min_conf=5,
+regimen por Hurst, stops ATR1.5/RR2.0, sizing por vol objetivo 10%.
+UNA SOLA evaluacion. No se ajusta nada tras ver el resultado.
+
+instrumento   anios      SR       t  trades  BuyHold   MaxDD
+SPY            25.0    0.57    2.83     256     0.58   13.1%
+QQQ            25.0    0.58    2.88     238     0.63   12.8%
+DIA            25.0    0.33    1.67     257     0.57   21.4%
+
+  CARTERA (3 instrumentos): SR=0.57  t=2.86  MaxDD=12.7%  (24.8 anios)
+  Umbral de ruido (1 evaluacion, 24.8a): 0.10
+  VEREDICTO: SUPERA
+
+  Y solo en el tramo posterior al corte (2020-06 -> hoy): SR=0.68 t=1.68

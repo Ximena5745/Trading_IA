@@ -77,10 +77,10 @@ class MT5Executor(AbcExecutor):
             raw = await self._client.place_order(
                 symbol=mt5_symbol,
                 side=side,
-                volume=round(quantity, 2),
+                quantity=round(quantity, 2),
                 sl=sl or 0.0,
                 tp=tp or 0.0,
-                idempotency_key=idempotency_key[:31]
+                client_order_id=idempotency_key[:31]
                 if idempotency_key
                 else "TRADER_AI",
             )

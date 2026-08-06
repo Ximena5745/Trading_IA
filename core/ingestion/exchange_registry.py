@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Type
 
+from core.ingestion.exchange_adapter import ExchangeAdapter
 from core.observability.logger import get_logger
 
 logger = get_logger(__name__)
@@ -22,6 +23,7 @@ class ExchangeConfig:
     secret_key: str = ""
     testnet: bool = True
     account_id: str = ""
+    password: str = ""
     host: str = "127.0.0.1"
     port: int = 7497
     client_id: int = 1
@@ -40,17 +42,17 @@ class ExchangeRegistry:
     - Client lifecycle management
     """
 
-    _clients: dict[str, any] = {}
-    _client_classes: dict[str, Type] = {}
+    _clients: dict[str, ExchangeAdapter] = {}
+    _client_classes: dict[str, Type[ExchangeAdapter]] = {}
 
     @classmethod
-    def register(cls, exchange: str, client_class: Type) -> None:
+    def register(cls, exchange: str, client_class: Type[ExchangeAdapter]) -> None:
         """Register a client class for an exchange."""
         cls._client_classes[exchange] = client_class
         logger.info("exchange_registered", exchange=exchange)
 
     @classmethod
-    def create_client(cls, config: ExchangeConfig) -> any:
+    def create_client(cls, config: ExchangeConfig) -> ExchangeAdapter:
         """Create a client for the specified exchange."""
         exchange = config.exchange.lower()
 
@@ -69,10 +71,11 @@ class ExchangeRegistry:
         return client
 
     @classmethod
-    def _instantiate_client(cls, client_class: Type, config: ExchangeConfig) -> any:
+    def _instantiate_client(
+        cls, client_class: Type[ExchangeAdapter], config: ExchangeConfig
+    ) -> ExchangeAdapter:
         """Instantiate client based on exchange type."""
-        if exchange := config.exchange.lower():
-            pass
+        exchange = config.exchange.lower()
 
         if exchange == "binance":
             return client_class(
@@ -101,8 +104,9 @@ class ExchangeRegistry:
             )
         elif exchange == "mt5":
             return client_class(
-                account=config.account_id,
                 server=config.host,
+                account_number=int(config.account_id) if config.account_id else 0,
+                password=config.password,
             )
         elif exchange == "alpha_vantage":
             return client_class(
@@ -113,12 +117,12 @@ class ExchangeRegistry:
             return client_class()
 
     @classmethod
-    def get_client(cls, exchange: str) -> Optional[any]:
+    def get_client(cls, exchange: str) -> Optional[ExchangeAdapter]:
         """Get existing client for exchange."""
         return cls._clients.get(exchange.lower())
 
     @classmethod
-    def get_or_create(cls, config: ExchangeConfig) -> any:
+    def get_or_create(cls, config: ExchangeConfig) -> ExchangeAdapter:
         """Get existing client or create new one."""
         exchange = config.exchange.lower()
 
@@ -137,10 +141,9 @@ class ExchangeRegistry:
             return False
 
         try:
-            if hasattr(client, "connect"):
-                await client.connect()
-                logger.info("client_connected", exchange=exchange)
-                return True
+            await client.connect()
+            logger.info("client_connected", exchange=exchange)
+            return True
         except Exception as e:
             logger.error("client_connect_failed", exchange=exchange, error=str(e))
 
@@ -155,10 +158,9 @@ class ExchangeRegistry:
             return False
 
         try:
-            if hasattr(client, "disconnect"):
-                await client.disconnect()
-                logger.info("client_disconnected", exchange=exchange)
-                return True
+            await client.disconnect()
+            logger.info("client_disconnected", exchange=exchange)
+            return True
         except Exception as e:
             logger.error("client_disconnect_failed", exchange=exchange, error=str(e))
 
@@ -170,15 +172,8 @@ class ExchangeRegistry:
         status = {}
 
         for exchange, client in cls._clients.items():
-            connected = False
-
-            if hasattr(client, "is_connected"):
-                connected = client.is_connected()
-            elif hasattr(client, "_connected"):
-                connected = getattr(client, "_connected", False)
-
             status[exchange] = {
-                "connected": connected,
+                "connected": client.is_connected(),
                 "has_client": True,
             }
 
@@ -199,40 +194,23 @@ class ExchangeRegistry:
     @classmethod
     def is_healthy(cls) -> bool:
         """Check if any client is connected."""
-        for client in cls._clients.values():
-            if hasattr(client, "is_connected"):
-                if client.is_connected():
-                    return True
-            elif hasattr(client, "_connected"):
-                if client._connected:
-                    return True
-        return False
+        return any(client.is_connected() for client in cls._clients.values())
 
     @classmethod
     async def health_check(cls) -> dict:
-        """Perform health check on all clients."""
+        """Perform health check on all clients based on their connection state."""
         results = {}
 
         for exchange, client in cls._clients.items():
-            healthy = False
-            latency_ms = 0
-
             try:
-                import time
-                start = time.time()
-
-                if hasattr(client, "get_klines"):
-                    pass
-
-                latency_ms = int((time.time() - start) * 1000)
-                healthy = True
-
+                healthy = client.is_connected()
             except Exception as e:
                 logger.warning("health_check_failed", exchange=exchange, error=str(e))
+                healthy = False
 
             results[exchange] = {
                 "healthy": healthy,
-                "latency_ms": latency_ms,
+                "latency_ms": 0,
             }
 
         return results

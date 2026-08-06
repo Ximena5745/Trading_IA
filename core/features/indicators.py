@@ -146,15 +146,28 @@ def _calc_macd(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _calc_atr(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_atr_series(
+    high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
+) -> pd.Series:
+    """Average True Range as a per-row series.
+
+    Single source of truth for ATR across the codebase — anything computing
+    ATR (feature engineering, MTF SL/TP sizing, etc.) must go through this
+    to avoid numeric divergence between the signal and the risk layer.
+    Uses pandas_ta (Wilder smoothing) when available, falling back to an
+    EWM-smoothed True Range otherwise.
+    """
     if ta:
-        df["atr_14"] = ta.atr(df["high"], df["low"], df["close"], length=14)
-    else:
-        hl = df["high"] - df["low"]
-        hc = (df["high"] - df["close"].shift(1)).abs()
-        lc = (df["low"] - df["close"].shift(1)).abs()
-        tr = pd.concat([hl, hc, lc], axis=1).max(axis=1)
-        df["atr_14"] = tr.ewm(span=14, adjust=False).mean()
+        return ta.atr(high, low, close, length=period)
+    hl = high - low
+    hc = (high - close.shift(1)).abs()
+    lc = (low - close.shift(1)).abs()
+    tr = pd.concat([hl, hc, lc], axis=1).max(axis=1)
+    return tr.ewm(span=period, adjust=False).mean()
+
+
+def _calc_atr(df: pd.DataFrame) -> pd.DataFrame:
+    df["atr_14"] = calculate_atr_series(df["high"], df["low"], df["close"], 14)
     return df
 
 

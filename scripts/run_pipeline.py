@@ -184,11 +184,9 @@ async def _pipeline_cycle(symbol: str, components: dict) -> None:
 
         # ── 1. Fetch OHLCV ────────────────────────────────────────────────────
         if is_crypto:
-            candles = await binance.get_historical_klines(symbol, "1h", HISTORY_CANDLES)
+            candles = await binance.get_klines(symbol, "1h", HISTORY_CANDLES)
         else:
-            candles = await mt5_client.get_historical_klines(
-                symbol, "1h", HISTORY_CANDLES
-            )
+            candles = await mt5_client.get_klines(symbol, "1h", HISTORY_CANDLES)
 
         if not candles:
             logger.warning("no_candles_returned", symbol=symbol)
@@ -315,7 +313,7 @@ async def _build_components(settings) -> dict:
 
             mt5_client = MT5Client(
                 server=settings.MT5_SERVER,
-                login=settings.MT5_LOGIN,
+                account_number=settings.MT5_LOGIN,
                 password=settings.MT5_PASSWORD,
             )
             await mt5_client.connect()

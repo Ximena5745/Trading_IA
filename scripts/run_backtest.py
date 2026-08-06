@@ -22,11 +22,16 @@ from core.features.feature_engineering import FeatureEngine
 from core.ingestion.binance_client import BinanceClient
 from core.observability.logger import configure_logging, get_logger
 from core.config.settings import get_settings
-from datetime import datetime, timedelta
 
 configure_logging()
 logger = get_logger("run_backtest")
 settings = get_settings()
+
+# Candles/day per interval, used to size the `limit` passed to get_klines
+# (Binance caps a single klines request at 1000 candles).
+_CANDLES_PER_DAY = {
+    "1m": 1440, "5m": 288, "15m": 96, "1h": 24, "4h": 6, "1d": 1,
+}
 
 
 async def run(symbol: str, interval: str, days: int, output: str | None) -> None:
@@ -62,16 +67,11 @@ async def run(symbol: str, interval: str, days: int, output: str | None) -> None
         await client.connect()
 
         try:
-            end_dt = datetime.utcnow()
-            start_dt = end_dt - timedelta(days=days)
+            per_day = _CANDLES_PER_DAY.get(interval, 24)
+            limit = min(days * per_day, 1000)  # Binance klines cap per request
 
             print(f"📥 Fetching {days} days of {interval} candles for {symbol}...")
-            klines = await client.get_historical_klines(
-                symbol=symbol,
-                interval=interval,
-                start_time=start_dt,
-                end_time=end_dt,
-            )
+            klines = await client.get_klines(symbol, interval, limit)
             print(f"   → {len(klines)} candles fetched")
 
             if len(klines) < 300:

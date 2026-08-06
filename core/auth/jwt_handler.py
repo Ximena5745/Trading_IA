@@ -1,11 +1,10 @@
 """
 Module: core/auth/jwt_handler.py
 Responsibility: JWT token generation and validation with blacklist support
-Dependencies: python-jose, settings, redis
+Dependencies: python-jose, settings, token_blacklist
 """
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import uuid4
@@ -13,6 +12,7 @@ from uuid import uuid4
 import redis
 from jose import JWTError, jwt
 
+from core.auth.token_blacklist import TokenBlacklist
 from core.exceptions import AuthenticationError
 from core.observability.logger import get_logger
 from core.config.settings import get_settings
@@ -32,17 +32,7 @@ class JWTHandler:
         self._secret = secret_key
         self._algorithm = algorithm
         self._expire_minutes = expire_minutes
-        self._redis = redis_client
-
-    def _get_redis(self) -> Optional[redis.Redis]:
-        if self._redis is None:
-            try:
-                self._redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
-                self._redis.ping()
-            except Exception as exc:
-                logger.warning("redis_not_available_for_blacklist", error=str(exc))
-                return None
-        return self._redis
+        self._blacklist = TokenBlacklist(settings.REDIS_URL, redis_client)
 
     def create_access_token(self, user_id: str, role: str) -> str:
         payload = {
@@ -70,11 +60,9 @@ class JWTHandler:
             payload = jwt.decode(token, self._secret, algorithms=[self._algorithm])
 
             if payload.get("type") == "access":
-                redis_client = self._get_redis()
-                if redis_client:
-                    jti = payload.get("jti")
-                    if jti and redis_client.exists(f"blacklist:{jti}"):
-                        raise AuthenticationError("Token has been revoked")
+                jti = payload.get("jti")
+                if jti and self._blacklist.is_blacklisted(jti):
+                    raise AuthenticationError("Token has been revoked")
 
             return payload
         except JWTError as e:
@@ -96,12 +84,7 @@ class JWTHandler:
             exp = payload.get("exp")
 
             if jti and exp:
-                redis_client = self._get_redis()
-                if redis_client:
-                    ttl = max(int(exp - datetime.utcnow().timestamp()), 1)
-                    redis_client.setex(f"blacklist:{jti}", min(ttl, expiry_seconds), "1")
-                    logger.info("token_blacklisted", jti=jti)
-                    return True
+                return self._blacklist.add(jti, exp, expiry_seconds)
         except Exception as exc:
             logger.warning("blacklist_add_failed", error=str(exc))
         return False

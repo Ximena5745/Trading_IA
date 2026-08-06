@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
-from datetime import datetime, timedelta
 
 sys.path.insert(0, ".")
 
@@ -21,27 +20,28 @@ logger = get_logger("seed_data")
 
 settings = get_settings()
 
+# Candles/day per interval, used to size the `limit` passed to get_klines
+# (Binance caps a single klines request at 1000 candles).
+_CANDLES_PER_DAY = {
+    "1m": 1440, "5m": 288, "15m": 96, "1h": 24, "4h": 6, "1d": 1,
+}
+
 
 async def seed(symbol: str, interval: str, days: int) -> None:
     client = BinanceClient(
         api_key=settings.BINANCE_API_KEY,
-        api_secret=settings.BINANCE_SECRET_KEY,
+        secret_key=settings.BINANCE_SECRET_KEY,
         testnet=settings.BINANCE_TESTNET,
     )
 
     await client.connect()
     logger.info("seed_start", symbol=symbol, interval=interval, days=days)
 
-    end_dt = datetime.utcnow()
-    start_dt = end_dt - timedelta(days=days)
+    per_day = _CANDLES_PER_DAY.get(interval, 24)
+    limit = min(days * per_day, 1000)  # Binance klines cap per request
 
     try:
-        klines = await client.get_historical_klines(
-            symbol=symbol,
-            interval=interval,
-            start_time=start_dt,
-            end_time=end_dt,
-        )
+        klines = await client.get_klines(symbol, interval, limit)
         logger.info("seed_fetched", symbol=symbol, candles=len(klines))
 
         # Print sample

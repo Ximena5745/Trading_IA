@@ -14,8 +14,10 @@ except ImportError:
     from binance.client import AsyncClient
 from binance.exceptions import BinanceAPIException
 
+from typing import Optional
+
 from core.exceptions import DataValidationError, ExecutionError
-from core.ingestion.base_client import ExchangeClient
+from core.ingestion.exchange_adapter import ExchangeAdapter
 from core.ingestion.data_validator import DataValidator
 from core.models import MarketData
 from core.observability.logger import get_logger
@@ -32,7 +34,10 @@ INTERVAL_MAP = {
 }
 
 
-class BinanceClient(ExchangeClient):
+class BinanceClient(ExchangeAdapter):
+    exchange_id = "binance"
+    supported_asset_classes = ("crypto",)
+
     def __init__(self, api_key: str, secret_key: str, testnet: bool = True):
         self._api_key = api_key
         self._secret_key = secret_key
@@ -53,7 +58,10 @@ class BinanceClient(ExchangeClient):
             await self._client.close_connection()
             logger.info("binance_client_disconnected")
 
-    async def get_historical_klines(
+    def is_connected(self) -> bool:
+        return self._client is not None
+
+    async def get_klines(
         self, symbol: str, interval: str, limit: int = 500
     ) -> list[MarketData]:
         if not self._client:
@@ -86,22 +94,36 @@ class BinanceClient(ExchangeClient):
             logger.error("binance_order_book_error", symbol=symbol, error=str(e))
             raise ExecutionError(f"Binance API error: {e}") from e
 
-    async def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: str = "MARKET",
+        client_order_id: Optional[str] = None,
+    ) -> dict:
         raise NotImplementedError("Use LiveExecutor for order placement")
 
     async def cancel_order(self, symbol: str, order_id: str) -> dict:
         raise NotImplementedError("Use LiveExecutor for order cancellation")
 
-    async def get_account_balance(self) -> dict:
+    async def get_order_status(self, symbol: str, order_id: str) -> dict:
+        if not self._client:
+            raise ExecutionError("BinanceClient not connected")
+        try:
+            return await self._client.get_order(symbol=symbol, orderId=order_id)
+        except BinanceAPIException as e:
+            raise ExecutionError(f"Binance API error: {e}") from e
+
+    async def get_balance(self, asset: str = "USDT") -> float:
         if not self._client:
             raise ExecutionError("BinanceClient not connected")
         try:
             account = await self._client.get_account()
-            return {
-                b["asset"]: float(b["free"])
-                for b in account["balances"]
-                if float(b["free"]) > 0
-            }
+            for b in account["balances"]:
+                if b["asset"] == asset:
+                    return float(b["free"])
+            return 0.0
         except BinanceAPIException as e:
             raise ExecutionError(f"Binance API error: {e}") from e
 

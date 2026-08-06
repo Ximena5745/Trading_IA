@@ -152,6 +152,9 @@ class MT5Client(ExchangeAdapter):
             self._connected = False
             logger.info("mt5_disconnected")
 
+    def is_connected(self) -> bool:
+        return self._connected
+
     async def get_klines(
         self,
         symbol: str,
@@ -249,10 +252,11 @@ class MT5Client(ExchangeAdapter):
         self,
         symbol: str,
         side: str,
-        volume: float,
+        quantity: float,
+        order_type: str = "MARKET",
+        client_order_id: Optional[str] = None,
         sl: float = 0.0,
         tp: float = 0.0,
-        idempotency_key: str = "",
         **kwargs,
     ) -> dict:
         """
@@ -264,7 +268,14 @@ class MT5Client(ExchangeAdapter):
             raise RuntimeError("MT5Client not connected")
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
-            None, self._place_order_sync, symbol, side, volume, sl, tp, idempotency_key
+            None,
+            self._place_order_sync,
+            symbol,
+            side,
+            quantity,
+            sl,
+            tp,
+            client_order_id or "",
         )
 
     def _place_order_sync(

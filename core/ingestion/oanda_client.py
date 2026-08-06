@@ -70,7 +70,7 @@ class OandaClient(ExchangeAdapter):
         self,
         symbol: str,
         interval: str = "1h",
-        count: int = 500,
+        limit: int = 500,
     ) -> list[MarketData]:
         """Get historical klines/candles."""
         if not self._connected or not self._client:
@@ -81,7 +81,7 @@ class OandaClient(ExchangeAdapter):
 
         params = {
             "granularity": granularity,
-            "count": count,
+            "count": limit,
         }
 
         try:
@@ -112,8 +112,8 @@ class OandaClient(ExchangeAdapter):
             logger.error("oanda_klines_failed", symbol=symbol, error=str(e))
             raise
 
-    async def get_order_book(self, symbol: str) -> dict:
-        """Get current price (OANDA no provides depth)."""
+    async def get_order_book(self, symbol: str, depth: int = 20) -> dict:
+        """Get current price (OANDA does not provide L2 depth; `depth` is ignored)."""
         if not self._connected or not self._client:
             raise RuntimeError("OANDA not connected")
 
@@ -128,8 +128,8 @@ class OandaClient(ExchangeAdapter):
             logger.error("oanda_order_book_failed", symbol=symbol, error=str(e))
             return {}
 
-    async def get_balance(self) -> float:
-        """Get account balance."""
+    async def get_balance(self, asset: str = "USD") -> float:
+        """Get account balance (OANDA accounts hold a single home currency; `asset` is ignored)."""
         if not self._connected or not self._client:
             return 0.0
 
@@ -141,6 +141,22 @@ class OandaClient(ExchangeAdapter):
             return float(response["account"]["balance"])
         except Exception:
             return 0.0
+
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: str = "MARKET",
+        client_order_id: Optional[str] = None,
+    ) -> dict:
+        raise NotImplementedError("Use LiveOandaExecutor for order placement")
+
+    async def cancel_order(self, symbol: str, order_id: str) -> dict:
+        raise NotImplementedError("Use LiveOandaExecutor for order cancellation")
+
+    async def get_order_status(self, symbol: str, order_id: str) -> dict:
+        raise NotImplementedError("Use LiveOandaExecutor for order status lookup")
 
     def is_connected(self) -> bool:
         return self._connected

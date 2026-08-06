@@ -40,7 +40,7 @@ class BybitClient(ExchangeAdapter):
     """Bybit V5 Unified Account adapter.
 
     Implements ExchangeAdapter so the rest of the platform treats Bybit
-    identically to Binance — just swap the adapter in ExchangeAdapterRegistry.
+    identically to Binance — just swap the adapter in ExchangeRegistry.
 
     Status: functional stub — REST calls are wired; WebSocket stream pending.
     """

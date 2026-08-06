@@ -48,6 +48,7 @@ htmlcov/
 # Data
 data/raw/*.parquet
 data/raw/*.csv
+data/processed/*.parquet
 data/models/*.joblib
 data/models/*.pkl
 

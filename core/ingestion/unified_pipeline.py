@@ -14,6 +14,7 @@ from typing import Optional
 import redis.asyncio as aioredis
 
 from core.ingestion.data_validator import DataValidator
+from core.ingestion.exchange_adapter import ExchangeAdapter
 from core.models import MarketData
 from core.observability.logger import get_logger
 
@@ -49,7 +50,7 @@ class UnifiedDataPipeline:
         self._redis: Optional[aioredis.Redis] = None
         self._validator = DataValidator() if enable_validation else None
 
-        self._clients = {}
+        self._clients: dict[str, ExchangeAdapter] = {}
         self._running = False
 
         self._cache_ttl = 300
@@ -63,13 +64,12 @@ class UnifiedDataPipeline:
     async def shutdown(self) -> None:
         self._running = False
         for exchange_id, client in self._clients.items():
-            if hasattr(client, "disconnect"):
-                await client.disconnect()
+            await client.disconnect()
         if self._redis:
             await self._redis.aclose()
         logger.info("unified_pipeline_shutdown")
 
-    def register_client(self, exchange_id: str, client) -> None:
+    def register_client(self, exchange_id: str, client: ExchangeAdapter) -> None:
         self._clients[exchange_id] = client
         logger.info("client_registered", exchange=exchange_id)
 
@@ -87,9 +87,6 @@ class UnifiedDataPipeline:
             raise ValueError(f"No client registered for exchange: {exchange}")
 
         try:
-            if not hasattr(client, "get_klines"):
-                raise AttributeError(f"Client {exchange} does not support get_klines")
-
             data = await client.get_klines(symbol, interval, count)
 
             normalized = [self._normalize_market_data(d, exchange) for d in data]
@@ -130,27 +127,26 @@ class UnifiedDataPipeline:
             raise ValueError(f"No client registered for exchange: {exchange}")
 
         try:
-            if hasattr(client, "get_order_book"):
-                order_book = await client.get_order_book(symbol)
-                if order_book and "asks" in order_book and "bids" in order_book:
-                    asks = order_book.get("asks", [])
-                    bids = order_book.get("bids", [])
+            order_book = await client.get_order_book(symbol)
+            if order_book and "asks" in order_book and "bids" in order_book:
+                asks = order_book.get("asks", [])
+                bids = order_book.get("bids", [])
 
-                    if asks and bids:
-                        ask_price = Decimal(str(asks[0][0]))
-                        bid_price = Decimal(str(bids[0][0]))
-                        mid = (ask_price + bid_price) / 2
+                if asks and bids:
+                    ask_price = Decimal(str(asks[0][0]))
+                    bid_price = Decimal(str(bids[0][0]))
+                    mid = (ask_price + bid_price) / 2
 
-                        return MarketData(
-                            timestamp=datetime.utcnow(),
-                            symbol=symbol,
-                            open=mid,
-                            high=ask_price,
-                            low=bid_price,
-                            close=mid,
-                            volume=Decimal(0),
-                            source=exchange,
-                        )
+                    return MarketData(
+                        timestamp=datetime.utcnow(),
+                        symbol=symbol,
+                        open=mid,
+                        high=ask_price,
+                        low=bid_price,
+                        close=mid,
+                        volume=Decimal(0),
+                        source=exchange,
+                    )
 
             return None
 
@@ -278,14 +274,8 @@ class UnifiedDataPipeline:
         status = {}
 
         for exchange_id, client in self._clients.items():
-            connected = False
-            if hasattr(client, "is_connected"):
-                connected = client.is_connected()
-            elif hasattr(client, "_connected"):
-                connected = getattr(client, "_connected", False)
-
             status[exchange_id] = {
-                "connected": connected,
+                "connected": client.is_connected(),
                 "registered": True,
             }
 
@@ -293,18 +283,7 @@ class UnifiedDataPipeline:
 
     def is_healthy(self) -> bool:
         """Check if at least one exchange is connected."""
-        if not self._clients:
-            return False
-
-        for client in self._clients.values():
-            if hasattr(client, "is_connected"):
-                if client.is_connected():
-                    return True
-            elif hasattr(client, "_connected"):
-                if client._connected:
-                    return True
-
-        return False
+        return any(client.is_connected() for client in self._clients.values())
 
 
 async def create_unified_pipeline(

@@ -83,7 +83,7 @@ async def fetch_binance_data(symbol: str, limit: int = 500) -> pd.DataFrame:
     client = BinanceClient(api_key="", secret_key="", testnet=True)
     try:
         await client.connect()
-        klines = await client.get_historical_klines(symbol, "1h", limit)
+        klines = await client.get_klines(symbol, "1h", limit)
         await client.disconnect()
         
         if not klines:

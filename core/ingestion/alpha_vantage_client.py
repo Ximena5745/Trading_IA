@@ -67,7 +67,7 @@ class AlphaVantageClient(ExchangeAdapter):
         self,
         symbol: str,
         interval: str = "1h",
-        output_size: str = "compact",
+        limit: int = 500,
     ) -> list[MarketData]:
         """Get historical klines from Alpha Vantage.
 
@@ -77,7 +77,11 @@ class AlphaVantageClient(ExchangeAdapter):
         - TIME_SERIES_DAILY_ADJUSTED
         - TIME_SERIES_WEEKLY
         - TIME_SERIES_MONTHLY
+
+        `limit` maps to Alpha Vantage's coarse `outputsize` param: <=100 -> "compact"
+        (~100 most recent points), otherwise "full" (full history available).
         """
+        output_size = "compact" if limit <= 100 else "full"
         function = self._map_interval_to_function(interval)
 
         params = {
@@ -240,6 +244,28 @@ class AlphaVantageClient(ExchangeAdapter):
         elif function == "TIME_SERIES_MONTHLY":
             return "Monthly Time Series"
         return "Time Series (Daily)"
+
+    async def get_order_book(self, symbol: str, depth: int = 20) -> dict:
+        raise NotImplementedError("Alpha Vantage is data-only")
+
+    async def get_balance(self, asset: str = "USD") -> float:
+        raise NotImplementedError("Alpha Vantage is data-only")
+
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: str = "MARKET",
+        client_order_id: Optional[str] = None,
+    ) -> dict:
+        raise NotImplementedError("Alpha Vantage is data-only")
+
+    async def cancel_order(self, symbol: str, order_id: str) -> dict:
+        raise NotImplementedError("Alpha Vantage is data-only")
+
+    async def get_order_status(self, symbol: str, order_id: str) -> dict:
+        raise NotImplementedError("Alpha Vantage is data-only")
 
     def is_connected(self) -> bool:
         return self._connected

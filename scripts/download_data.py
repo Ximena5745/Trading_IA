@@ -54,17 +54,50 @@ BINANCE_INTERVAL_MAP = {
     "1d": "1d",
 }
 
-# Symbol mapping: Binance → Yahoo Finance
+# Symbol mapping: canonical → Yahoo Finance
 YFINANCE_SYMBOL_MAP = {
+    # Crypto (fallback; la ruta primaria es Binance)
     "BTCUSDT": "BTC-USD",
     "ETHUSDT": "ETH-USD",
+    "SOLUSDT": "SOL-USD",
+    "BNBUSDT": "BNB-USD",
+    # Forex
     "EURUSD": "EURUSD=X",
     "GBPUSD": "GBPUSD=X",
     "USDJPY": "JPY=X",
-    "XAUUSD": "GC=F",
+    "USDCHF": "CHF=X",
+    "AUDUSD": "AUDUSD=X",
+    "USDCAD": "CAD=X",
+    # Índices (cash)
     "US500": "^GSPC",
     "US30": "^DJI",
+    "NAS100": "^NDX",
+    "DE40": "^GDAXI",
+    "UK100": "^FTSE",
+    "JP225": "^N225",
+    # ETF replicables (open/close son precios transaccionales reales,
+    # a diferencia de la apertura teórica de un índice cash)
+    "SPY": "SPY",
+    "QQQ": "QQQ",
+    "DIA": "DIA",
+    # Commodities (futuros continuos)
+    "XAUUSD": "GC=F",
+    "XAGUSD": "SI=F",
+    "USOIL": "CL=F",
+    "UKOIL": "BZ=F",
+    "NATGAS": "NG=F",
+    "WHEAT": "ZW=F",
+    # Macro (inputs de features de las Capas 3-4, no operables)
+    "VIX": "^VIX",
+    "VIX3M": "^VIX3M",
+    "DXY": "DX-Y.NYB",
+    "US10Y": "^TNX",
 }
+
+# Símbolos que Binance sí sirve de forma nativa. El resto va directo a
+# yfinance en vez de fallar primero contra Binance (que devolvía 400 y
+# generaba un error espurio en el log para 6 de cada 8 símbolos).
+BINANCE_NATIVE_SYMBOLS = {"BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"}
 
 
 def _parse_raw_kline(symbol: str, k: list) -> dict:
@@ -126,6 +159,8 @@ def _download_binance(
     step_ms = TIMEFRAME_MS[timeframe]
     batch_size = 1000
     current_ms = start_ms
+    empty_batches = 0
+    MAX_EMPTY_BATCHES = 200  # corta si el símbolo realmente no existe
 
     try:
         while current_ms < end_ms:
@@ -144,8 +179,23 @@ def _download_binance(
             
             raw = response.json()
             if not raw:
-                break
-            
+                # Una ventana vacía NO significa fin de los datos: significa que
+                # el símbolo aún no cotizaba en ese tramo. Abortar aquí truncaba
+                # todo símbolo cuyo listado cayera más allá del primer lote
+                # (p. ej. SOLUSDT, listado en 2020, con lotes de 1000 días desde
+                # 2016 → primer lote vacío → cero filas descargadas).
+                empty_batches += 1
+                if empty_batches > MAX_EMPTY_BATCHES:
+                    logger.warning(
+                        "binance_no_data_in_range", symbol=symbol, up_to=str(
+                            pd.Timestamp(current_ms, unit="ms")
+                        )
+                    )
+                    break
+                current_ms = batch_end
+                continue
+
+            empty_batches = 0
             rows.extend(_parse_raw_kline(symbol, k) for k in raw)
             current_ms = int(raw[-1][0]) + step_ms
             
@@ -261,8 +311,15 @@ def _download_yfinance(symbol: str, timeframe: str, years: int) -> list[dict]:
         return []
 
 
-def download(symbol: str, timeframe: str, years: int) -> None:
-    """Download and save OHLCV data for a symbol."""
+def download(symbol: str, timeframe: str, years: int, backfill: bool = False) -> None:
+    """Download and save OHLCV data for a symbol.
+
+    Con `backfill=True` se ignora el corte incremental y se pide el rango
+    completo de `years` al proveedor. Es necesario para *profundizar* histórico
+    ya existente: la ruta incremental solo extiende hacia adelante (desde el
+    último timestamp guardado), por lo que sobre un fichero que ya llega a hoy
+    devuelve "actualizado" y nunca descarga historia más antigua.
+    """
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUT_DIR / f"{symbol}_{timeframe}.parquet"
 
@@ -270,9 +327,15 @@ def download(symbol: str, timeframe: str, years: int) -> None:
     now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
     target_start = now_ms - years * 365 * 24 * 3_600_000
 
-    if existing.empty:
+    if existing.empty or backfill:
         start_ms = target_start
-        logger.info("fresh_download", symbol=symbol, timeframe=timeframe, years=years)
+        logger.info(
+            "full_range_download",
+            symbol=symbol,
+            timeframe=timeframe,
+            years=years,
+            backfill=backfill,
+        )
     else:
         last_ts = existing["timestamp"].max()
         start_ms = int(last_ts.timestamp() * 1000) + TIMEFRAME_MS[timeframe]
@@ -282,13 +345,17 @@ def download(symbol: str, timeframe: str, years: int) -> None:
             return
         logger.info("incremental_download", symbol=symbol, from_ts=str(last_ts))
 
-    # Try Binance first, then yfinance as fallback
+    # Binance solo para los símbolos que sirve de forma nativa; el resto va
+    # directo a yfinance (antes pasaba por un 400 de Binance en cada llamada).
     new_rows = None
-    try:
-        new_rows = _download_binance(symbol, timeframe, start_ms, now_ms)
-    except Exception as e:
-        print(f"⚠️  Binance falló para {symbol} {timeframe}: {e}")
-        print(f"   Intentando con yfinance como alternativa...")
+    if symbol in BINANCE_NATIVE_SYMBOLS:
+        try:
+            new_rows = _download_binance(symbol, timeframe, start_ms, now_ms)
+        except Exception as e:
+            print(f"⚠️  Binance falló para {symbol} {timeframe}: {e}")
+            print("   Intentando con yfinance como alternativa...")
+            new_rows = _download_yfinance(symbol, timeframe, years)
+    else:
         new_rows = _download_yfinance(symbol, timeframe, years)
     
     if not new_rows:
@@ -297,6 +364,21 @@ def download(symbol: str, timeframe: str, years: int) -> None:
         return
 
     new_df = pd.DataFrame(new_rows)
+
+    # Los ficheros ya en disco no son homogéneos: unos guardan `timestamp` como
+    # datetime64[ms, UTC] (US500, EURUSD...) y otros tz-naive (BTCUSDT). Un
+    # concat directo entre ambos lanza "Cannot join tz-naive with tz-aware".
+    # Se normaliza todo a UTC antes de fusionar.
+    def _to_utc(df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty or "timestamp" not in df.columns:
+            return df
+        df = df.copy()
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+        return df
+
+    existing = _to_utc(existing)
+    new_df = _to_utc(new_df)
+
     combined = (
         pd.concat([existing, new_df], ignore_index=True)
         if not existing.empty
@@ -339,30 +421,65 @@ def main() -> None:
         "--all", action="store_true", help="Download all assets (CRYPTO, FOREX, INDICES, COMMODITIES)"
     )
     parser.add_argument(
-        "--asset-class", 
-        choices=["crypto", "forex", "indices", "commodities"],
+        "--asset-class",
+        choices=["crypto", "forex", "indices", "etf", "commodities", "macro"],
         default=None,
         help="Download all symbols for a specific asset class"
     )
+    parser.add_argument(
+        "--backfill",
+        action="store_true",
+        help="Fuerza descarga del rango completo y fusiona con lo existente. "
+             "Necesario para profundizar histórico ya descargado (la ruta "
+             "incremental solo extiende hacia adelante).",
+    )
     args = parser.parse_args()
 
-    # Define symbols by asset class
+    # Universo completo declarado en PLAN_MAESTRO.md (28 activos) + macro.
+    # Profundidad: 1d para todas las clases (Yahoo no sirve intradía más allá
+    # de ~730 días); 1h adicional solo en crypto, donde Binance sí tiene
+    # histórico intradía completo.
     ASSET_SYMBOLS = {
         "crypto": [
-            ("BTCUSDT", ["1h", "4h"]),
-            ("ETHUSDT", ["1h", "4h"]),
+            ("BTCUSDT", ["1d", "1h"]),
+            ("ETHUSDT", ["1d", "1h"]),
+            ("SOLUSDT", ["1d", "1h"]),
+            ("BNBUSDT", ["1d", "1h"]),
         ],
         "forex": [
-            ("EURUSD", ["1h", "4h", "1d"]),
-            ("GBPUSD", ["1h", "4h", "1d"]),
-            ("USDJPY", ["1h", "4h", "1d"]),
+            ("EURUSD", ["1d"]),
+            ("GBPUSD", ["1d"]),
+            ("USDJPY", ["1d"]),
+            ("USDCHF", ["1d"]),
+            ("AUDUSD", ["1d"]),
+            ("USDCAD", ["1d"]),
         ],
         "indices": [
-            ("US500", ["1h", "4h", "1d"]),
-            ("US30", ["1h", "4h", "1d"]),
+            ("US500", ["1d"]),
+            ("US30", ["1d"]),
+            ("NAS100", ["1d"]),
+            ("DE40", ["1d"]),
+            ("UK100", ["1d"]),
+            ("JP225", ["1d"]),
+        ],
+        "etf": [
+            ("SPY", ["1d"]),
+            ("QQQ", ["1d"]),
+            ("DIA", ["1d"]),
         ],
         "commodities": [
-            ("XAUUSD", ["1h", "4h", "1d"]),
+            ("XAUUSD", ["1d"]),
+            ("XAGUSD", ["1d"]),
+            ("USOIL", ["1d"]),
+            ("UKOIL", ["1d"]),
+            ("NATGAS", ["1d"]),
+            ("WHEAT", ["1d"]),
+        ],
+        "macro": [
+            ("VIX", ["1d"]),
+            ("VIX3M", ["1d"]),
+            ("DXY", ["1d"]),
+            ("US10Y", ["1d"]),
         ],
     }
 
@@ -412,7 +529,7 @@ def main() -> None:
     failed = 0
     for symbol, timeframe in download_list:
         try:
-            download(symbol, timeframe, args.years)
+            download(symbol, timeframe, args.years, backfill=args.backfill)
             completed += 1
         except Exception as e:
             print(f"❌ Failed to download {symbol} {timeframe}: {e}")
