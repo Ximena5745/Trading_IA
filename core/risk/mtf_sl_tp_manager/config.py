@@ -146,9 +146,28 @@ ASSET_SLTP_CONFIGS: dict[tuple[AssetClass, Timeframe], SLTPConfig] = {
 }
 
 
+_sltp_overrides: dict[tuple[AssetClass, Timeframe], SLTPConfig] = {}
+
+
+def set_sltp_override(asset_class: AssetClass, timeframe: Timeframe, config: SLTPConfig) -> None:
+    """Sobrescribe en memoria la configuración de SL/TP para (asset_class, timeframe)."""
+    _sltp_overrides[(asset_class, timeframe)] = config
+
+
+def clear_sltp_override(asset_class: AssetClass, timeframe: Timeframe) -> None:
+    """Elimina el override, si existe, volviendo al valor por defecto."""
+    _sltp_overrides.pop((asset_class, timeframe), None)
+
+
+def has_sltp_override(asset_class: AssetClass, timeframe: Timeframe) -> bool:
+    return (asset_class, timeframe) in _sltp_overrides
+
+
 def get_sltp_config(asset_class: AssetClass, timeframe: Timeframe) -> SLTPConfig:
     """Obtiene la configuración de SL/TP para un activo y timeframe."""
     key = (asset_class, timeframe)
+    if key in _sltp_overrides:
+        return _sltp_overrides[key]
     if key in ASSET_SLTP_CONFIGS:
         return ASSET_SLTP_CONFIGS[key]
 

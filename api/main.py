@@ -20,7 +20,6 @@ from slowapi.util import get_remote_address
 
 from api.routes.auth import router as auth_router
 from api.routes.backtesting import router as backtesting_router
-from api.routes.dashboard import router as dashboard_router
 from api.routes.execution import router as execution_router
 from api.routes.market import (
     router as market_router,
@@ -31,6 +30,8 @@ from api.routes.market import (
 from api.routes.marketplace import router as marketplace_router
 from api.routes.portfolio import router as portfolio_router
 from api.routes.risk import router as risk_router
+from api.routes.models import router as models_router
+from api.routes.monitoring import router as monitoring_router
 from api.routes.signals import router as signals_router
 from api.routes.simulation import router as simulation_router
 from api.routes.strategies import router as strategies_router
@@ -351,10 +352,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # ── Register all routers ────────────────────────────────────────────────────
 app.include_router(auth_router)
 app.include_router(risk_router)
+app.include_router(models_router)
+app.include_router(monitoring_router)
 app.include_router(market_router)
 app.include_router(signals_router)
 app.include_router(backtesting_router)
-app.include_router(dashboard_router)
 app.include_router(portfolio_router)
 app.include_router(execution_router)
 app.include_router(strategies_router)

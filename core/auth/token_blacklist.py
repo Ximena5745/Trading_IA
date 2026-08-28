@@ -33,8 +33,9 @@ class TokenBlacklist:
     def _get_redis(self) -> Optional[redis.Redis]:
         if self._redis is None:
             try:
-                self._redis = redis.from_url(self._redis_url, decode_responses=True)
-                self._redis.ping()
+                client = redis.from_url(self._redis_url, decode_responses=True)
+                client.ping()
+                self._redis = client
             except Exception as exc:
                 logger.warning("redis_not_available_for_blacklist", error=str(exc))
                 return None
@@ -44,7 +45,12 @@ class TokenBlacklist:
         redis_client = self._get_redis()
         if not redis_client:
             return False
-        return bool(redis_client.exists(f"blacklist:{jti}"))
+        try:
+            return bool(redis_client.exists(f"blacklist:{jti}"))
+        except Exception as exc:
+            logger.warning("blacklist_check_failed", error=str(exc))
+            self._redis = None
+            return False
 
     def add(self, jti: str, exp_timestamp: float, max_ttl_seconds: int = 604800) -> bool:
         redis_client = self._get_redis()
@@ -57,4 +63,5 @@ class TokenBlacklist:
             return True
         except Exception as exc:
             logger.warning("blacklist_add_failed", error=str(exc))
+            self._redis = None
             return False

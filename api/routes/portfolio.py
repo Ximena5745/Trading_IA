@@ -8,6 +8,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from api.dependencies import get_current_user, require_trader
+from core.config.settings import get_settings
+from core.consensus.asset_specific_consensus import ASSET_SPECIFIC_WEIGHTS
+from core.consensus.voting_engine import AGENT_WEIGHTS_CRYPTO, AGENT_WEIGHTS_MT5
+from core.models import detect_asset_class
 from core.observability.logger import get_logger
 from core.portfolio.portfolio_manager import PortfolioManager
 from core.monitoring.performance_tracker import PerformanceTracker
@@ -124,6 +128,61 @@ async def get_portfolio_history_public(limit: int = 100):
                 "capital": round(capital, 2)
             })
         return {"snapshots": list(reversed(snapshots)), "count": len(snapshots)}
+
+
+_AGENT_NAMES = {
+    "technical_v1": "Technical Agent",
+    "regime_v1": "Regime Agent",
+    "microstructure_v1": "Microstructure Agent",
+    "asset_specific_v1": "Asset-Specific Agent",
+    "fundamental": "Fundamental Agent",
+}
+
+
+def _active_models_for_asset_class(asset_class_value: str) -> dict:
+    """Which consensus scheme + agent weights apply to an asset class.
+
+    asset_specific weights are used when AssetSpecificAgent has a trained model
+    for the asset; otherwise the engine falls back to the legacy crypto/mt5
+    weights by asset class. Both are shown so the panel is honest about the
+    fallback.
+    """
+    scheme = "crypto" if asset_class_value == "crypto" else "mt5"
+    legacy = AGENT_WEIGHTS_CRYPTO if scheme == "crypto" else AGENT_WEIGHTS_MT5
+    legacy_active = [
+        {"id": aid, "name": _AGENT_NAMES.get(aid, aid), "weight": w}
+        for aid, w in legacy.items() if w
+    ]
+    asset_specific_active = [
+        {"id": aid, "name": _AGENT_NAMES.get(aid, aid), "weight": w}
+        for aid, w in ASSET_SPECIFIC_WEIGHTS.items() if w
+    ]
+    return {
+        "primary_scheme": scheme,
+        "legacy_weights": legacy_active,
+        "asset_specific_weights": asset_specific_active,
+    }
+
+
+@router.get("/active-models")
+async def get_active_models():
+    """Per-symbol map of which trading agents are active and their consensus weight.
+
+    Public: read-only, derived from detect_asset_class + the static weight tables
+    in core.consensus. Fully functional (no mock) — reflects exactly what the
+    voting engine would weight for each supported symbol.
+    """
+    settings = get_settings()
+    by_symbol = []
+    for symbol in settings.SUPPORTED_SYMBOLS:
+        ac = detect_asset_class(symbol)
+        ac_value = getattr(ac, "value", str(ac))
+        by_symbol.append({
+            "symbol": symbol,
+            "asset_class": ac_value,
+            **_active_models_for_asset_class(ac_value),
+        })
+    return {"count": len(by_symbol), "symbols": by_symbol}
 
 
 @router.get("/performance")

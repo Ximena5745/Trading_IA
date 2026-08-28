@@ -186,14 +186,9 @@ print('✅ Modelo Forex listo' if agent.is_ready() else '❌ Error')
 "
 ```
 
-### Opción 2: Integración FastAPI
+### Opción 2: Integración FastAPI + Dashboard
 ```bash
-uvicorn api.main:app --reload
-```
-
-### Opción 3: Dashboard Streamlit
-```bash
-streamlit run app/dashboard.py
+uvicorn api.main:app --reload   # dashboard SPA disponible en /dashboard
 ```
 
 ---

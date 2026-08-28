@@ -1,5 +1,10 @@
 # Dashboard Implementation Complete — April 6, 2026
 
+> **Nota (2026-08-25):** documento histórico, congelado a esta fecha. Las referencias a Streamlit
+> (dashboards, puerto 8501, `app/dashboard.py`) quedaron obsoletas: Streamlit se retiró del proyecto
+> el 2026-08-25 (Fase 3 de [`docs/PLAN_MIGRACION_DASHBOARD_2026-08-22.md`](docs/PLAN_MIGRACION_DASHBOARD_2026-08-22.md));
+> el código vive ahora en `docs/archive/app_streamlit_legacy/`. `PLAN_MAESTRO.md` es la fuente de verdad del estado actual.
+
 ## Previous State (April 5, 2026)
 
 The TRADER AI system had:

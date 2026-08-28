@@ -745,10 +745,7 @@ Servido directamente por FastAPI en `http://localhost:8000/`. Sin dependencias e
 ### Ejecución
 
 ```bash
-# Dashboard
-streamlit run app/dashboard.py --server.port 8501
-
-# API
+# API + Dashboard (SPA nativa servida en /dashboard — Streamlit retirado 2026-08-25, ver docs/archive/app_streamlit_legacy/)
 uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 

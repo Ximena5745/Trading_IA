@@ -674,19 +674,9 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 # INFO:     Application startup complete
 ```
 
-### 10.3 Iniciar Streamlit (Terminal 2)
+### 10.3 Dashboard
 
-```bash
-# Activar venv
-source venv/bin/activate
-
-# Iniciar
-streamlit run app/main.py
-
-# Debe mostrar:
-# You can now view your Streamlit app in your browser.
-# URL: http://localhost:8501
-```
+El dashboard es la SPA nativa servida por la propia API (Streamlit retirado 2026-08-25, ver `docs/archive/app_streamlit_legacy/`). No requiere un segundo proceso: con `uvicorn api.main:app` corriendo (paso 10.2), abrir `http://localhost:8000/dashboard` en el navegador.
 
 ### 10.4 Acceder a Aplicación
 

@@ -479,9 +479,15 @@
 
     <script>
         // Fetch validation data from API
+        // Requires a Bearer token — reads the same localStorage key the parent
+        // dashboard.html login flow writes to (both served from the same origin).
         async function loadValidationData() {
             try {
-                const response = await fetch('/backtest/crypto/validation');
+                const token = localStorage.getItem('trader_ia_token') || '';
+                if (!token) throw new Error('No autenticado — inicia sesión en el dashboard principal');
+                const response = await fetch('/backtest/crypto/validation', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
             } catch (error) {

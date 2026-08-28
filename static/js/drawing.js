@@ -338,7 +338,118 @@ class ExtendedLineTool {
     }
 }
 
+// Fibonacci Retracement Tool
+// Drag from swing point A (0%) to swing point B (100%); horizontal levels are
+// drawn at the standard retracement ratios between the two prices.
+class FibonacciTool {
+    constructor() {
+        this.levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+    }
+    start(e, ctx) {
+        const p = this.getPos(e, ctx);
+        return {type: 'fib', x1: p.x, y1: p.y, x2: p.x, y2: p.y, levels: this.levels, draw: this.draw};
+    }
+    move(e, drawing, ctx) {
+        const p = this.getPos(e, ctx);
+        drawing.x2 = p.x;
+        drawing.y2 = p.y;
+    }
+    end(e, drawing, ctx) {
+        const p = this.getPos(e, ctx);
+        drawing.x2 = p.x;
+        drawing.y2 = p.y;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.font = '10px JetBrains Mono, monospace';
+        const xL = Math.min(this.x1, this.x2);
+        const xR = Math.max(this.x1, this.x2);
+        for (const lvl of (this.levels || [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1])) {
+            const y = this.y1 + (this.y2 - this.y1) * lvl;
+            ctx.strokeStyle = 'rgba(245,166,35,0.55)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(xL, y);
+            ctx.lineTo(xR, y);
+            ctx.stroke();
+            ctx.fillStyle = '#f5a623';
+            ctx.fillText((lvl * 100).toFixed(1) + '%', xR + 4, y + 3);
+        }
+        // Vertical anchors
+        ctx.strokeStyle = 'rgba(245,166,35,0.25)';
+        ctx.beginPath();
+        ctx.moveTo(this.x1, this.y1);
+        ctx.lineTo(this.x1, this.y2);
+        ctx.moveTo(this.x2, this.y1);
+        ctx.lineTo(this.x2, this.y2);
+        ctx.stroke();
+        ctx.restore();
+    }
+    getPos(e, ctx) {
+        const rect = ctx.canvas.getBoundingClientRect();
+        return {x: e.clientX - rect.left, y: e.clientY - rect.top};
+    }
+}
+
+// Elliott Wave Tool
+// Drag from the start of the move (0) to the projected end (5). A canonical
+// 5-wave impulse zigzag is generated between the two points with the usual
+// proportions (wave 3 the longest, 2 & 4 partial retracements) and labelled
+// 0-1-2-3-4-5. It's a template to nudge, not a strict pivot editor.
+class ElliottWaveTool {
+    // Fraction of the 0->5 vector reached at each pivot, plus a perpendicular
+    // wobble so 2 and 4 read as retracements rather than a straight line.
+    static PIVOTS = [
+        {t: 0.00, perp: 0.00},
+        {t: 0.28, perp: 0.10},
+        {t: 0.16, perp: -0.06},
+        {t: 0.72, perp: 0.16},
+        {t: 0.56, perp: -0.04},
+        {t: 1.00, perp: 0.00},
+    ];
+    start(e, ctx) {
+        const p = this.getPos(e, ctx);
+        return {type: 'elliott', x1: p.x, y1: p.y, x2: p.x, y2: p.y, draw: this.draw};
+    }
+    move(e, drawing, ctx) {
+        const p = this.getPos(e, ctx);
+        drawing.x2 = p.x;
+        drawing.y2 = p.y;
+    }
+    end(e, drawing, ctx) {
+        const p = this.getPos(e, ctx);
+        drawing.x2 = p.x;
+        drawing.y2 = p.y;
+    }
+    draw(ctx) {
+        const dx = this.x2 - this.x1;
+        const dy = this.y2 - this.y1;
+        const px = -dy, py = dx; // perpendicular vector
+        const pts = ElliottWaveTool.PIVOTS.map(k => ({
+            x: this.x1 + dx * k.t + px * k.perp,
+            y: this.y1 + dy * k.t + py * k.perp,
+        }));
+        ctx.save();
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.stroke();
+        ctx.font = 'bold 12px JetBrains Mono, monospace';
+        ctx.fillStyle = '#c4b5fd';
+        pts.forEach((pt, i) => ctx.fillText(String(i), pt.x + 5, pt.y - 5));
+        ctx.restore();
+    }
+    getPos(e, ctx) {
+        const rect = ctx.canvas.getBoundingClientRect();
+        return {x: e.clientX - rect.left, y: e.clientY - rect.top};
+    }
+}
+
 window.DrawingManager = DrawingManager;
+window.FibonacciTool = FibonacciTool;
+window.ElliottWaveTool = ElliottWaveTool;
 window.LineTool = LineTool;
 window.RectangleTool = RectangleTool;
 window.TriangleTool = TriangleTool;

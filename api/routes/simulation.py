@@ -64,7 +64,8 @@ class SimulationRequest(BaseModel):
 # ── Background task ────────────────────────────────────────────────────────
 
 
-def _run_simulation_job(job_id: str, request: SimulationRequest) -> None:
+async def _run_simulation_job(job_id: str, request: SimulationRequest) -> None:
+    from core.config.settings import get_settings
     from core.features.feature_store import FeatureStore
 
     _jobs[job_id]["status"] = "running"
@@ -79,8 +80,9 @@ def _run_simulation_job(job_id: str, request: SimulationRequest) -> None:
         strategy = reg.get(request.strategy_id)
 
         # Load features from store
-        feature_store = FeatureStore()
-        features = feature_store.get_history(request.symbol, limit=5000)
+        feature_store = FeatureStore(redis_url=get_settings().REDIS_URL)
+        await feature_store.connect()
+        features = await feature_store.get_history(request.symbol, limit=5000)
 
         if not features:
             raise ValueError(f"No feature data found for {request.symbol}")

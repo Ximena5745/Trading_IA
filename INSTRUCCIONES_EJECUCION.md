@@ -203,7 +203,7 @@ print(f'EURUSD_1h: {len(df)} registros')
 - [ ] He ejecutado `python scripts/retrain.py --asset-class forex --timeframe 1h`
 - [ ] Archivos `.parquet` existen en `data/raw/`
 - [ ] Modelos `.pkl` existen en `data/models/`
-- [ ] Dashboard funciona: `streamlit run app/dashboard.py`
+- [ ] Dashboard funciona: `uvicorn api.main:app --reload`, luego abrir `/dashboard`
 
 ---
 

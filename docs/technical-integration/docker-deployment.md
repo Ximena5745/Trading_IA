@@ -32,7 +32,7 @@
 │   ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐            │
 │   │      APP        │ │    GRAFANA      │ │   PROMETHEUS    │            │
 │   │   (FastAPI +    │ │  (Dashboards)   │ │   (Metrics)     │            │
-│   │   Streamlit)    │ │     :3000       │ │     :9090       │            │
+│   │  dashboard SPA) │ │     :3000       │ │     :9090       │            │
 │   │     :8000       │ └─────────────────┘ └─────────────────┘            │
 │   └────────┬────────┘                                                     │
 │            │                                                               │
@@ -52,7 +52,7 @@
 
 ## Servicios
 
-### App (FastAPI + Streamlit)
+### App (FastAPI + dashboard SPA)
 
 ```yaml
 app:
@@ -60,8 +60,7 @@ app:
     context: ..
     dockerfile: docker/Dockerfile
   ports:
-    - "8000:8000"   # FastAPI
-    - "8501:8501"   # Streamlit
+    - "8000:8000"   # FastAPI (incluye el dashboard en /dashboard)
   environment:
     - DATABASE_URL=postgresql+asyncpg://trader:trader@db:5432/trader_ai
     - REDIS_URL=redis://redis:6379/0
@@ -189,29 +188,21 @@ upstream api {
     server app:8000;
 }
 
-upstream streamlit {
-    server app:8501;
-}
-
 server {
     listen 80;
     server_name trader-ai.local;
 
-    # API
-    location /api/ {
-        proxy_pass http://api;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    # Streamlit
+    # API + dashboard SPA + WebSocket (/ws/prices/{symbol}) — todo en el mismo
+    # proceso FastAPI, así que una sola ubicación con soporte de upgrade cubre
+    # REST, HTML estático y WS.
     location / {
-        proxy_pass http://streamlit;
+        proxy_pass http://api;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
     # Grafana
@@ -349,7 +340,7 @@ curl http://localhost:8001/metrics
 |----------|-----|
 | API | http://localhost:8000 |
 | API Docs | http://localhost:8000/docs |
-| Streamlit | http://localhost:8501 |
+| Dashboard | http://localhost:8000/dashboard |
 | Grafana | http://localhost:3000 |
 | Prometheus | http://localhost:9090 |
 

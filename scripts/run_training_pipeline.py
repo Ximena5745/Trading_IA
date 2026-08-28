@@ -118,7 +118,7 @@ def main():
     print("\n💡 Próximos pasos:")
     print("  1. Revisar métricas de modelos en docs/model-training-results.md")
     print("  2. Ejecutar FASE 4: python scripts/start_phase2.py")
-    print("  3. Iniciar dashboard: streamlit run app/dashboard.py")
+    print("  3. Iniciar dashboard: uvicorn api.main:app --reload, luego abrir /dashboard")
     print("\n")
 
 

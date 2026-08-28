@@ -68,8 +68,7 @@ cp .env.example .env
 docker-compose up -d db redis  # O instalar en local
 
 # 6. Iniciar
-uvicorn api.main:app --reload   # Terminal 1
-streamlit run app/main.py        # Terminal 2
+uvicorn api.main:app --reload   # Sirve la API y el dashboard SPA en /dashboard
 ```
 
 ---

@@ -1,3 +1,8 @@
+> **Archivado 2026-08-25** — Streamlit se retiró del proyecto (Fase 3 de
+> [`docs/PLAN_MIGRACION_DASHBOARD_2026-08-22.md`](../../PLAN_MIGRACION_DASHBOARD_2026-08-22.md)).
+> Este directorio se conserva solo como referencia histórica; no editar, no usar como fuente de verdad.
+> La SPA nativa (`static/dashboard.html`) es la única UI activa.
+
 # TRADER AI — Dashboards
 
 ## Dashboard HTML/JS Nativo (Activo — Recomendado)

@@ -24,7 +24,10 @@ from core.risk.mtf_sl_tp_manager.config import (
     ASSET_SLTP_CONFIGS,
     SLTPConfig,
     Timeframe,
+    clear_sltp_override,
     get_sltp_config,
+    has_sltp_override,
+    set_sltp_override,
 )
 from core.risk.mtf_sl_tp_manager.fibonacci import FibonacciLevels, calculate_fibonacci_levels
 from core.risk.mtf_sl_tp_manager.manager import (
@@ -47,6 +50,9 @@ __all__ = [
     "ATRMultiTimeframe",
     "Timeframe",
     "get_sltp_config",
+    "set_sltp_override",
+    "clear_sltp_override",
+    "has_sltp_override",
     "calculate_trend_direction",
     "create_mtf_sltp_manager",
     "create_signal_quality_filter",
