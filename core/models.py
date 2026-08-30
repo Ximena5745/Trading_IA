@@ -297,6 +297,9 @@ class FeatureSet(BaseModel):
     # Raw close for signal engine
     close: float = 0.0
 
+    # Decision trace (SPEC-B04) — set by the pipeline, propagated end-to-end
+    correlation_id: Optional[str] = None
+
 
 # ---------------------------------------------------------------------------
 # Market Regime
@@ -338,6 +341,7 @@ class AgentOutput(BaseModel):
     features_used: list[str]
     shap_values: dict[str, float]
     model_version: str
+    correlation_id: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -354,6 +358,7 @@ class ConsensusOutput(BaseModel):
     blocked_by_regime: bool
     agent_outputs: list[AgentOutput]
     conflicts: list[str]
+    correlation_id: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +390,7 @@ class Signal(BaseModel):
     regime: Optional[MarketRegime] = None
     strategy_id: str = "manual"
     status: str = "pending"
+    correlation_id: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

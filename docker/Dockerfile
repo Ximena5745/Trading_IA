@@ -26,7 +26,13 @@ COPY scripts/ ./scripts/
 COPY static/ ./static/
 COPY requirements.txt .
 
-# Create data directory
+# Database migrations must ship in the image (SPEC-A03 / F-05): without these
+# run_migrations() raises and the container would otherwise start with no DB.
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+
+# Create data directory tree. Real parquet/model data is NOT baked into the
+# image — it is bind-mounted from ../data via docker-compose.yml.
 RUN mkdir -p data/raw/parquet data/models backtest_results
 
 # Environment variables
@@ -34,12 +40,15 @@ ENV PYTHONUNBUFFERED=1
 ENV EXECUTION_MODE=paper
 ENV TRADING_ENABLED=false
 
-# Health check
+# Health check — stdlib only (`requests` is not in requirements.txt). Non-2xx
+# raises → non-zero exit → container marked unhealthy.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"
 
 # Expose ports
 EXPOSE 8000 8001
 
-# Run Uvicorn with 4 workers
+# Default command: the API (no scheduled jobs — SPEC-A02). The `worker` service
+# in docker-compose.yml overrides this with `python scripts/run_pipeline.py`,
+# which is the single owner of the pipeline scheduler.
 CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

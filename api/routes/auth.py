@@ -6,10 +6,11 @@ Responsibility: Authentication endpoints — login, refresh, logout, me, registe
 Dependencies: jwt_handler, user_repository, dependencies
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
-from api.dependencies import get_current_user, get_jwt_handler
+from api.dependencies import get_current_user, get_jwt_handler, require_admin
 from core.auth.jwt_handler import JWTHandler
+from core.config.settings import get_settings
 from core.db.user_repository import get_user_by_email, verify_password, create_user
 from core.auth.permissions import Role
 from slowapi import Limiter
@@ -17,6 +18,7 @@ from slowapi.util import get_remote_address
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/auth", tags=["auth"])
+settings = get_settings()
 
 
 class LoginRequest(BaseModel):
@@ -26,8 +28,14 @@ class LoginRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str
-    role: str = Role.TRADER.value
+    password: str = Field(min_length=12)
+    # NOTE: no `role` — public registration always creates a viewer (SPEC-A01).
+
+
+class CreateUserRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=12)
+    role: str = Role.VIEWER.value
 
 
 class TokenResponse(BaseModel):
@@ -44,27 +52,49 @@ class RefreshRequest(BaseModel):
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("3/minute")
 async def register(request: Request, body: RegisterRequest, jwt: JWTHandler = Depends(get_jwt_handler)):
+    # SPEC-A01 / F-01: public self-registration is opt-in and, when on, can only
+    # ever create a `viewer`. Elevated roles go through POST /auth/users (admin).
+    if not settings.REGISTRATION_ENABLED:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
     existing = await get_user_by_email(body.email)
     if existing is not None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
         )
 
-    try:
-        role = Role(body.role) if body.role else Role.TRADER
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid role. Must be one of: {[r.value for r in Role]}",
-        )
-
-    user = await create_user(body.email, body.password, role.value)
+    user = await create_user(body.email, body.password, Role.VIEWER.value)
     return TokenResponse(
         access_token=jwt.create_access_token(user.email, user.role),
         refresh_token=jwt.create_refresh_token(user.email),
         expires_in=3600,
     )
+
+
+@router.post(
+    "/users",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
+@limiter.limit("10/minute")
+async def create_user_admin(request: Request, body: CreateUserRequest):
+    """Admin-only account creation for any role (SPEC-A01)."""
+    try:
+        role = Role(body.role)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid role. Must be one of: {[r.value for r in Role]}",
+        )
+
+    if await get_user_by_email(body.email) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
+
+    user = await create_user(body.email, body.password, role.value)
+    return {"id": user.id, "email": user.email, "role": user.role}
 
 
 @router.post("/login", response_model=TokenResponse)

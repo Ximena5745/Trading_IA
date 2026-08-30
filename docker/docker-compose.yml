@@ -22,6 +22,36 @@ services:
         condition: service_healthy
     env_file:
       - ../.env
+    volumes:
+      # Real parquet/model data lives on the host, not in the image (SPEC-A03).
+      - ../data:/app/data
+    restart: unless-stopped
+    networks:
+      - trader-ai
+
+  # Pipeline worker — the SINGLE owner of the APScheduler (SPEC-A02 / F-04).
+  # The `app` service runs no scheduled jobs; this one does. It takes a Redis
+  # lock (trader:scheduler:owner) on start, so extra replicas stay passive.
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: trader-ai-worker
+    command: python scripts/run_pipeline.py
+    environment:
+      - EXECUTION_MODE=paper
+      - TRADING_ENABLED=false
+      - DATABASE_URL=postgresql://trader:${DB_PASSWORD}@db:5432/trader_ai
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    volumes:
+      - ../data:/app/data
     restart: unless-stopped
     networks:
       - trader-ai

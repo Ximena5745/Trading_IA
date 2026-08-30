@@ -18,6 +18,8 @@ logger = get_logger(__name__)
 settings = get_settings()
 
 PORTFOLIO_KEY = "trader:portfolio:state"
+CLOSED_TRADES_KEY = "trader:portfolio:closed_trades"
+CLOSED_TRADES_MAX = 200
 
 
 class PortfolioManagerRedis:
@@ -131,6 +133,15 @@ class PortfolioManagerRedis:
                 portfolio["available_capital"] += recovered_value
 
                 portfolio["positions"].pop(i)
+                self._record_closed_trade(
+                    {
+                        "symbol": symbol,
+                        "strategy_id": pos.get("strategy_id"),
+                        "net_pnl": round(pnl, 8),
+                        "exit_price": exit_price,
+                        "closed_at": datetime.utcnow().isoformat(),
+                    }
+                )
                 break
 
         self._save_portfolio(portfolio)
@@ -139,6 +150,23 @@ class PortfolioManagerRedis:
             logger.info("position_closed_redis", symbol=symbol, pnl=closed_position.get("unrealized_pnl"))
 
         return closed_position or {}
+
+    def _record_closed_trade(self, trade: dict) -> None:
+        try:
+            r = self._get_redis()
+            r.rpush(CLOSED_TRADES_KEY, json.dumps(trade, default=str))
+            r.ltrim(CLOSED_TRADES_KEY, -CLOSED_TRADES_MAX, -1)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("closed_trade_record_error", error=str(e))
+
+    def get_recent_trades(self, limit: int = 20) -> list[dict]:
+        """Most recent closed trades, oldest→newest, each with ``net_pnl``."""
+        try:
+            raw = self._get_redis().lrange(CLOSED_TRADES_KEY, -limit, -1)
+            return [json.loads(x) for x in raw]
+        except Exception as e:  # noqa: BLE001
+            logger.warning("recent_trades_load_error", error=str(e))
+            return []
 
     def update_positions_prices(self, prices: dict) -> None:
         """Actualiza precios de posiciones abiertas y calcula PnL."""

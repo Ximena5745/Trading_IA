@@ -11,12 +11,13 @@ Hay cuatro fuentes de "universo" inconsistentes entre sí:
 
 | Fuente | Símbolos | Nomenclatura de índices |
 |---|---|---|
-| `core/config/constants.py` → `ASSET_CLASS_SYMBOLS` / `SUPPORTED_SYMBOLS` | 28 (incluye SOLUSDT, BNBUSDT, XAGUSD, USOIL, DE40, JP225…) | `SPX500`, `NAS100` |
+| `core/config/constants.py` → `ASSET_CLASS_SYMBOLS` / `SUPPORTED_SYMBOLS` | 22 (incluye SOLUSDT, BNBUSDT, XAGUSD, USOIL, DE40, JP225…) | `SPX500`, `NAS100` |
+| `core/config/settings.py` → `SUPPORTED_SYMBOLS` | 9, hardcodeados (**no** importa de `constants.py` pese al comentario) | `SPX500`, `NAS100` |
 | `scripts/run_pipeline.py` → `SCHEDULE` | 12 (añade AUDUSD, USDCHF, USDCAD, UK100) | `US500`, `US30`, `UK100` |
 | `core/ml/i1_gate_validator/config.py` → `PIPELINE_SYMBOLS` | 8 | `US500`, `US30` |
 | `data/raw/parquet/1h/` | 6 no-crypto: `eurusd, gbpusd, usdjpy, us30, us500, xauusd` | `us500`, `us30` |
 
-El pipeline, el gate y los datos ya usan la familia `US###`; solo `constants.py` diverge con `SPX500`/`NAS100`. No hay un único punto que defina "qué se puede operar" ni un mapeo documentado a símbolos de broker.
+El pipeline, el gate y los datos ya usan la familia `US###`; `constants.py` y `settings.py` divergen con `SPX500`/`NAS100`. No hay un único punto que defina "qué se puede operar" ni un mapeo documentado a símbolos de broker.
 
 ## Decisión
 
@@ -28,7 +29,7 @@ El pipeline, el gate y los datos ya usan la familia `US###`; solo `constants.py`
    BTCUSDT, ETHUSDT, EURUSD, GBPUSD, USDJPY, XAUUSD, US500, US30
    ```
 
-3. **Nomenclatura canónica de índices: familia `US###` / `UK###` / `DE##` / `JP###`.** Se adopta `US500`, `US30` (y, cuando se incorporen, `UK100`, `DE40`, `JP225`, `NAS100`→se mantiene `NAS100`). Se **elimina** `SPX500` como alias en `constants.py`. Motivo: el gate I1, el pipeline y los parquet ya usan esta familia; cambiar tres consumidores es más caro que cambiar uno.
+3. **Nomenclatura canónica de índices: familia `US###` / `UK###` / `DE##` / `JP###`.** Se adopta `US500`, `US30` (y, cuando se incorporen, `UK100`, `DE40`, `JP225`, `NAS100`→se mantiene `NAS100`). Se **elimina** `SPX500` como alias en `constants.py` y en `settings.py`. Motivo: el gate I1, el pipeline y los parquet ya usan esta familia; cambiar dos definiciones divergentes es más barato que renombrar tres consumidores + datos.
 
 4. **Mapeo a símbolos de broker en un único dict** `BROKER_SYMBOL_MAP: dict[str, dict[str, str]]` en `core/config/constants.py` (`{símbolo_canónico: {"binance": "...", "mt5": "..."}}`). Los adapters de exchange traducen solo a través de este dict.
 
@@ -45,7 +46,7 @@ El pipeline, el gate y los datos ya usan la familia `US###`; solo `constants.py`
 
 **Negativas / coste**
 - Hay que reescribir `constants.py` (`SPX500`→`US500`, `NAS100` se mantiene) y revisar todo `grep -rn "SPX500"` en código, tests y datos.
-- `settings.SUPPORTED_SYMBOLS` pasa de 10–28 a 8; cualquier test o doc que asuma el set viejo se actualiza.
+- `settings.SUPPORTED_SYMBOLS` pasa de 9–22 a 8; cualquier test o doc que asuma el set viejo se actualiza.
 - `run_pipeline.SCHEDULE` pierde AUDUSD/USDCHF/USDCAD/UK100 hasta que entren por el gate.
 
 **Neutras**

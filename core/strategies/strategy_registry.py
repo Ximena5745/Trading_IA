@@ -6,6 +6,7 @@ Dependencies: base_strategy, builtin strategies, logger
 from __future__ import annotations
 
 from core.exceptions import StrategyNotFoundError
+from core.ml.i1_strategies import I1_STRATEGY_REGISTRY, I1StrategySpec
 from core.observability.logger import get_logger
 from core.strategies.base_strategy import AbcStrategy
 from core.strategies.builtin.ema_rsi import EmaRsiStrategy
@@ -18,8 +19,18 @@ logger = get_logger(__name__)
 
 
 class StrategyRegistry:
+    """The single catalogue of strategies (SPEC-B06 / ADR-003).
+
+    Holds two kinds of entry under one namespace:
+      * builtin ``AbcStrategy`` objects (exposed by the API / simulator);
+      * ``I1StrategySpec`` parametrizations validated by the I1 gate — the ones
+        the pipeline actually trades, via data/models/i1_params/<symbol>.json.
+    ``I1_STRATEGY_REGISTRY`` is a *view* of this registry, not a separate source.
+    """
+
     def __init__(self):
         self._strategies: dict[str, AbcStrategy] = {}
+        self._i1_specs: dict[str, I1StrategySpec] = dict(I1_STRATEGY_REGISTRY)
         self._load_builtins()
 
     def _load_builtins(self) -> None:
@@ -63,3 +74,17 @@ class StrategyRegistry:
             raise StrategyNotFoundError(f"Strategy not found: {strategy_id}")
         del self._strategies[strategy_id]
         logger.info("strategy_unregistered", strategy_id=strategy_id)
+
+    # ── I1 parametrizations (the gate's view over this registry) ────────────
+    def get_i1_spec(self, strategy_id: str) -> I1StrategySpec:
+        spec = self._i1_specs.get(strategy_id)
+        if spec is None:
+            raise StrategyNotFoundError(f"I1 strategy spec not found: {strategy_id}")
+        return spec
+
+    def has(self, strategy_id: str) -> bool:
+        return strategy_id in self._strategies or strategy_id in self._i1_specs
+
+    def strategy_ids(self) -> set[str]:
+        """Every id known to the single catalogue (builtin + I1 specs)."""
+        return set(self._strategies) | set(self._i1_specs)

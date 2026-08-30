@@ -7,22 +7,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from core.config.constants import TRADED_UNIVERSE
+
 PERIODS_PER_YEAR_1H = 252 * 24
 GATE_SHARPE_NET = 0.8
 GATE_P_VALUE = 0.05
 GATE_SHARPE_HOLDOUT = 0.8
 HOLDOUT_FRACTION = 0.2
 
-PIPELINE_SYMBOLS = [
-    "BTCUSDT",
-    "ETHUSDT",
-    "EURUSD",
-    "GBPUSD",
-    "USDJPY",
-    "US500",
-    "US30",
-    "XAUUSD",
-]
+# Single source of truth — ADR-004 / SPEC-B03. The gate validates exactly the
+# symbols the pipeline may trade.
+PIPELINE_SYMBOLS = list(TRADED_UNIVERSE)
 
 DEFAULT_I1_PARAMS_DIR = Path("data/models/i1_params")
 

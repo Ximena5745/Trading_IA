@@ -45,6 +45,13 @@ kill_switch_activations = Counter(
     ["reason"],
 )
 
+# Pipeline
+pipeline_cycles_total = Counter(
+    "trader_ai_pipeline_cycles_total",
+    "Total pipeline cycles executed, per symbol",
+    ["symbol"],
+)
+
 # Model inference
 model_latency = Histogram(
     "trader_ai_model_prediction_latency_ms",

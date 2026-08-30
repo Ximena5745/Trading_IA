@@ -84,8 +84,11 @@ class SignalEngine:
         self,
         consensus: ConsensusOutput,
         features: FeatureSet,
-        strategy_id: str = "default_v1",
+        strategy_id: str = "default_v1",  # ← the ONLY occurrence of this literal (SPEC-B06)
     ) -> Optional[Signal]:
+        # The fallback id above is for tests / standalone use only. The pipeline
+        # always passes the real strategy_id from data/models/i1_params/<symbol>.json
+        # (ADR-003) and never reaches here for a symbol without an approved strategy.
         if consensus.final_direction == "NEUTRAL":
             logger.debug(
                 "signal_not_generated",

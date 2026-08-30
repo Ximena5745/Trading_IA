@@ -8,6 +8,8 @@ from __future__ import annotations
 from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
+from core.config.constants import TRADED_UNIVERSE
+
 
 class Settings(BaseSettings):
     # Execution — NEVER change to live without explicit authorization
@@ -42,6 +44,11 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
+    # Public self-registration. OFF by default (SPEC-A01 / F-01). When ON, the
+    # public endpoint only ever creates a `viewer`.
+    REGISTRATION_ENABLED: bool = False
+    # Escape hatch for the JWT secret validator — tests only.
+    ALLOW_INSECURE_JWT: bool = False
 
     # ── Risk limits — not editable at runtime by users ──────────────────────
     MAX_RISK_PER_TRADE_PCT: float = 0.01
@@ -54,23 +61,10 @@ class Settings(BaseSettings):
     FEATURE_VERSION: str = "v1"
     DEFAULT_TIMEFRAME: str = "1h"
 
-    # Symbols to trade — loaded from constants by default; can be overridden
-    # via env var as a JSON list: SUPPORTED_SYMBOLS='["EURUSD","XAUUSD"]'
-    SUPPORTED_SYMBOLS: list[str] = [
-        # Crypto
-        "BTCUSDT",
-        "ETHUSDT",
-        # Forex
-        "EURUSD",
-        "GBPUSD",
-        "USDJPY",
-        # Indices
-        "SPX500",
-        "NAS100",
-        # Commodities
-        "XAUUSD",
-        "USOIL",
-    ]
+    # Symbols to trade — THE single source is core.config.constants.TRADED_UNIVERSE
+    # (ADR-004 / SPEC-B03). Can still be narrowed via env var as a JSON list:
+    # SUPPORTED_SYMBOLS='["EURUSD","XAUUSD"]'
+    SUPPORTED_SYMBOLS: list[str] = list(TRADED_UNIVERSE)
 
     # ── MetaTrader 5 (FASE E) ────────────────────────────────────────────────
     MT5_SERVER: str = "ICMarketsSC-Demo04"
@@ -103,9 +97,16 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET_KEY")
     @classmethod
     def validate_jwt_secret(cls, v: str) -> str:
+        """Always enforced (SPEC-A01 / F-08): ≥32 chars and not the default,
+        unless ALLOW_INSECURE_JWT=true (env) — for tests only."""
         import os
-        if v == "change-me-in-production" and os.getenv("ENVIRONMENT") == "production":
-            raise ValueError("JWT_SECRET_KEY must be set in production")
+
+        if os.getenv("ALLOW_INSECURE_JWT", "").strip().lower() in ("1", "true", "yes"):
+            return v
+        if v == "change-me-in-production":
+            raise ValueError("JWT_SECRET_KEY must be changed from the default value")
+        if len(v) < 32:
+            raise ValueError("JWT_SECRET_KEY must be at least 32 characters")
         return v
 
     @field_validator("OANDA_ENVIRONMENT")

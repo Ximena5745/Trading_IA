@@ -1,0 +1,8 @@
+{
+  "strategy_id": "Momentum",
+  "params": {
+    "lookback": 16
+  },
+  "sharpe_net_holdout": 1.3232,
+  "approved_at": "2026-07-26T06:54:29.385961+00:00"
+}

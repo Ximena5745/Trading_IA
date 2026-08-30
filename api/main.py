@@ -35,6 +35,7 @@ from api.routes.monitoring import router as monitoring_router
 from api.routes.signals import router as signals_router
 from api.routes.simulation import router as simulation_router
 from api.routes.strategies import router as strategies_router
+from api.routes.trace import router as trace_router
 from api.routes.drawings import router as drawings_router
 from api.routes.indicators import router as indicators_router
 from api.routes.websocket import router as websocket_router
@@ -175,7 +176,23 @@ async def lifespan(app: FastAPI):
         db_initialized = True
         logger.info("database_ready", migrations="head")
     except Exception as exc:
-        logger.warning("database_init_failed", error=str(exc), hint="continuing without DB")
+        # SPEC-A03 / F-05: in live mode a broken DB is fatal — the process must
+        # NOT come up "green but without persistence". In paper mode we degrade
+        # loudly and expose db_initialized=false on /health.
+        if settings.EXECUTION_MODE == "live":
+            logger.critical(
+                "database_init_failed_fatal",
+                error=str(exc),
+                execution_mode="live",
+                hint="live mode requires a working DB and applied migrations; aborting startup",
+            )
+            raise
+        logger.warning(
+            "database_init_failed",
+            error=str(exc),
+            execution_mode=settings.EXECUTION_MODE,
+            hint="paper mode: continuing without DB (db_initialized=false)",
+        )
 
     signal_repo = SignalRepository()
     order_repo = OrderRepository()
@@ -241,18 +258,10 @@ async def lifespan(app: FastAPI):
     # ── Load real parquet data into cache ───────────────────────────────────
     await asyncio.to_thread(_load_parquet_data)
 
-    # ── Start FundamentalAgent background refresh task ─────────────────────
-    import asyncio as _asyncio
-
-    async def _refresh_fundamental():
-        while True:
-            try:
-                await fundamental_agent.refresh()
-            except Exception as exc:
-                logger.warning("fundamental_refresh_failed", error=str(exc))
-            await _asyncio.sleep(1800)  # refresh every 30 min
-
-    _refresh_task = _asyncio.create_task(_refresh_fundamental())
+    # NOTE: the API process runs NO scheduled jobs (SPEC-A02 / F-04). The
+    # pipeline scheduler and the FundamentalAgent macro-event refresh are owned
+    # exclusively by scripts/run_pipeline.py (the `worker` service). Running them
+    # here would fire once per uvicorn worker → duplicate signals and orders.
 
     # ── Start Prometheus metrics endpoint ───────────────────────────────────
     try:
@@ -271,59 +280,12 @@ async def lifespan(app: FastAPI):
     if settings.EXECUTION_MODE == "live" and not settings.TRADING_ENABLED:
         logger.warning("live_mode_but_trading_disabled")
 
-    import asyncio as _asyncio2
-
-    _asyncio2.create_task(
+    asyncio.create_task(
         alert_engine.on_system_restart("2.0.0", settings.EXECUTION_MODE)
     )
 
-    # ── Start pipeline scheduler ────────────────────────────────────────────
-    _scheduler = None
-    _pipeline_components = None
-
-    try:
-        from apscheduler.schedulers.asyncio import AsyncIOScheduler
-        from apscheduler.triggers.cron import CronTrigger
-        from scripts.run_pipeline import SCHEDULE, _build_components, _pipeline_cycle
-
-        if db_initialized:
-            try:
-                _pipeline_components = await _build_components(settings)
-            except Exception as exc:
-                logger.warning("pipeline_components_build_failed", error=str(exc))
-
-        if _pipeline_components is not None:
-            _scheduler = AsyncIOScheduler(timezone="UTC")
-            for symbol, minute_offset in SCHEDULE:
-                _scheduler.add_job(
-                    _pipeline_cycle,
-                    trigger=CronTrigger(minute=minute_offset, timezone="UTC"),
-                    args=[symbol, _pipeline_components],
-                    id=f"pipeline_{symbol}",
-                    max_instances=1,
-                    coalesce=True,
-                    misfire_grace_time=120,
-                )
-            _scheduler.start()
-            logger.info("pipeline_scheduler_started", jobs=len(SCHEDULE))
-        else:
-            logger.warning("pipeline_scheduler_skipped")
-
-    except ImportError:
-        logger.warning("apscheduler_not_installed", hint="pip install apscheduler")
-    except Exception as exc:
-        logger.error("pipeline_scheduler_failed", error=str(exc))
-
     yield
 
-    if _refresh_task and not _refresh_task.done():
-        _refresh_task.cancel()
-        try:
-            await _asyncio.wait_for(_refresh_task, timeout=5.0)
-        except Exception:
-            pass
-    if _scheduler and _scheduler.running:
-        _scheduler.shutdown(wait=False)
     await close_pool()
     logger.info("trader_ai_shutdown")
 
@@ -360,6 +322,7 @@ app.include_router(backtesting_router)
 app.include_router(portfolio_router)
 app.include_router(execution_router)
 app.include_router(strategies_router)
+app.include_router(trace_router)
 # Fase 5
 app.include_router(marketplace_router)
 app.include_router(simulation_router)
@@ -375,6 +338,7 @@ async def health():
         "version": "2.0.0",
         "execution_mode": settings.EXECUTION_MODE,
         "trading_enabled": settings.TRADING_ENABLED,
+        "db_initialized": bool(getattr(app.state, "db_initialized", False)),
     }
 
 

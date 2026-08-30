@@ -52,6 +52,10 @@ class HMMRegimeDetector:
     Features: returns, volatility, ADX, Hurst, volume ratio.
     """
 
+    # Below this many clean observations, an 8-state HMM is degenerate — do not
+    # fit (predict_current then returns TRANSITION, confidence 0).
+    MIN_TRAIN_SAMPLES = 60
+
     def __init__(self, n_states: int = 8, retrain_days: int = 30):
         self.n_states = n_states
         self.retrain_days = retrain_days
@@ -89,27 +93,49 @@ class HMMRegimeDetector:
             volume_ratio,
         ])
 
-        features = np.nan_to_num(features, nan=0.0)
+        # NaNs are left in place here (fixed output length); fit() drops non-finite
+        # rows, predict() zero-fills them. Only the volatility scalar, if the whole
+        # series was NaN, is neutralised.
+        features[:, 1] = np.nan_to_num(features[:, 1], nan=0.0)
         return features[:-1]
 
     def fit(self, df: pd.DataFrame) -> "HMMRegimeDetector":
-        """Train HMM on historical data."""
+        """Train HMM on historical data.
+
+        Robust to NaNs and small samples: non-finite rows are dropped; below
+        MIN_TRAIN_SAMPLES no model is trained; the state count is capped to the
+        available data; a diagonal covariance with regularisation avoids the
+        'covars must be positive-definite' failure on thin data.
+        """
         if not HMM_AVAILABLE:
             logger.warning("hmmlearn_not_available_using_fallback")
             return self
 
         X = self._prepare_features(df)
+        X = X[np.isfinite(X).all(axis=1)]
+
+        if len(X) < self.MIN_TRAIN_SAMPLES:
+            logger.warning(
+                "hmm_insufficient_data", samples=len(X), min=self.MIN_TRAIN_SAMPLES
+            )
+            self._model = None
+            return self
+
+        effective_states = max(2, min(self.n_states, len(X) // 15))
 
         try:
             self._model = hmm.GaussianHMM(
-                n_components=self.n_states,
-                covariance_type="full",
+                n_components=effective_states,
+                covariance_type="diag",
                 n_iter=100,
                 random_state=42,
+                min_covar=1e-2,
             )
             self._model.fit(X)
             self._last_train = df["timestamp"].max()
-            logger.info("hmm_trained", n_states=self.n_states, samples=len(X))
+            logger.info(
+                "hmm_trained", n_states=effective_states, samples=len(X)
+            )
         except Exception as e:
             logger.error("hmm_training_failed", error=str(e))
             self._model = None
@@ -121,18 +147,18 @@ class HMMRegimeDetector:
         if self._model is None:
             return pd.Series([HMMRegime.TRANSITION] * len(df), index=df.index)
 
-        X = self._prepare_features(df)
+        X = np.nan_to_num(self._prepare_features(df), nan=0.0)
         hidden_states = self._model.predict(X)
 
         regimes = [self._regime_map.get(s, HMMRegime.TRANSITION) for s in hidden_states]
         return pd.Series(regimes, index=df.index[:-1])
 
     def predict_current(self, df: pd.DataFrame) -> HMMRegime:
-        """Predict current regime (most recent)."""
+        """Predict current regime (most recent). TRANSITION if no model / no data."""
         if self._model is None:
             return HMMRegime.TRANSITION
 
-        X = self._prepare_features(df)
+        X = np.nan_to_num(self._prepare_features(df), nan=0.0)
         if len(X) == 0:
             return HMMRegime.TRANSITION
 

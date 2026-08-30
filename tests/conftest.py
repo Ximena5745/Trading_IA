@@ -1,6 +1,12 @@
 """Shared pytest fixtures."""
 from __future__ import annotations
 
+import os
+
+# SPEC-A01: the JWT-secret validator is always active. Tests run with the
+# documented escape hatch so Settings() with the default secret still builds.
+os.environ.setdefault("ALLOW_INSECURE_JWT", "true")
+
 import pytest
 from unittest.mock import MagicMock
 

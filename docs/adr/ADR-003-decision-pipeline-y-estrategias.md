@@ -10,7 +10,7 @@
 Hoy conviven tres artefactos llamados "estrategia" y ninguno alimenta la decisión real:
 
 1. `core/strategies/builtin/*` (`AbcStrategy`: EmaRsi, MeanReversion, TSMOM, VolBreakout, CrossSectionalMomentum) — solo los consumen la API `/strategies`, el marketplace y el simulador.
-2. `core/ml/i1_strategies.py` (`I1_STRATEGY_REGISTRY`: `tsmom_v1`, `vol_breakout_v1`, `mean_rev_v1`, `ema_rsi_v1`, `ml_lgb_v1`, `BB_ZScore`, `Momentum`) — solo los consume el gate I1.
+2. `core/ml/i1_strategies.py` (`I1_STRATEGY_REGISTRY`, 8 claves: `MA_10_30`, `BB_ZScore`, `Momentum`, `ema_rsi_v1`, `mean_rev_v1`, `tsmom_v1`, `vol_breakout_v1`, `ml_lgb_v1` — la auditoría integral citó 7; el registro real incluye además `MA_10_30`) — solo los consume el gate I1.
 3. El pipeline real (`scripts/run_pipeline.py`) — no usa ninguno de los dos: genera la señal con agentes + `ConsensusEngine` + `SignalEngine` y llama a `SignalEngine.generate(..., strategy_id="default_v1")` con el identificador **hardcodeado** (`scripts/run_pipeline.py:223`, `core/signals/signal_engine.py:87`).
 
 Consecuencia: lo que el gate I1 valida no es lo que el pipeline ejecuta, y lo que el pipeline ejecuta no lo valida nadie. No se puede afirmar que el core "tiene edge" porque el objeto medido y el objeto operado son distintos.

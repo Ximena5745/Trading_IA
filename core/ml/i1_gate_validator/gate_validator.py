@@ -213,6 +213,25 @@ class I1GateValidator:
             )
         return best_result
 
+    def _write_approved(self, result: I1AssetResult) -> None:
+        """Emit data/models/i1_params/<SYMBOL>.json for a passed asset (ADR-003)."""
+        from core.strategies.approved_params import write_approved_params
+
+        try:
+            write_approved_params(
+                symbol=result.symbol,
+                strategy_id=result.best_strategy,
+                params=dict(result.best_params or {}),
+                sharpe_net_holdout=result.sharpe_net_holdout,
+                params_dir=self.params_dir,
+            )
+        except Exception as exc:  # noqa: BLE001 — reporting must not fail the gate
+            from core.observability.logger import get_logger
+
+            get_logger(__name__).error(
+                "approved_params_write_failed", symbol=result.symbol, error=str(exc)
+            )
+
     def validate_all(
         self,
         data_dir: Path,
@@ -247,7 +266,10 @@ class I1GateValidator:
                 )
                 continue
             df = pd.read_parquet(path)
-            assets.append(self.validate_asset(symbol, df))
+            result = self.validate_asset(symbol, df)
+            assets.append(result)
+            if result.passed:
+                self._write_approved(result)
 
         passed_count = sum(1 for a in assets if a.passed)
         return I1GateReport(

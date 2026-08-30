@@ -5,7 +5,8 @@ Dependencies: models, settings, logger
 """
 from __future__ import annotations
 
-from datetime import datetime
+from collections import deque
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
@@ -35,9 +36,17 @@ class PortfolioManager:
         )
         self._peak_capital = initial_capital
         self._daily_start_capital = initial_capital
+        # Rolling record of closed trades — feeds the kill switch's
+        # consecutive-loss trigger (SPEC-A05 / F-09).
+        self._closed_trades: deque[dict] = deque(maxlen=200)
 
     def get_portfolio(self) -> Portfolio:
         return self._portfolio
+
+    def get_recent_trades(self, limit: int = 20) -> list[dict]:
+        """Most recent closed trades, oldest→newest, each with ``net_pnl``."""
+        trades = list(self._closed_trades)
+        return trades[-limit:]
 
     def get_available_capital(self) -> float:
         return self._portfolio.available_capital
@@ -81,6 +90,15 @@ class PortfolioManager:
                 self._portfolio.daily_pnl += pnl
                 self._portfolio.positions.pop(i)
                 self._update_metrics()
+                self._closed_trades.append(
+                    {
+                        "symbol": symbol,
+                        "strategy_id": strategy_id,
+                        "net_pnl": round(pnl, 8),
+                        "exit_price": exit_price,
+                        "closed_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
                 logger.info(
                     "position_closed",
                     symbol=symbol,
