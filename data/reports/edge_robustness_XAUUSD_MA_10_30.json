@@ -1,0 +1,241 @@
+{
+  "generated_at": "2026-08-31T01:54:47.488547+00:00",
+  "params": {
+    "paths": 1000,
+    "block": 24,
+    "seed": 42,
+    "cost_factors": [
+      1.0,
+      1.25,
+      1.5,
+      1.75,
+      2.0,
+      2.5,
+      3.0
+    ],
+    "quarter_bars": 2160,
+    "strategy_override": "MA_10_30",
+    "params_override": null
+  },
+  "methodology": {
+    "monte_carlo": "block bootstrap of holdout net returns; annualized Sharpe per path",
+    "cost_sweep": "half-side unit cost \u00d7 factor; net = gross - trade_intensity\u00b7unit\u00b7factor",
+    "regime": "ADX vs min_adx; ATR% vs sample median; net Sharpe per bucket",
+    "anchored_wf": "expanding train, quarterly grid re-optimization by in-sample net Sharpe",
+    "pass_criteria": {
+      "monte_carlo": "CI95 lower bound > 0",
+      "cost_sweep": "net Sharpe > 0 at cost \u00d72",
+      "regime": ">=2 ADX & >=2 vol buckets positive; no >85% pnl concentration with others negative",
+      "anchored_wf": "concatenated OOS net Sharpe > 0 and >=50% folds positive"
+    }
+  },
+  "assets": [
+    {
+      "symbol": "XAUUSD",
+      "status": "ok",
+      "strategy_id": "MA_10_30",
+      "params": {
+        "fast": 10,
+        "slow": 30
+      },
+      "is_approved_strategy": false,
+      "sharpe_net_holdout_approved": null,
+      "recomputed_holdout_sharpe_net": 2.3071,
+      "holdout_bars": 2741,
+      "holdout_turnover": 254.0,
+      "holdout_cost_drag": 0.1821,
+      "verdict": "FRAGILE",
+      "failed_checks": [
+        "monte_carlo_ci_lower_gt_0",
+        "not_single_regime"
+      ],
+      "checks": {
+        "monte_carlo_ci_lower_gt_0": false,
+        "survives_cost_x2": true,
+        "not_single_regime": false,
+        "anchored_wf_positive": true
+      },
+      "monte_carlo": {
+        "status": "ok",
+        "n_paths": 1000,
+        "block_bars": 24,
+        "n_bars": 2741,
+        "point_sharpe": 2.3071,
+        "mean": 2.3834,
+        "std": 1.2373,
+        "percentiles": {
+          "2.5": -0.0388,
+          "5": 0.3619,
+          "25": 1.5793,
+          "50": 2.3754,
+          "75": 3.2,
+          "95": 4.4692,
+          "97.5": 4.8783
+        },
+        "ci95_lower": -0.0388,
+        "ci95_upper": 4.8783,
+        "prob_positive": 0.972,
+        "pass": false
+      },
+      "monte_carlo_full_sample": {
+        "status": "ok",
+        "n_paths": 1000,
+        "block_bars": 24,
+        "n_bars": 13706,
+        "point_sharpe": 1.42,
+        "mean": 1.4555,
+        "std": 0.6089,
+        "percentiles": {
+          "2.5": 0.251,
+          "5": 0.4494,
+          "25": 1.0536,
+          "50": 1.4603,
+          "75": 1.8576,
+          "95": 2.4495,
+          "97.5": 2.6825
+        },
+        "ci95_lower": 0.251,
+        "ci95_upper": 2.6825,
+        "prob_positive": 0.994,
+        "pass": true
+      },
+      "cost_sweep": {
+        "by_factor": [
+          {
+            "factor": 1.0,
+            "sharpe_net": 2.3071,
+            "total_return": 0.349654
+          },
+          {
+            "factor": 1.25,
+            "sharpe_net": 2.2616,
+            "total_return": 0.342769
+          },
+          {
+            "factor": 1.5,
+            "sharpe_net": 2.216,
+            "total_return": 0.335883
+          },
+          {
+            "factor": 1.75,
+            "sharpe_net": 2.1705,
+            "total_return": 0.328998
+          },
+          {
+            "factor": 2.0,
+            "sharpe_net": 2.1249,
+            "total_return": 0.322113
+          },
+          {
+            "factor": 2.5,
+            "sharpe_net": 2.0338,
+            "total_return": 0.308342
+          },
+          {
+            "factor": 3.0,
+            "sharpe_net": 1.9426,
+            "total_return": 0.294571
+          }
+        ],
+        "nullification_factor_zero": null,
+        "nullification_factor_gate": null,
+        "sharpe_net_x2": 2.1249,
+        "pass": true
+      },
+      "regime_decomposition": {
+        "vol_median_atr_pct": 0.002943,
+        "buckets": {
+          "adx_high": {
+            "n_bars": 11678,
+            "sharpe_net": 1.5928,
+            "total_return": 0.668594,
+            "pnl_share": 1.0297
+          },
+          "adx_low": {
+            "n_bars": 2028,
+            "sharpe_net": -1.0466,
+            "total_return": -0.019269,
+            "pnl_share": -0.0297
+          },
+          "vol_high": {
+            "n_bars": 6853,
+            "sharpe_net": 1.844,
+            "total_return": 0.563287,
+            "pnl_share": 0.8675
+          },
+          "vol_low": {
+            "n_bars": 6853,
+            "sharpe_net": 0.8122,
+            "total_return": 0.086038,
+            "pnl_share": 0.1325
+          }
+        },
+        "adx_buckets_positive": 1,
+        "vol_buckets_positive": 2,
+        "single_regime_dependent": true,
+        "pass": false
+      },
+      "anchored_walk_forward": {
+        "status": "ok",
+        "quarter_bars": 2160,
+        "min_train_bars": 4320,
+        "n_folds": 4,
+        "folds_positive": 3,
+        "oos_sharpe_net": 1.387,
+        "oos_total_return": 0.411589,
+        "oos_max_drawdown": 0.166,
+        "folds": [
+          {
+            "fold": 1,
+            "train_bars": 4320,
+            "test_bars": 2160,
+            "best_params": {
+              "fast": 8,
+              "slow": 30
+            },
+            "in_sample_sharpe_net": 0.8335,
+            "oos_sharpe_net": 1.9385,
+            "oos_return": 0.091616
+          },
+          {
+            "fold": 2,
+            "train_bars": 6480,
+            "test_bars": 2160,
+            "best_params": {
+              "fast": 8,
+              "slow": 30
+            },
+            "in_sample_sharpe_net": 1.1666,
+            "oos_sharpe_net": 3.3788,
+            "oos_return": 0.220194
+          },
+          {
+            "fold": 3,
+            "train_bars": 8640,
+            "test_bars": 2160,
+            "best_params": {
+              "fast": 8,
+              "slow": 30
+            },
+            "in_sample_sharpe_net": 1.8218,
+            "oos_sharpe_net": -2.4319,
+            "oos_return": -0.127437
+          },
+          {
+            "fold": 4,
+            "train_bars": 10800,
+            "test_bars": 2160,
+            "best_params": {
+              "fast": 8,
+              "slow": 30
+            },
+            "in_sample_sharpe_net": 1.0331,
+            "oos_sharpe_net": 2.0098,
+            "oos_return": 0.227216
+          }
+        ],
+        "pass": true
+      }
+    }
+  ]
+}

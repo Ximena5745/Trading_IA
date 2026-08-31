@@ -20,6 +20,13 @@ def half_side_cost_pct(symbol: str, cost_model: CostModel, ref_price: float = 1.
     if inst is None:
         return 0.0005
 
+    # NOTE: this identity (spread_pips * pip_value / (lot_size * ref_price))
+    # only collapses to spread_in_price / price when pip_value == pip_size *
+    # lot_size, which holds for USD-quoted forex majors, XAUUSD and the index
+    # CFDs. For JPY-quoted pairs (USDJPY, ...) pip_value is already FX-converted,
+    # so dividing by the JPY notional double-counts the rate and understates the
+    # cost by ~100x. Those pairs are not gate-relevant today; fix before relying
+    # on their net Sharpe. See docs/CORE_VALIDATION_RAMA1_2026-08-30.md.
     spread_dollars = inst.spread_pips * inst.pip_value * 1.0
     notional = max(inst.lot_size * ref_price, 1.0)
     return spread_dollars / notional

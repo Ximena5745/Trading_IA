@@ -5,6 +5,8 @@ pytest==8.0.2
 pytest-asyncio==0.23.5
 hypothesis==6.98.0
 httpx==0.27.0
+# Hermetic integration fixtures (SPEC-B01): ephemeral Postgres/Redis + live_server
+testcontainers[postgres,redis]==4.5.1
 
 # Code quality
 black==24.2.0

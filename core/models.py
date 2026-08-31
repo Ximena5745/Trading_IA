@@ -136,7 +136,12 @@ INSTRUMENT_CONFIGS: dict[str, InstrumentConfig] = {
         AssetClass.COMMODITIES,
         pip_value=1.0,
         lot_size=100,
-        spread_pips=0.25,
+        # spread_pips is expressed in `point` units (1 point = $0.01 for gold).
+        # 30 ≈ $0.30 effective half-turn cost = raw spread (~$0.15-0.25) + a
+        # commission/slippage allowance for a spot-gold ECN fill. The prior value
+        # (0.25 => $0.0025) understated the cost by ~100x and made the 2.6 cost
+        # sweep vacuous (see docs/CORE_VALIDATION_RAMA1_2026-08-30.md).
+        spread_pips=30.0,
         point=0.01,
     ),
     # Indices CFD — point value varies; spread in index points

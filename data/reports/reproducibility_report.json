@@ -1,0 +1,614 @@
+{
+  "generated_at": "2026-08-30T22:55:56.114220+00:00",
+  "verdict": "REPRODUCIBLE",
+  "scope": "quant decision chain (indicators -> signal -> filters -> net P&L -> metrics)",
+  "note": "Full-stack pipeline equivalence (Redis/DB/testnet order & snapshot persistence) is validated in F2.1/F2.3 with the running stack.",
+  "digest_check": {
+    "deterministic": true,
+    "combined_sha_pass1": "fae4239a7f0b99d4d7032dabaaca32f422e665ec0b7e48dfb5f8928cd908f1d3",
+    "combined_sha_pass2": "fae4239a7f0b99d4d7032dabaaca32f422e665ec0b7e48dfb5f8928cd908f1d3",
+    "per_symbol": [
+      {
+        "symbol": "BTCUSDT",
+        "data_available": false,
+        "n_strategies": 0,
+        "sha_pass1": "d4bf77a6d836e4463fa530d7f02b960080e5c4ba2e8c0e59cca9a52b27f1adc3",
+        "sha_pass2": "d4bf77a6d836e4463fa530d7f02b960080e5c4ba2e8c0e59cca9a52b27f1adc3",
+        "match": true
+      },
+      {
+        "symbol": "ETHUSDT",
+        "data_available": false,
+        "n_strategies": 0,
+        "sha_pass1": "2ad386cc2a052bfac59b062b3fd38ad2133bb245bd7ee6dd2ba65a37b80cdd95",
+        "sha_pass2": "2ad386cc2a052bfac59b062b3fd38ad2133bb245bd7ee6dd2ba65a37b80cdd95",
+        "match": true
+      },
+      {
+        "symbol": "EURUSD",
+        "data_available": true,
+        "n_strategies": 3,
+        "sha_pass1": "263b0e2ac1efc18fe09383e35204f982322309fc7bec4fa9ba66feba71ddbd50",
+        "sha_pass2": "263b0e2ac1efc18fe09383e35204f982322309fc7bec4fa9ba66feba71ddbd50",
+        "match": true
+      },
+      {
+        "symbol": "GBPUSD",
+        "data_available": true,
+        "n_strategies": 8,
+        "sha_pass1": "f993b5fd0832c04559baa41e29c75e60e2a04dfbeaedaf7c5c002c9b01ad59a2",
+        "sha_pass2": "f993b5fd0832c04559baa41e29c75e60e2a04dfbeaedaf7c5c002c9b01ad59a2",
+        "match": true
+      },
+      {
+        "symbol": "USDJPY",
+        "data_available": true,
+        "n_strategies": 8,
+        "sha_pass1": "25b8e71f1764ce287cd48b560eb29580aa0106ae3e6945468d43534e9d3b1980",
+        "sha_pass2": "25b8e71f1764ce287cd48b560eb29580aa0106ae3e6945468d43534e9d3b1980",
+        "match": true
+      },
+      {
+        "symbol": "US500",
+        "data_available": true,
+        "n_strategies": 2,
+        "sha_pass1": "abfb94389623f5f10e7b0a59a797cd013d1ec5d0b0b6dfff02d05369859bfb65",
+        "sha_pass2": "abfb94389623f5f10e7b0a59a797cd013d1ec5d0b0b6dfff02d05369859bfb65",
+        "match": true
+      },
+      {
+        "symbol": "US30",
+        "data_available": true,
+        "n_strategies": 4,
+        "sha_pass1": "e366c6c78bddae04404d0f75b58086966a3dcd6c2b0b514f503a730871fee35c",
+        "sha_pass2": "e366c6c78bddae04404d0f75b58086966a3dcd6c2b0b514f503a730871fee35c",
+        "match": true
+      },
+      {
+        "symbol": "XAUUSD",
+        "data_available": true,
+        "n_strategies": 8,
+        "sha_pass1": "d3fd21da4e6850a9d79302af023a9073112c0cffe5963a25ef4031f8daf3b286",
+        "sha_pass2": "d3fd21da4e6850a9d79302af023a9073112c0cffe5963a25ef4031f8daf3b286",
+        "match": true
+      }
+    ],
+    "pass1_digests": [
+      {
+        "symbol": "BTCUSDT",
+        "data_available": false,
+        "strategies": {}
+      },
+      {
+        "symbol": "ETHUSDT",
+        "data_available": false,
+        "strategies": {}
+      },
+      {
+        "symbol": "EURUSD",
+        "data_available": true,
+        "n_bars": 17222,
+        "strategies": {
+          "BB_ZScore": {
+            "signal_sha256": "3095374d82dfbcb81900c83af1ccecb49efbc41e35f8af853f4ea5667ac9948f",
+            "last_action": 1,
+            "n_bars": 17221,
+            "nonzero_bars": 8975,
+            "turnover": 933.0,
+            "holdout_sharpe_net": -0.2102767852,
+            "holdout_sharpe_gross": 0.226326647,
+            "holdout_max_dd": 0.0397366481,
+            "holdout_total_return": -0.005174802
+          },
+          "ema_rsi_v1": {
+            "signal_sha256": "4af957c71506ef190ec050cca8091929147b0abf4cace87af2bffad29b50432b",
+            "last_action": -1,
+            "n_bars": 17221,
+            "nonzero_bars": 10534,
+            "turnover": 2247.0,
+            "holdout_sharpe_net": -0.9316579929,
+            "holdout_sharpe_gross": 0.0348684783,
+            "holdout_max_dd": 0.0570738247,
+            "holdout_total_return": -0.0253925525
+          },
+          "mean_rev_v1": {
+            "signal_sha256": "891fad51a1a04eaab8d3978073a32b6931f113bf90f6abf99ee506d52aebcc4a",
+            "last_action": 1,
+            "n_bars": 17221,
+            "nonzero_bars": 8959,
+            "turnover": 829.0,
+            "holdout_sharpe_net": -2.003677638,
+            "holdout_sharpe_gross": -1.600809273,
+            "holdout_max_dd": 0.0561267032,
+            "holdout_total_return": -0.0481218522
+          }
+        }
+      },
+      {
+        "symbol": "GBPUSD",
+        "data_available": true,
+        "n_bars": 17224,
+        "strategies": {
+          "BB_ZScore": {
+            "signal_sha256": "989b9844b946ee5ddf2a68b6f52a1fef8d42c33b3719b01d9e0d7cc7f39a23c0",
+            "last_action": 0,
+            "n_bars": 17223,
+            "nonzero_bars": 2647,
+            "turnover": 1526.0,
+            "holdout_sharpe_net": -0.6845393998,
+            "holdout_sharpe_gross": 0.3808939896,
+            "holdout_max_dd": 0.0437080498,
+            "holdout_total_return": -0.0133631514
+          },
+          "MA_10_30": {
+            "signal_sha256": "4fea726a9ef613360819dfed220a56fcf7229819f08207925888a58982cfa503",
+            "last_action": -1,
+            "n_bars": 17223,
+            "nonzero_bars": 13912,
+            "turnover": 1737.0,
+            "holdout_sharpe_net": 0.0953887667,
+            "holdout_sharpe_gross": 0.7609799886,
+            "holdout_max_dd": 0.0406998458,
+            "holdout_total_return": 0.0035365729
+          },
+          "Momentum": {
+            "signal_sha256": "17d322a66abe1c0408b2475fa73bd2f1c5be9e9a6b0e6bf3257aa2a337ecca84",
+            "last_action": -1,
+            "n_bars": 17223,
+            "nonzero_bars": 14027,
+            "turnover": 3113.0,
+            "holdout_sharpe_net": -1.5040355326,
+            "holdout_sharpe_gross": -0.3511506626,
+            "holdout_max_dd": 0.0879064415,
+            "holdout_total_return": -0.0562402752
+          },
+          "ema_rsi_v1": {
+            "signal_sha256": "c687d03f57ee66f2b767b53d59016eb28dd3207d4b95215e23d979c39a9f4413",
+            "last_action": 0,
+            "n_bars": 17223,
+            "nonzero_bars": 7764,
+            "turnover": 2938.0,
+            "holdout_sharpe_net": -0.9514002117,
+            "holdout_sharpe_gross": 0.5924300456,
+            "holdout_max_dd": 0.0484341599,
+            "holdout_total_return": -0.0262590464
+          },
+          "mean_rev_v1": {
+            "signal_sha256": "8b0cea9328bae0457eda2414a6207a8d214a812a3269f6d811767089f38fdf9a",
+            "last_action": 0,
+            "n_bars": 17223,
+            "nonzero_bars": 2337,
+            "turnover": 1362.0,
+            "holdout_sharpe_net": -0.9163986612,
+            "holdout_sharpe_gross": 0.082631139,
+            "holdout_max_dd": 0.0440367567,
+            "holdout_total_return": -0.0170660552
+          },
+          "ml_lgb_v1": {
+            "signal_sha256": "619c7f3f20508c64eba9048924f95a622db44bc2169b985b54fcd52edde2cdea",
+            "last_action": 0,
+            "n_bars": 17223,
+            "nonzero_bars": 0,
+            "turnover": 0.0,
+            "holdout_sharpe_net": 0.0,
+            "holdout_sharpe_gross": 0.0,
+            "holdout_max_dd": 0.0,
+            "holdout_total_return": 0.0
+          },
+          "tsmom_v1": {
+            "signal_sha256": "17d322a66abe1c0408b2475fa73bd2f1c5be9e9a6b0e6bf3257aa2a337ecca84",
+            "last_action": -1,
+            "n_bars": 17223,
+            "nonzero_bars": 14027,
+            "turnover": 3113.0,
+            "holdout_sharpe_net": -1.5040355326,
+            "holdout_sharpe_gross": -0.3511506626,
+            "holdout_max_dd": 0.0879064415,
+            "holdout_total_return": -0.0562402752
+          },
+          "vol_breakout_v1": {
+            "signal_sha256": "61163c81c5dbd9f481d72b30e47ffa78521acf46498a02bf730222cf2b6c7604",
+            "last_action": 0,
+            "n_bars": 17223,
+            "nonzero_bars": 3071,
+            "turnover": 1878.0,
+            "holdout_sharpe_net": -3.0255162939,
+            "holdout_sharpe_gross": -1.7905801613,
+            "holdout_max_dd": 0.069088653,
+            "holdout_total_return": -0.062545103
+          }
+        }
+      },
+      {
+        "symbol": "USDJPY",
+        "data_available": true,
+        "n_bars": 17125,
+        "strategies": {
+          "BB_ZScore": {
+            "signal_sha256": "cfdb9ce57463d3c784552710326dd8e219f9e459d4253cc3e9db4481bb8ce1d8",
+            "last_action": 0,
+            "n_bars": 17124,
+            "nonzero_bars": 2434,
+            "turnover": 1444.0,
+            "holdout_sharpe_net": -0.0844712719,
+            "holdout_sharpe_gross": -0.0777299688,
+            "holdout_max_dd": 0.0256150017,
+            "holdout_total_return": -0.0015341811
+          },
+          "MA_10_30": {
+            "signal_sha256": "bef553850c5aa74ec21129511dc0231e43c38eda6829214586e26b2d640acfcd",
+            "last_action": 1,
+            "n_bars": 17124,
+            "nonzero_bars": 14012,
+            "turnover": 1695.0,
+            "holdout_sharpe_net": 3.1917235461,
+            "holdout_sharpe_gross": 3.1954729681,
+            "holdout_max_dd": 0.0255381059,
+            "holdout_total_return": 0.1194439501
+          },
+          "Momentum": {
+            "signal_sha256": "67f0c9cc7133b5fbdda694fb24f67c88216d56d7a5cc5c595d12495d2dfbe915",
+            "last_action": 1,
+            "n_bars": 17124,
+            "nonzero_bars": 14148,
+            "turnover": 3023.0,
+            "holdout_sharpe_net": 0.4551956894,
+            "holdout_sharpe_gross": 0.4626838933,
+            "holdout_max_dd": 0.0378569426,
+            "holdout_total_return": 0.0171573388
+          },
+          "ema_rsi_v1": {
+            "signal_sha256": "675e9d01fffd17f3c0bee4631d58f5f113e71bb15b749ea9072050d2edc07d53",
+            "last_action": 1,
+            "n_bars": 17124,
+            "nonzero_bars": 7637,
+            "turnover": 2889.0,
+            "holdout_sharpe_net": 1.7610789357,
+            "holdout_sharpe_gross": 1.77032082,
+            "holdout_max_dd": 0.0209138722,
+            "holdout_total_return": 0.0464803364
+          },
+          "mean_rev_v1": {
+            "signal_sha256": "c3340707458087168774a54d08817ecdc496c79d4784c3534777a7cad7849b8d",
+            "last_action": 0,
+            "n_bars": 17124,
+            "nonzero_bars": 2183,
+            "turnover": 1298.0,
+            "holdout_sharpe_net": -0.3740262654,
+            "holdout_sharpe_gross": -0.367818495,
+            "holdout_max_dd": 0.0270814172,
+            "holdout_total_return": -0.0065669912
+          },
+          "ml_lgb_v1": {
+            "signal_sha256": "4057e9457c7b7bac34c3a23085f7ae171977a8cbd3504b4d1a2d9a69f0f479d4",
+            "last_action": 0,
+            "n_bars": 17124,
+            "nonzero_bars": 0,
+            "turnover": 0.0,
+            "holdout_sharpe_net": 0.0,
+            "holdout_sharpe_gross": 0.0,
+            "holdout_max_dd": 0.0,
+            "holdout_total_return": 0.0
+          },
+          "tsmom_v1": {
+            "signal_sha256": "67f0c9cc7133b5fbdda694fb24f67c88216d56d7a5cc5c595d12495d2dfbe915",
+            "last_action": 1,
+            "n_bars": 17124,
+            "nonzero_bars": 14148,
+            "turnover": 3023.0,
+            "holdout_sharpe_net": 0.4551956894,
+            "holdout_sharpe_gross": 0.4626838933,
+            "holdout_max_dd": 0.0378569426,
+            "holdout_total_return": 0.0171573388
+          },
+          "vol_breakout_v1": {
+            "signal_sha256": "7a8a8e8bb4c7471fe6763f7a56ce1ff3f7c08489769792d510fe557a0191a7b3",
+            "last_action": 0,
+            "n_bars": 17124,
+            "nonzero_bars": 2913,
+            "turnover": 1816.0,
+            "holdout_sharpe_net": 0.7677106626,
+            "holdout_sharpe_gross": 0.7758854181,
+            "holdout_max_dd": 0.0206607692,
+            "holdout_total_return": 0.0144087354
+          }
+        }
+      },
+      {
+        "symbol": "US500",
+        "data_available": true,
+        "n_bars": 5068,
+        "strategies": {
+          "tsmom_v1": {
+            "signal_sha256": "c72797c1a77e0f8969b808f2314d2f500cb00f7f7df56847928c3405bc4fffdb",
+            "last_action": -1,
+            "n_bars": 5067,
+            "nonzero_bars": 4673,
+            "turnover": 579.0,
+            "holdout_sharpe_net": -2.2235737584,
+            "holdout_sharpe_gross": -0.1613946463,
+            "holdout_max_dd": 0.1490666572,
+            "holdout_total_return": -0.0950878461
+          },
+          "vol_breakout_v1": {
+            "signal_sha256": "e8c4aca33d88136a08d5d17f7aa7f630871ef163a975274002253e0d6270dac8",
+            "last_action": -1,
+            "n_bars": 5067,
+            "nonzero_bars": 3466,
+            "turnover": 253.0,
+            "holdout_sharpe_net": -2.0666930326,
+            "holdout_sharpe_gross": -1.185476534,
+            "holdout_max_dd": 0.0997880943,
+            "holdout_total_return": -0.0815890816
+          }
+        }
+      },
+      {
+        "symbol": "US30",
+        "data_available": true,
+        "n_bars": 5068,
+        "strategies": {
+          "BB_ZScore": {
+            "signal_sha256": "e5a228820de7d70336bcb571158c8443fdb19f00aa619b81ba7b62470b13d87b",
+            "last_action": 1,
+            "n_bars": 5067,
+            "nonzero_bars": 4324,
+            "turnover": 65.0,
+            "holdout_sharpe_net": -3.760720241,
+            "holdout_sharpe_gross": -2.4276574725,
+            "holdout_max_dd": 0.1698733185,
+            "holdout_total_return": -0.1470419881
+          },
+          "mean_rev_v1": {
+            "signal_sha256": "6bc80f6ca6420d05ef1e77c3e30c0cba7cfe84b5e3dd63aa8e7f985088ac087f",
+            "last_action": 0,
+            "n_bars": 5067,
+            "nonzero_bars": 4404,
+            "turnover": 46.0,
+            "holdout_sharpe_net": 0.7856278919,
+            "holdout_sharpe_gross": 1.7141929931,
+            "holdout_max_dd": 0.0567839581,
+            "holdout_total_return": 0.0330315531
+          },
+          "tsmom_v1": {
+            "signal_sha256": "ad5f403500023ee23c64f84c6a500005da461181d01d80a4fc65e5d8eae4fd9a",
+            "last_action": -1,
+            "n_bars": 5067,
+            "nonzero_bars": 4454,
+            "turnover": 301.0,
+            "holdout_sharpe_net": -4.9245428259,
+            "holdout_sharpe_gross": 2.0918232334,
+            "holdout_max_dd": 0.2237972952,
+            "holdout_total_return": -0.2398284912
+          },
+          "vol_breakout_v1": {
+            "signal_sha256": "ae3038281c7063b8941029c37f582c45bb2f74e65a44fe42d2081117b907eb48",
+            "last_action": -1,
+            "n_bars": 5067,
+            "nonzero_bars": 4209,
+            "turnover": 87.0,
+            "holdout_sharpe_net": 0.7401591961,
+            "holdout_sharpe_gross": 2.4665987765,
+            "holdout_max_dd": 0.0629371761,
+            "holdout_total_return": 0.0298557708
+          }
+        }
+      },
+      {
+        "symbol": "XAUUSD",
+        "data_available": true,
+        "n_bars": 13708,
+        "strategies": {
+          "BB_ZScore": {
+            "signal_sha256": "e3dc5ee9072b2323b7f1823ce1dd3d387cb12d00265e0978e6094a5216f446c0",
+            "last_action": 0,
+            "n_bars": 13707,
+            "nonzero_bars": 2083,
+            "turnover": 1238.0,
+            "holdout_sharpe_net": 0.5766925121,
+            "holdout_sharpe_gross": 0.5799819997,
+            "holdout_max_dd": 0.0774927829,
+            "holdout_total_return": 0.0382474463
+          },
+          "MA_10_30": {
+            "signal_sha256": "7d87f2b93eaa654c88069cfc7549e272aeef9fa07ce6a77a284ac9f4a040c3ae",
+            "last_action": -1,
+            "n_bars": 13707,
+            "nonzero_bars": 11590,
+            "turnover": 1313.0,
+            "holdout_sharpe_net": 2.4876914481,
+            "holdout_sharpe_gross": 2.4892080476,
+            "holdout_max_dd": 0.0921602039,
+            "holdout_total_return": 0.376965686
+          },
+          "Momentum": {
+            "signal_sha256": "bf81717d7d0512ca6d53b6932e07eafdd4e79fb9c22e0391951a3707d85db5bb",
+            "last_action": 1,
+            "n_bars": 13707,
+            "nonzero_bars": 11703,
+            "turnover": 2445.0,
+            "holdout_sharpe_net": 1.6708091246,
+            "holdout_sharpe_gross": 1.6737228299,
+            "holdout_max_dd": 0.1623257383,
+            "holdout_total_return": 0.253429632
+          },
+          "ema_rsi_v1": {
+            "signal_sha256": "63ce30b85de8d3aab01e3ed8de23bdc96d13cdd225b186b5150e55f594d845a4",
+            "last_action": -1,
+            "n_bars": 13707,
+            "nonzero_bars": 6481,
+            "turnover": 2285.0,
+            "holdout_sharpe_net": 0.2291114889,
+            "holdout_sharpe_gross": 0.2331845805,
+            "holdout_max_dd": 0.1310394439,
+            "holdout_total_return": 0.0246964813
+          },
+          "mean_rev_v1": {
+            "signal_sha256": "fe7db1df4ac073444a3e997130d4d2beec14e8ad5a23887c90bc23edf5ddd009",
+            "last_action": 0,
+            "n_bars": 13707,
+            "nonzero_bars": 1905,
+            "turnover": 1146.0,
+            "holdout_sharpe_net": 0.149573664,
+            "holdout_sharpe_gross": 0.1528831854,
+            "holdout_max_dd": 0.0703120643,
+            "holdout_total_return": 0.0095523902
+          },
+          "ml_lgb_v1": {
+            "signal_sha256": "68a2aa71e5b1dc041cd6de832e2ae50bf960aa5ef2f388561b12766537de0856",
+            "last_action": 0,
+            "n_bars": 13707,
+            "nonzero_bars": 0,
+            "turnover": 0.0,
+            "holdout_sharpe_net": 0.0,
+            "holdout_sharpe_gross": 0.0,
+            "holdout_max_dd": 0.0,
+            "holdout_total_return": 0.0
+          },
+          "tsmom_v1": {
+            "signal_sha256": "bf81717d7d0512ca6d53b6932e07eafdd4e79fb9c22e0391951a3707d85db5bb",
+            "last_action": 1,
+            "n_bars": 13707,
+            "nonzero_bars": 11703,
+            "turnover": 2445.0,
+            "holdout_sharpe_net": 1.6708091246,
+            "holdout_sharpe_gross": 1.6737228299,
+            "holdout_max_dd": 0.1623257383,
+            "holdout_total_return": 0.253429632
+          },
+          "vol_breakout_v1": {
+            "signal_sha256": "f6f26ce26d72f799b0388902ec837348de85e57b0189fc85645fa2294bc9e71b",
+            "last_action": 0,
+            "n_bars": 13707,
+            "nonzero_bars": 2233,
+            "turnover": 1398.0,
+            "holdout_sharpe_net": 1.6823797708,
+            "holdout_sharpe_gross": 1.6858035973,
+            "holdout_max_dd": 0.0696862061,
+            "holdout_total_return": 0.1158373626
+          }
+        }
+      }
+    ]
+  },
+  "nondeterminism_scan": {
+    "modules": [
+      "scripts/run_pipeline.py",
+      "core/signals",
+      "core/consensus",
+      "core/strategies",
+      "core/risk/risk_manager.py",
+      "core/ml/i1_strategies.py",
+      "core/ml/i1_gate_validator",
+      "core/adaptation/hmm_regime_detector.py"
+    ],
+    "n_metadata": 13,
+    "n_decision_unmitigated": 0,
+    "findings": [
+      {
+        "file": "scripts/run_pipeline.py",
+        "line": 169,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "start = datetime.now(timezone.utc)"
+      },
+      {
+        "file": "scripts/run_pipeline.py",
+        "line": 202,
+        "kind": "uuid4",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "correlation_id = str(uuid4())"
+      },
+      {
+        "file": "scripts/run_pipeline.py",
+        "line": 213,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "timestamp=datetime.now(timezone.utc),"
+      },
+      {
+        "file": "scripts/run_pipeline.py",
+        "line": 444,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "elapsed = (datetime.now(timezone.utc) - start).total_seconds()"
+      },
+      {
+        "file": "core/signals/signal_engine.py",
+        "line": 142,
+        "kind": "uuid4",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "id=str(uuid4()),"
+      },
+      {
+        "file": "core/consensus/asset_specific_consensus.py",
+        "line": 123,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "ts = agent_outputs[0].timestamp if agent_outputs else datetime.utcnow()"
+      },
+      {
+        "file": "core/consensus/voting_engine.py",
+        "line": 108,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "ts = agent_outputs[0].timestamp if agent_outputs else datetime.utcnow()"
+      },
+      {
+        "file": "core/strategies/ab_testing.py",
+        "line": 86,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "\"start_time\": datetime.utcnow(),"
+      },
+      {
+        "file": "core/strategies/ab_testing.py",
+        "line": 321,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "\"graduated_at\": datetime.utcnow().isoformat(),"
+      },
+      {
+        "file": "core/strategies/approved_params.py",
+        "line": 110,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "\"approved_at\": approved_at or datetime.now(timezone.utc).isoformat(),"
+      },
+      {
+        "file": "core/strategies/strategy_rotation.py",
+        "line": 76,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "last_activation=datetime.utcnow(),"
+      },
+      {
+        "file": "core/strategies/strategy_rotation.py",
+        "line": 93,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "last_activation=datetime.utcnow(),"
+      },
+      {
+        "file": "core/ml/i1_gate_validator/gate_validator.py",
+        "line": 276,
+        "kind": "datetime_now",
+        "severity": "metadata",
+        "mitigated": true,
+        "code": "generated_at=datetime.now(timezone.utc).isoformat(),"
+      }
+    ]
+  }
+}

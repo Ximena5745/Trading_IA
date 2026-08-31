@@ -1,0 +1,310 @@
+{
+  "generated_at": "2026-08-31T01:06:19.887689+00:00",
+  "dir": "data\\raw\\parquet\\1h",
+  "n_files": 8,
+  "n_hard_violations": 0,
+  "return_limits_by_class": {
+    "CRYPTO": 0.2,
+    "FOREX": 0.1,
+    "INDICES": 0.12,
+    "COMMODITIES": 0.12
+  },
+  "files": [
+    {
+      "symbol": "BTCUSDT",
+      "file": "btcusdt_1h.parquet",
+      "rows": 78472,
+      "date_start": "2017-08-17T04:00:00+00:00",
+      "date_end": "2026-08-05T03:00:00+00:00",
+      "span_days": 3275.0,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 19,
+        "n_weekend_gaps": 2,
+        "n_intraday_gaps": 17,
+        "max_gap_hours": 34.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.2,
+        "n_bars_over_limit": 1,
+        "max_abs_logret": 0.20103,
+        "n_bars_z_gt_10": 30
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "ETHUSDT",
+      "file": "ethusdt_1h.parquet",
+      "rows": 78472,
+      "date_start": "2017-08-17T04:00:00+00:00",
+      "date_end": "2026-08-05T03:00:00+00:00",
+      "span_days": 3275.0,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 19,
+        "n_weekend_gaps": 2,
+        "n_intraday_gaps": 17,
+        "max_gap_hours": 34.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.2,
+        "n_bars_over_limit": 1,
+        "max_abs_logret": 0.23411,
+        "n_bars_z_gt_10": 19
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "EURUSD",
+      "file": "eurusd_1h.parquet",
+      "rows": 17222,
+      "date_start": "2023-06-19T23:00:00+00:00",
+      "date_end": "2026-04-03T21:00:00+00:00",
+      "span_days": 1018.9,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 154,
+        "n_weekend_gaps": 145,
+        "n_intraday_gaps": 9,
+        "max_gap_hours": 76.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.1,
+        "n_bars_over_limit": 0,
+        "max_abs_logret": 0.01277,
+        "n_bars_z_gt_10": 3
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "GBPUSD",
+      "file": "gbpusd_1h.parquet",
+      "rows": 17224,
+      "date_start": "2023-06-19T23:00:00+00:00",
+      "date_end": "2026-04-03T21:00:00+00:00",
+      "span_days": 1018.9,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 153,
+        "n_weekend_gaps": 145,
+        "n_intraday_gaps": 8,
+        "max_gap_hours": 76.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.1,
+        "n_bars_over_limit": 0,
+        "max_abs_logret": 0.00963,
+        "n_bars_z_gt_10": 2
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "US30",
+      "file": "us30_1h.parquet",
+      "rows": 5068,
+      "date_start": "2023-05-05T13:30:00+00:00",
+      "date_end": "2026-04-02T19:30:00+00:00",
+      "span_days": 1063.2,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 729,
+        "n_weekend_gaps": 149,
+        "n_intraday_gaps": 580,
+        "max_gap_hours": 94.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.12,
+        "n_bars_over_limit": 0,
+        "max_abs_logret": 0.04451,
+        "n_bars_z_gt_10": 0
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "US500",
+      "file": "us500_1h.parquet",
+      "rows": 5068,
+      "date_start": "2023-05-05T13:30:00+00:00",
+      "date_end": "2026-04-02T19:30:00+00:00",
+      "span_days": 1063.2,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 729,
+        "n_weekend_gaps": 149,
+        "n_intraday_gaps": 580,
+        "max_gap_hours": 94.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.12,
+        "n_bars_over_limit": 0,
+        "max_abs_logret": 0.04829,
+        "n_bars_z_gt_10": 1
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "USDJPY",
+      "file": "usdjpy_1h.parquet",
+      "rows": 17125,
+      "date_start": "2023-06-19T23:00:00+00:00",
+      "date_end": "2026-04-03T20:00:00+00:00",
+      "span_days": 1018.9,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 152,
+        "n_weekend_gaps": 145,
+        "n_intraday_gaps": 7,
+        "max_gap_hours": 77.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.1,
+        "n_bars_over_limit": 0,
+        "max_abs_logret": 0.02132,
+        "n_bars_z_gt_10": 6
+      },
+      "hard_violation": false
+    },
+    {
+      "symbol": "XAUUSD",
+      "file": "xauusd_1h.parquet",
+      "rows": 13708,
+      "date_start": "2023-11-09T05:00:00+00:00",
+      "date_end": "2026-04-02T20:00:00+00:00",
+      "span_days": 875.6,
+      "timestamp_tz_aware_utc": true,
+      "timestamp_monotonic": true,
+      "duplicate_timestamps": 0,
+      "ohlc_integrity": {
+        "violations": {
+          "high_lt_low": 0,
+          "high_lt_open_or_close": 0,
+          "low_gt_open_or_close": 0,
+          "nonpositive_price": 0,
+          "negative_volume": 0,
+          "nan_ohlcv": 0
+        },
+        "total": 0
+      },
+      "cadence": {
+        "modal_delta_seconds": 3600.0,
+        "median_delta_seconds": 3600.0,
+        "n_gaps_over_2x_median": 151,
+        "n_weekend_gaps": 124,
+        "n_intraday_gaps": 27,
+        "max_gap_hours": 80.0
+      },
+      "return_outliers": {
+        "abs_logret_limit": 0.12,
+        "n_bars_over_limit": 0,
+        "max_abs_logret": 0.07966,
+        "n_bars_z_gt_10": 3
+      },
+      "hard_violation": false
+    }
+  ]
+}

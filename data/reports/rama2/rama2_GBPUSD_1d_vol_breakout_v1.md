@@ -1,0 +1,84 @@
+# Edge Robustness — 2026-08-31T04:58:48.325793+00:00
+
+Gate F2-(b) criteria · timeframe: 1d · periods/year: 252 · paths: 500 · block: 5 bars
+
+## GBPUSD — vol_breakout_v1 {'lookback': 20, 'atr_mult': 2.0} — **FRAGILE**
+
+- Holdout Sharpe neto (recalculado): **-0.9748** (aprobado: None) · holdout bars = 752 · turnover = 91.0 · cost drag = 0.0706
+- **Monte Carlo (holdout)** 500 paths: CI95 = [-2.0031, 0.2387], P(Sharpe>0) = 0.058 -> FAIL
+- Monte Carlo (full sample, contexto): CI95 = [-0.7879, 0.2049], P(Sharpe>0) = 0.122
+- **Cost sweep**: Sharpe neto ×2 = -1.0452; anulación (≤0) en ×1.0; < gate 0.8 en ×1.0 -> FAIL
+- **Regime**: ADX+ buckets = 0/2, vol+ buckets = 0/2, single-regime = True -> FAIL
+- **Anchored WF**: 57 folds, 20 positivos, OOS Sharpe neto = -0.3025 -> FAIL
+
+| Cost × | Sharpe net |
+|--:|--:|
+| 1.0 | -0.9748 |
+| 1.25 | -0.9924 |
+| 1.5 | -1.01 |
+| 1.75 | -1.0276 |
+| 2.0 | -1.0452 |
+| 2.5 | -1.0803 |
+| 3.0 | -1.1154 |
+
+| Fold | train bars | best params | IS Sharpe | OOS Sharpe |
+|--:|--:|---|--:|--:|
+| 1 | 126 | {'atr_mult': 1.5, 'lookback': 15} | -2.0359 | 3.4945 |
+| 2 | 189 | {'atr_mult': 1.5, 'lookback': 20} | 0.3161 | 0.2275 |
+| 3 | 252 | {'atr_mult': 1.5, 'lookback': 20} | 0.2836 | 0.0135 |
+| 4 | 315 | {'atr_mult': 1.5, 'lookback': 20} | 0.2026 | 1.596 |
+| 5 | 378 | {'atr_mult': 1.5, 'lookback': 20} | 0.6166 | 1.005 |
+| 6 | 441 | {'atr_mult': 1.5, 'lookback': 20} | 0.6372 | -1.8259 |
+| 7 | 504 | {'atr_mult': 1.5, 'lookback': 20} | 0.3139 | -2.6185 |
+| 8 | 567 | {'atr_mult': 1.5, 'lookback': 20} | 0.1509 | 2.0811 |
+| 9 | 630 | {'atr_mult': 1.5, 'lookback': 20} | 0.2605 | -1.1648 |
+| 10 | 693 | {'atr_mult': 1.5, 'lookback': 20} | 0.0858 | -1.4776 |
+| 11 | 756 | {'atr_mult': 1.5, 'lookback': 20} | -0.0847 | -0.5416 |
+| 12 | 819 | {'atr_mult': 1.5, 'lookback': 20} | -0.1431 | -0.7623 |
+| 13 | 882 | {'atr_mult': 1.5, 'lookback': 20} | -0.1212 | 1.2028 |
+| 14 | 945 | {'atr_mult': 1.5, 'lookback': 20} | -0.0495 | 0.3044 |
+| 15 | 1008 | {'atr_mult': 1.5, 'lookback': 20} | -0.0149 | -0.5651 |
+| 16 | 1071 | {'atr_mult': 1.5, 'lookback': 20} | -0.054 | -1.9381 |
+| 17 | 1134 | {'atr_mult': 1.5, 'lookback': 20} | -0.4079 | 1.057 |
+| 18 | 1197 | {'atr_mult': 1.5, 'lookback': 20} | -0.3272 | -2.0105 |
+| 19 | 1260 | {'atr_mult': 1.5, 'lookback': 20} | -0.3453 | 0.8029 |
+| 20 | 1323 | {'atr_mult': 1.5, 'lookback': 20} | -0.3123 | -3.6218 |
+| 21 | 1386 | {'atr_mult': 1.5, 'lookback': 20} | -0.4131 | -0.4779 |
+| 22 | 1449 | {'atr_mult': 1.5, 'lookback': 20} | -0.4212 | -4.2174 |
+| 23 | 1512 | {'atr_mult': 1.5, 'lookback': 20} | -0.4781 | 1.9092 |
+| 24 | 1575 | {'atr_mult': 1.5, 'lookback': 20} | -0.3875 | -0.4427 |
+| 25 | 1638 | {'atr_mult': 1.5, 'lookback': 20} | -0.3893 | 0.9852 |
+| 26 | 1701 | {'atr_mult': 1.5, 'lookback': 20} | -0.3544 | -0.201 |
+| 27 | 1764 | {'atr_mult': 1.5, 'lookback': 20} | -0.3501 | -3.6393 |
+| 28 | 1827 | {'atr_mult': 1.5, 'lookback': 20} | -0.4322 | -0.3687 |
+| 29 | 1890 | {'atr_mult': 1.5, 'lookback': 20} | -0.4293 | -2.3705 |
+| 30 | 1953 | {'atr_mult': 1.5, 'lookback': 20} | -0.4678 | 3.1939 |
+| 31 | 2016 | {'atr_mult': 1.5, 'lookback': 20} | -0.3612 | -2.4653 |
+| 32 | 2079 | {'atr_mult': 1.5, 'lookback': 20} | -0.4056 | 1.6033 |
+| 33 | 2142 | {'atr_mult': 1.5, 'lookback': 20} | -0.2535 | 0.2524 |
+| 34 | 2205 | {'atr_mult': 1.5, 'lookback': 20} | -0.2355 | -0.4022 |
+| 35 | 2268 | {'atr_mult': 1.5, 'lookback': 20} | -0.2371 | -0.844 |
+| 36 | 2331 | {'atr_mult': 1.5, 'lookback': 20} | -0.25 | -1.4904 |
+| 37 | 2394 | {'atr_mult': 1.5, 'lookback': 20} | -0.2633 | -0.9832 |
+| 38 | 2457 | {'atr_mult': 1.5, 'lookback': 20} | -0.2777 | -2.4209 |
+| 39 | 2520 | {'atr_mult': 1.5, 'lookback': 20} | -0.3175 | -0.7202 |
+| 40 | 2583 | {'atr_mult': 1.5, 'lookback': 20} | -0.3215 | 1.2757 |
+| 41 | 2646 | {'atr_mult': 1.5, 'lookback': 20} | -0.2814 | -2.1359 |
+| 42 | 2709 | {'atr_mult': 1.5, 'lookback': 20} | -0.3273 | 3.3344 |
+| 43 | 2772 | {'atr_mult': 1.5, 'lookback': 20} | -0.1834 | -2.5661 |
+| 44 | 2835 | {'atr_mult': 1.5, 'lookback': 20} | -0.258 | -2.1339 |
+| 45 | 2898 | {'atr_mult': 1.5, 'lookback': 20} | -0.2886 | 3.4553 |
+| 46 | 2961 | {'atr_mult': 1.5, 'lookback': 20} | -0.2212 | -2.4716 |
+| 47 | 3024 | {'atr_mult': 1.5, 'lookback': 20} | -0.2456 | -1.4802 |
+| 48 | 3087 | {'atr_mult': 1.5, 'lookback': 20} | -0.264 | -2.1369 |
+| 49 | 3150 | {'atr_mult': 1.5, 'lookback': 20} | -0.277 | -0.4805 |
+| 50 | 3213 | {'atr_mult': 1.5, 'lookback': 20} | -0.2911 | -1.2065 |
+| 51 | 3276 | {'atr_mult': 1.5, 'lookback': 15} | -0.2901 | -1.7666 |
+| 52 | 3339 | {'atr_mult': 1.5, 'lookback': 15} | -0.3103 | -1.5891 |
+| 53 | 3402 | {'atr_mult': 1.5, 'lookback': 15} | -0.3369 | -0.3473 |
+| 54 | 3465 | {'atr_mult': 1.5, 'lookback': 15} | -0.337 | -0.6476 |
+| 55 | 3528 | {'atr_mult': 1.5, 'lookback': 20} | -0.336 | 0.6932 |
+| 56 | 3591 | {'atr_mult': 1.5, 'lookback': 20} | -0.3289 | 0.4441 |
+| 57 | 3654 | {'atr_mult': 1.5, 'lookback': 20} | -0.3215 | -0.0073 |
+
+_Generated by scripts/run_edge_robustness.py — SPEC-C02._

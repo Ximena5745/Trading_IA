@@ -1,6 +1,28 @@
 version: "3.9"
 
 services:
+  # One-shot: apply Alembic migrations to head, then exit. api + worker wait for
+  # this to complete successfully (SPEC-A03 / F1.9 — deterministic startup).
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: trader-ai-migrate
+    command: python -m core.db.migrate
+    environment:
+      - EXECUTION_MODE=paper
+      - TRADING_ENABLED=false
+      - DATABASE_URL=postgresql://trader:${DB_PASSWORD}@db:5432/trader_ai
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    restart: "no"
+    networks:
+      - trader-ai
+
   # FastAPI Application
   app:
     build:
@@ -14,12 +36,14 @@ services:
       - EXECUTION_MODE=paper
       - TRADING_ENABLED=false
       - DATABASE_URL=postgresql://trader:${DB_PASSWORD}@db:5432/trader_ai
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - ../.env
     volumes:
@@ -42,12 +66,14 @@ services:
       - EXECUTION_MODE=paper
       - TRADING_ENABLED=false
       - DATABASE_URL=postgresql://trader:${DB_PASSWORD}@db:5432/trader_ai
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - ../.env
     volumes:

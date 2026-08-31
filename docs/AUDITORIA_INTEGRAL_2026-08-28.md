@@ -6,6 +6,8 @@
 **Estado del sistema:** **Development / pre-Paper-Trading.** No apto para capital real.
 **Metodología:** verificación directa contra filesystem, código y ejecución de tests reales en este entorno. Los hallazgos de las auditorías `2026-05-16` y `2026-07-25` se usan como baseline pero se re-verificaron uno a uno.
 
+> **Actualización 2026-08-30:** ver **[ADDENDUM — Avances F0–F2](#addendum--avances-f0f2-del-plan-de-elevación-2026-08-30)**. F-01 y F-03…F-08 cerrados en la rama de trabajo de F1; **F-02 confirmado y escalado a GATE F2 = NO-GO preliminar** (`docs/CORE_VALIDATION_DECISION_2026-08-30.md`).
+
 > **Regla aplicada:** nada se marca como `IMPLEMENTED` por aparecer en documentación, tener una clase o un endpoint. Solo si se pudo trazar en el flujo real. Donde no se pudo ejecutar end-to-end (falta Postgres/Redis/broker en el entorno), se marca `UNKNOWN` explícitamente.
 
 ---
@@ -42,6 +44,56 @@
 - **[P2] Tres universos de activos inconsistentes.** `settings.SUPPORTED_SYMBOLS` (10: …SPX500, NAS100, USOIL) vs `run_pipeline.SCHEDULE` (12: …US500, US30, UK100, AUDUSD, USDCHF, USDCAD) vs `i1_gate_validator` (8) vs `data/raw/` (6 no-crypto). Nomenclatura de índices divergente (`SPX500` vs `US500`).
 - **[P2] CI roto en el job de lint.** `.github/workflows/ci.yml:26` — `pip install ruff black bandita` (typo: `bandita`). El job `lint` falla siempre; los `needs: lint` posteriores no corren.
 - **[P2] `test_dashboard_e2e.py` contamina la señal de test.** Sus 20 casos asumen un servidor FastAPI ya levantado en `127.0.0.1:8000` y no lo arrancan → **siempre** cuentan como 20 fallos en CI y en cualquier entorno sin arranque manual. Los `tests/integration/*` sí corren (2 errores de teardown por falta de Redis, no de aserción).
+
+---
+
+# ADDENDUM — Avances F0–F2 del Plan de Elevación (2026-08-30)
+
+> Esta auditoría es una **instantánea en `aeea1c5`**. Lo de abajo NO la reescribe:
+> registra el estado de sus hallazgos tras ejecutar F0–F2 del
+> `docs/PLAN_ELEVACION_MADUREZ_2026-08-28.md`. El trabajo vive en una rama sobre
+> `043d218`, **sin commitear**, y **pendiente del pase de auditoría fresca** que el
+> plan exige. Detalle por entregable: `docs/PROGRESS.md`.
+
+## Estado de los hallazgos críticos
+
+| ID | Hallazgo (resumen) | Sev. original | Estado 2026-08-30 | Evidencia del cambio |
+|---|---|---|---|---|
+| **F-01** | `POST /auth/register` permite auto-asignarse `admin` | P0 | ✅ **CERRADO** | `REGISTRATION_ENABLED` (default false); `/register` sin campo `role`, solo crea `viewer`; nuevo `POST /auth/users` con `require_admin`; validador `JWT_SECRET_KEY` siempre activo (≥32, ≠ default). `tests/unit/test_security_floor.py` (6 ✅). Plan F1.7. |
+| **F-02** | Sin edge: gate I1 reprueba 7/8 activos | P0 | ⛔ **CONFIRMADO y ESCALADO a GATE NO-GO** | 2.5: `data/reports/quant_report.*` — solo XAUUSD con WF+holdout consistentes. 2.6: `data/reports/edge_robustness.*` — XAUUSD/Momentum **FRÁGIL** (CI Monte Carlo holdout **[−1.43, +3.76]**, mono-régimen ADX). Veredicto: `docs/CORE_VALIDATION_DECISION_2026-08-30.md` → **NO-GO preliminar**. |
+| **F-03** | El pipeline real decide con `strategy_id="default_v1"` fijo; 3 registros de estrategia desconectados | P1 | ✅ **CERRADO** | `core/strategies/approved_params.py` (contrato `data/models/i1_params/<SYMBOL>.json`); el gate I1 escribe el archivo por activo `passed`; `run_pipeline` carga params por activo (Gate 0b `no_approved_strategy` fail-safe) + confirmación de estrategia; `StrategyRegistry` pliega `I1_STRATEGY_REGISTRY`; `grep -rn "default_v1" scripts core` → 1. Plan F1.4. |
+| **F-04** | 4 workers uvicorn con scheduler embebido → pipeline/órdenes ×4 | P1 | ✅ **CERRADO** | APScheduler y `_refresh_task` fuera del `lifespan`; `scripts/run_pipeline.py` único dueño con lock Redis (`SET NX EX` + renovación Lua); servicio `worker` en compose. `tests/unit/test_scheduler_split.py` (7 ✅). Plan F1.1. |
+| **F-05** | Contenedor arranca sin DB en silencio (falta `alembic/` en la imagen) | P1 | ✅ **CERRADO** | `Dockerfile` `COPY alembic/` + `alembic.ini`; `alembic/env.py` async (asyncpg, sin psycopg2) leyendo `DATABASE_URL` de env; servicio one-shot `migrate` que bloquea `app`/`worker`; arranque **falla** si `EXECUTION_MODE=live` y la DB no inicializa; `/health.db_initialized`. Plan F1.2/F1.9. |
+| **F-06** | Cadena de trazas sin productor (`store_signal`/`AuditLog`/alpha-decay nunca invocados) | P1 | ✅ **CERRADO (núcleo)** | `correlation_id` generado en `_pipeline_cycle` y propagado a features/agentes/consenso/señal; `TraceStore` (Redis + fallback memoria) registra 8 etapas; `AuditLog` por decisión; señal persistida vía repo; `GET /trace/{id}`. `tests/unit/test_pipeline_trace.py` (3 ✅). **Diferido:** columna DB `correlation_id` (migración → Plan F3.2). Plan F1.6. |
+| **F-07** | Job `lint` de CI roto (typo `bandita`); dependientes no corren | P1 | ✅ **CERRADO** | `bandita`→`bandit`; job de integración con `services: postgres+redis` y `-m integration`; `unit-tests` con `-m "not slow and not integration"`. Verde local; **falta el primer push a CI** (condición abierta de F1). Plan F1.8. |
+| **F-08** | Enforcement de `JWT_SECRET_KEY` solo en `production`, sin chequeo de longitud | P1 | ✅ **CERRADO** | Validador siempre activo: `len ≥ 32` y `≠ "change-me-in-production"`, salvo `ALLOW_INSECURE_JWT=true` explícito (solo tests). Plan F1.7. |
+| **F-09** | `RiskManager.validate_signal` no agrega riesgo de posiciones abiertas ni correlación | P1 | ✅ **PARCIAL** | `aggregate_open_exposure(portfolio, capital)` (Σ posiciones abiertas + señal nueva vs `MAX_PORTFOLIO_RISK_PCT`) + chequeo directo de pérdida diaria en `validate_signal`. `tests/unit/test_risk_decision_correctness.py` (6 ✅). Plan F1.5. **Falta:** límite por correlación/cluster → Plan F6.1. |
+
+## Deuda técnica y hallazgos P2 tocados
+
+- **Universo de activos (P2, G-10/D-11):** `TRADED_UNIVERSE` único en `core/config/constants.py` (8 símbolos, `US###`), importado por `settings.SUPPORTED_SYMBOLS`, `run_pipeline.SCHEDULE` y `i1_gate_validator.PIPELINE_SYMBOLS`. `SPX500`→`US500`. `tests/unit/test_universe_single_source.py` (13 ✅). Plan F1.3.
+- **HMM roto (D-12):** `hmm_regime_detector` — drop de filas no finitas, `MIN_TRAIN_SAMPLES`, nº de estados adaptativo, `covariance_type="diag"` + `min_covar`. 12 tests verdes (antes 2 ❌). Plan F1.5.
+- **`test_dashboard_e2e.py` mal diseñado (P2):** ahora `@pytest.mark.integration` + fixture `live_server` (uvicorn en puerto libre, arranque ligero). Deselección por defecto vía `pytest.ini`. Plan F1.8.
+- **Datos (nuevo, Plan F2.4):** `scripts/audit_data_quality.py` → **0 violaciones duras** en los 6 parquet 1h (UTC, monótonos, sin dups, OHLC íntegro). `core/features/indicators.py`: **sin look-ahead**. `core/ml/target_engine.py`: 6 puntos de look-ahead (umbral/cortes sobre serie completa) **no cableados** — trampa para F5. `docs/audits/AUDIT_F2_4_LEAKAGE_2026-08-30.md`. **BTC/ETH: sin parquet 1h.**
+
+## Efecto neto sobre el score
+
+Las correcciones F1 elevan varias áreas (Seguridad, Estrategias, Risk, Observabilidad,
+Testing, Performance, DevSecOps, Multi-Asset) — estimación en `docs/audits/AUDIT_F1_2026-08-30.md`:
+**global ~4.6 → ~5.4**. Pero **Quant sigue en 2.5**: el gate F2 confirma que **no hay
+edge robusto demostrable** en el universo actual. Mientras eso no cambie, el techo de
+madurez global del sistema está limitado por (b) — ninguna mejora de arquitectura,
+seguridad u observabilidad lo levanta.
+
+## Recomendación actualizada
+
+La **FINAL RECOMMENDATION** de esta auditoría sigue vigente en lo esencial: el bloqueo
+de fondo es **F-02**. Con F1 hecho, el sistema ya es *auditable y determinista* — se
+puede medir el edge sin ambigüedad — y la medición dio negativa. El siguiente paso es
+el **mini-plan de pivote** de `docs/CORE_VALIDATION_DECISION_2026-08-30.md` (datos más
+largos, revisión de costos de XAUUSD, estrategias alternativas; luego otros
+timeframes/familias; luego replanteo de universo o de producto), **no** avanzar a
+F3–F10.
 
 ---
 
@@ -591,6 +643,13 @@ Backlog completo en `docs/SPEC_BACKLOG_2026-08-28.md`. Ejemplos de las specs MUS
 | **Test Gate** | ¿Suite hermética verde en CI incluyendo e2e? | 🟡 (unit/quant sí; integration/e2e no) |
 | **Production Gate** | ¿Listo para capital real? | ❌ |
 
+> **Estado 2026-08-30 (rama F1, sin commitear):** Architecture Gate → 🟡 (un scheduler
+> con lock, un universo, una fuente de estrategias; el árbol de capas dual sigue → F3.1).
+> Risk Gate → 🟡 (exposición de cartera agregada; falta correlación → F6.1).
+> Security Gate → ✅ (F-01 y F-08 cerrados). Test Gate → 🟡 (fixtures herméticos +
+> `live_server` listos; falta la corrida verde de `-m integration` en CI).
+> **Quant Gate → ❌ confirmado** (GATE F2 = NO-GO preliminar). Production Gate → ❌.
+
 ---
 
 # FINAL RECOMMENDATION
@@ -602,6 +661,12 @@ Backlog completo en `docs/SPEC_BACKLOG_2026-08-28.md`. Ejemplos de las specs MUS
 5. **Nunca** `Development → Production`. La ruta es `→ Backtest → OOS → Stress → Paper (≥4 semanas) → Capital limitado supervisado → Production`, con los Acceptance Gates de arriba en verde.
 
 > **No conectar capital real.** El sistema no tiene edge confirmado, tiene una escalada de privilegios abierta, y su pipeline de decisión se ejecuta de forma no determinista bajo la configuración de despliegue actual.
+>
+> **Actualización 2026-08-30 (rama F1, sin commitear):** la escalada de privilegios está
+> cerrada (F-01) y el pipeline ya es determinista y con dueño único (F-04, verificado
+> por `scripts/check_reproducibility.py`). El bloqueo restante es el central: **sin edge
+> confirmado** — el GATE F2 dio **NO-GO preliminar** (`docs/CORE_VALIDATION_DECISION_2026-08-30.md`).
+> Sigue vigente: **no conectar capital real**; el plan está en ciclo de pivote.
 
 ---
 

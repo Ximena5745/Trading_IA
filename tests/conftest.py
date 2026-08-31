@@ -53,3 +53,119 @@ def sample_portfolio() -> dict:
         "daily_pnl_pct": 0.0,
         "drawdown_current": 0.02,
     }
+
+
+# ── Hermetic integration fixtures (SPEC-B01) ──────────────────────────────
+@pytest.fixture(scope="session")
+def docker_services():
+    """Ephemeral Postgres + Redis for integration tests.
+
+    Resolution order:
+      1. Real services already pointed at by env (CI `services:` block) → use them.
+      2. testcontainers + a working Docker daemon → spin ephemeral containers.
+      3. Otherwise → skip the requesting test.
+    Yields ``{"database_url": ..., "redis_url": ...}`` and restores env on teardown.
+    """
+    pre_db, pre_redis = os.environ.get("DATABASE_URL"), os.environ.get("REDIS_URL")
+
+    if os.environ.get("CI_DB_READY") == "1" and pre_db and pre_redis:
+        yield {"database_url": pre_db, "redis_url": pre_redis}
+        return
+
+    try:
+        from testcontainers.postgres import PostgresContainer
+        from testcontainers.redis import RedisContainer
+    except ImportError:
+        pytest.skip("testcontainers not installed (pip install testcontainers)")
+
+    try:
+        pg = PostgresContainer("postgres:15-alpine")
+        rd = RedisContainer("redis:7-alpine")
+        pg.start()
+        rd.start()
+    except Exception as exc:  # noqa: BLE001 — Docker daemon missing / unreachable
+        pytest.skip(f"Docker not available for testcontainers: {exc}")
+
+    db_url = pg.get_connection_url().replace("psycopg2", "asyncpg")
+    redis_url = f"redis://{rd.get_container_host_ip()}:{rd.get_exposed_port(6379)}/0"
+    os.environ["DATABASE_URL"], os.environ["REDIS_URL"] = db_url, redis_url
+    try:
+        yield {"database_url": db_url, "redis_url": redis_url}
+    finally:
+        for key, val in (("DATABASE_URL", pre_db), ("REDIS_URL", pre_redis)):
+            if val is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = val
+        rd.stop()
+        pg.stop()
+
+
+@pytest.fixture(scope="session")
+def live_server():
+    """Run `api.main:app` under uvicorn on a free port for the test session.
+
+    Yields the base URL (e.g. ``http://127.0.0.1:54123``). Used by
+    tests/test_dashboard_e2e.py, which previously assumed a server was already
+    listening on :8000 and always failed.
+    """
+    import socket
+    import threading
+    import time
+    from unittest.mock import patch
+
+    import httpx
+    import uvicorn
+
+    import api.main as main
+
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+
+    # Keep startup fast and deterministic — the dashboard tests only need HTML +
+    # public read endpoints, not migrations / parquet warmup / the metrics port.
+    async def _noop_async(*_a, **_kw):
+        return None
+
+    patches = [
+        patch.object(main, "init_pool", _noop_async),
+        patch.object(main, "run_migrations", lambda: None),
+        patch.object(main, "_load_parquet_data", lambda: None),
+        patch.object(main, "start_metrics_server", lambda *a, **k: None),
+    ]
+    for p in patches:
+        p.start()
+
+    config = uvicorn.Config(
+        main.app, host="127.0.0.1", port=port, log_level="warning", lifespan="on"
+    )
+    server = uvicorn.Server(config)
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+
+    base = f"http://127.0.0.1:{port}"
+    ready = False
+    for _ in range(150):
+        try:
+            httpx.get(f"{base}/health", timeout=1.0)
+            ready = True
+            break
+        except Exception:  # noqa: BLE001
+            time.sleep(0.1)
+
+    if not ready:
+        server.should_exit = True
+        thread.join(timeout=5)
+        for p in patches:
+            p.stop()
+        pytest.skip("live_server did not become ready")
+
+    try:
+        yield base
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+        for p in patches:
+            p.stop()

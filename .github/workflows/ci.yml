@@ -24,7 +24,7 @@ jobs:
           cache: pip
 
       - name: Install linting tools
-        run: pip install ruff black bandita
+        run: pip install ruff black bandit
 
       - name: Ruff lint
         run: ruff check .
@@ -81,7 +81,7 @@ jobs:
           BINANCE_API_KEY: ""
           BINANCE_SECRET_KEY: ""
         run: |
-          pytest tests/unit/ tests/quant/ -v --tb=short --cov=core --cov-report=xml -m "not slow"
+          pytest tests/unit/ tests/quant/ -v --tb=short --cov=core --cov-report=xml -m "not slow and not integration"
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -89,11 +89,28 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: false
 
-  # ── Integration tests ───────────────────────────────────────────────────
+  # ── Integration tests (hermetic: ephemeral Postgres + Redis) ────────────
   integration-tests:
-    name: Integration Tests (paper mode)
+    name: Integration Tests (hermetic)
     runs-on: ubuntu-latest
     needs: [unit-tests, type-check]
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: trader
+          POSTGRES_PASSWORD: trader
+          POSTGRES_DB: trader_ai
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U trader" --health-interval 10s
+          --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s
+          --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -104,16 +121,21 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements-ci.txt
+        run: |
+          pip install -r requirements-ci.txt
+          pip install uvicorn httpx
 
-      - name: Run integration tests
+      - name: Run integration + e2e tests
         env:
           EXECUTION_MODE: paper
           TRADING_ENABLED: "false"
           JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
           BINANCE_API_KEY: ""
           BINANCE_SECRET_KEY: ""
-        run: pytest tests/integration/ -v --tb=short
+          CI_DB_READY: "1"
+          DATABASE_URL: postgresql+asyncpg://trader:trader@localhost:5432/trader_ai
+          REDIS_URL: redis://localhost:6379/0
+        run: pytest tests/integration/ tests/test_dashboard_e2e.py -v --tb=short -m integration
 
   # ── Safety gate ─────────────────────────────────────────────────────────
   safety-checks:
@@ -163,10 +185,10 @@ jobs:
           TRADING_ENABLED: "false"
           JWT_SECRET_KEY: ci-test-secret-key-minimum-32-chars-long
         run: |
-          if ls data/raw/*_1h.parquet 1>/dev/null 2>&1; then
+          if ls data/raw/parquet/1h/*_1h.parquet 1>/dev/null 2>&1; then
             python scripts/run_i1_edge_research.py --strict --bootstrap 200
           else
-            echo "Skipping I1 strict gate: no parquet data in data/raw/"
+            echo "Skipping I1 strict gate: no parquet data in data/raw/parquet/1h/"
           fi
 
   # ── Backtest gate ────────────────────────────────────────────────────────

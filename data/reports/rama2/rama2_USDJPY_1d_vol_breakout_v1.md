@@ -1,0 +1,84 @@
+# Edge Robustness — 2026-08-31T04:59:42.142591+00:00
+
+Gate F2-(b) criteria · timeframe: 1d · periods/year: 252 · paths: 500 · block: 5 bars
+
+## USDJPY — vol_breakout_v1 {'lookback': 20, 'atr_mult': 2.0} — **FRAGILE**
+
+- Holdout Sharpe neto (recalculado): **0.2664** (aprobado: None) · holdout bars = 752 · turnover = 84.0 · cost drag = 0.0004
+- **Monte Carlo (holdout)** 500 paths: CI95 = [-0.7114, 1.2957], P(Sharpe>0) = 0.696 -> FAIL
+- Monte Carlo (full sample, contexto): CI95 = [-0.4614, 0.4549], P(Sharpe>0) = 0.526
+- **Cost sweep**: Sharpe neto ×2 = 0.266; anulación (≤0) en ×None; < gate 0.8 en ×1.0 -> PASS
+- **Regime**: ADX+ buckets = 1/2, vol+ buckets = 1/2, single-regime = True -> FAIL
+- **Anchored WF**: 57 folds, 26 positivos, OOS Sharpe neto = -0.151 -> FAIL
+
+| Cost × | Sharpe net |
+|--:|--:|
+| 1.0 | 0.2664 |
+| 1.25 | 0.2663 |
+| 1.5 | 0.2662 |
+| 1.75 | 0.2661 |
+| 2.0 | 0.266 |
+| 2.5 | 0.2658 |
+| 3.0 | 0.2656 |
+
+| Fold | train bars | best params | IS Sharpe | OOS Sharpe |
+|--:|--:|---|--:|--:|
+| 1 | 126 | {'atr_mult': 1.5, 'lookback': 15} | 1.9249 | 0.4182 |
+| 2 | 189 | {'atr_mult': 1.5, 'lookback': 15} | 0.7425 | 1.1623 |
+| 3 | 252 | {'atr_mult': 1.5, 'lookback': 15} | 1.07 | -1.7653 |
+| 4 | 315 | {'atr_mult': 1.5, 'lookback': 20} | 1.5316 | -0.5941 |
+| 5 | 378 | {'atr_mult': 1.5, 'lookback': 20} | 0.9086 | 0.8915 |
+| 6 | 441 | {'atr_mult': 1.5, 'lookback': 20} | 0.9003 | -0.7338 |
+| 7 | 504 | {'atr_mult': 1.5, 'lookback': 20} | 0.7519 | -3.3343 |
+| 8 | 567 | {'atr_mult': 1.5, 'lookback': 20} | 0.5746 | -2.4486 |
+| 9 | 630 | {'atr_mult': 1.5, 'lookback': 20} | 0.4498 | 1.0816 |
+| 10 | 693 | {'atr_mult': 1.5, 'lookback': 20} | 0.4801 | 1.0703 |
+| 11 | 756 | {'atr_mult': 1.5, 'lookback': 20} | 0.5499 | -0.1324 |
+| 12 | 819 | {'atr_mult': 1.5, 'lookback': 20} | 0.5109 | -2.0793 |
+| 13 | 882 | {'atr_mult': 1.5, 'lookback': 20} | 0.2955 | 1.1282 |
+| 14 | 945 | {'atr_mult': 1.5, 'lookback': 20} | 0.3718 | -0.1573 |
+| 15 | 1008 | {'atr_mult': 1.5, 'lookback': 20} | 0.3423 | 1.0573 |
+| 16 | 1071 | {'atr_mult': 1.5, 'lookback': 20} | 0.3987 | 0.9114 |
+| 17 | 1134 | {'atr_mult': 1.5, 'lookback': 20} | 0.4219 | -0.0393 |
+| 18 | 1197 | {'atr_mult': 1.5, 'lookback': 20} | 0.4012 | 2.3214 |
+| 19 | 1260 | {'atr_mult': 1.5, 'lookback': 20} | 0.5331 | -2.096 |
+| 20 | 1323 | {'atr_mult': 1.5, 'lookback': 20} | 0.4059 | -0.3066 |
+| 21 | 1386 | {'atr_mult': 1.5, 'lookback': 20} | 0.3852 | -3.0328 |
+| 22 | 1449 | {'atr_mult': 1.5, 'lookback': 20} | 0.2416 | 1.9975 |
+| 23 | 1512 | {'atr_mult': 1.5, 'lookback': 20} | 0.2867 | 2.4754 |
+| 24 | 1575 | {'atr_mult': 1.5, 'lookback': 20} | 0.348 | 0.3732 |
+| 25 | 1638 | {'atr_mult': 1.5, 'lookback': 20} | 0.2929 | -2.0464 |
+| 26 | 1701 | {'atr_mult': 1.5, 'lookback': 20} | 0.2556 | 1.8993 |
+| 27 | 1764 | {'atr_mult': 1.5, 'lookback': 20} | 0.2769 | 1.4083 |
+| 28 | 1827 | {'atr_mult': 1.5, 'lookback': 20} | 0.3163 | -1.039 |
+| 29 | 1890 | {'atr_mult': 1.5, 'lookback': 20} | 0.297 | -0.2376 |
+| 30 | 1953 | {'atr_mult': 1.5, 'lookback': 20} | 0.2868 | -4.4131 |
+| 31 | 2016 | {'atr_mult': 1.5, 'lookback': 20} | 0.2173 | -0.8613 |
+| 32 | 2079 | {'atr_mult': 1.5, 'lookback': 20} | 0.1885 | -1.9647 |
+| 33 | 2142 | {'atr_mult': 1.5, 'lookback': 20} | 0.0804 | -1.1334 |
+| 34 | 2205 | {'atr_mult': 1.5, 'lookback': 20} | 0.0571 | -1.6253 |
+| 35 | 2268 | {'atr_mult': 1.5, 'lookback': 20} | 0.0126 | -2.9806 |
+| 36 | 2331 | {'atr_mult': 1.5, 'lookback': 20} | -0.0089 | 1.5601 |
+| 37 | 2394 | {'atr_mult': 1.5, 'lookback': 20} | 0.017 | -6.0566 |
+| 38 | 2457 | {'atr_mult': 1.5, 'lookback': 20} | -0.0642 | 0.283 |
+| 39 | 2520 | {'atr_mult': 1.5, 'lookback': 20} | -0.057 | -2.0284 |
+| 40 | 2583 | {'atr_mult': 1.5, 'lookback': 20} | -0.1013 | 1.226 |
+| 41 | 2646 | {'atr_mult': 1.5, 'lookback': 20} | -0.0737 | 0.8755 |
+| 42 | 2709 | {'atr_mult': 1.5, 'lookback': 20} | -0.0354 | 1.8215 |
+| 43 | 2772 | {'atr_mult': 1.5, 'lookback': 20} | 0.021 | -1.2421 |
+| 44 | 2835 | {'atr_mult': 1.5, 'lookback': 20} | -0.0173 | -1.3771 |
+| 45 | 2898 | {'atr_mult': 1.5, 'lookback': 20} | -0.0464 | -1.4708 |
+| 46 | 2961 | {'atr_mult': 1.5, 'lookback': 20} | -0.0915 | 2.3356 |
+| 47 | 3024 | {'atr_mult': 1.5, 'lookback': 20} | -0.0728 | -1.0397 |
+| 48 | 3087 | {'atr_mult': 1.5, 'lookback': 20} | -0.0893 | 2.3138 |
+| 49 | 3150 | {'atr_mult': 1.5, 'lookback': 20} | -0.0573 | 0.716 |
+| 50 | 3213 | {'atr_mult': 1.5, 'lookback': 20} | -0.0398 | 3.1037 |
+| 51 | 3276 | {'atr_mult': 1.5, 'lookback': 20} | 0.0419 | -0.3591 |
+| 52 | 3339 | {'atr_mult': 1.5, 'lookback': 20} | 0.0377 | 0.8979 |
+| 53 | 3402 | {'atr_mult': 1.5, 'lookback': 20} | 0.0532 | -1.9622 |
+| 54 | 3465 | {'atr_mult': 1.5, 'lookback': 20} | 0.0322 | -1.2766 |
+| 55 | 3528 | {'atr_mult': 1.5, 'lookback': 20} | 0.0042 | -0.9026 |
+| 56 | 3591 | {'atr_mult': 1.5, 'lookback': 20} | 0.0052 | 0.1585 |
+| 57 | 3654 | {'atr_mult': 1.5, 'lookback': 20} | 0.0077 | 0.012 |
+
+_Generated by scripts/run_edge_robustness.py — SPEC-C02._

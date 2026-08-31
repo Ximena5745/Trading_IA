@@ -1,7 +1,8 @@
 # Plan de Elevación de Madurez — TRADER AI
 
 > **Fecha:** 2026-08-28 · **Base:** `docs/AUDITORIA_INTEGRAL_2026-08-28.md` (commit `aeea1c5`) y `docs/SPEC_BACKLOG_2026-08-28.md`
-> **Estado:** aprobado · **Ejecución:** 1 persona + asistencia IA
+> **Estado:** aprobado · **en ejecución** · **Ejecución:** 1 persona + asistencia IA
+> **Avance (2026-08-30):** F0 ✅ GO · F1 ✅ GO CON CONDICIONES · F2 ⛔ **NO-GO** (condición (b) — sin edge robusto) → `docs/CORE_VALIDATION_DECISION_2026-08-30.md`. **Bloque B (F3–F10) en pausa.** **Pivote Rama 1 ejecutado** → `docs/CORE_VALIDATION_RAMA1_2026-08-30.md`: (1) CostModel de XAUUSD corregido (bug ~100×; Momentum holdout 1.32→1.02); (2) BTC/ETH con 9 años de datos / holdout 1.8 años → todas las familias 1h negativas; (3+4) XAUUSD extendido a **28.4 años vía MT5 IC Markets (67 694 barras, 1998→2026)**, holdout 2.2 años → **extender el holdout NO rescató el edge; cada métrica se degrada monótonamente**. A 28 años `MA_10_30` MC full-sample [−0.60, +0.54] (P=0.45) y anchored WF 29 folds −0.18 (FAIL); `Momentum` falla los 4 criterios. El edge era la ventana alcista 2021-2026. **Ambas vías para salvar (b) — más datos cripto (9 a) y más datos oro (28 a) — refutadas. ⛔ NO-GO de (b) CONCLUYENTE.** Siguiente: Rama 2 del pivote (4h/1d + familias nuevas; MT5 IC Markets sirve ~28 años de todo el universo). Detalle: `docs/PROGRESS.md`.
 
 ## Context
 
@@ -19,6 +20,56 @@
 - **GATE de validación del core:** triple condición (funciona **Y** edge **Y** sin pérdida no explicada). NO-GO ⇒ el plan se detiene en la fase 2 y entra un ciclo de arreglo/pivote antes de re-planificar 3–10.
 
 **Esfuerzo hasta el GATE:** ~85 días-persona activos + ~2 semanas de observación (≈ 4 meses en solitario). **Esfuerzo total** (si GATE=GO): ~330 días-persona + compliance externo + 4 semanas de observación en la fase 9.
+
+---
+
+## Estado de ejecución — 2026-08-30
+
+> Instantánea del avance. Fuente de verdad por entregable: `docs/PROGRESS.md`.
+> Todo el trabajo F1/F2 vive en una rama sobre `043d218` (F0), **sin commitear** al
+> redactar esto. Los "pases de auditoría fresca" que exige el método siguen pendientes.
+
+| Fase | Entregables hechos | Veredicto de cierre | Doc |
+|---|---|---|---|
+| **F0** — Gobernanza mínima | 2 / 2 | ✅ **GO** | `docs/audits/AUDIT_F0_2026-08-28.md` |
+| **F1** — Habilitación mínima del core | 9 / 9 | ✅ **GO CON CONDICIONES** | `docs/audits/AUDIT_F1_2026-08-30.md` |
+| **F2** — Validación del core (⛔ GATE) | 5 / 7 (2.2, 2.4, 2.5, 2.6, 2.7) · 2.1 y 2.3 requieren stack + ventana de 2 sem | ⛔ **NO-GO preliminar** | `docs/CORE_VALIDATION_DECISION_2026-08-30.md` |
+| F3–F10 (Bloque B) | — | **En pausa** (depende de GATE F2 = GO) | — |
+
+**Condiciones abiertas de F1** (no bloquean, con fecha de cierre comprometida):
+1. Pase de auditoría fresco (sesión nueva sin contexto, acotada a F1).
+2. `pytest -m integration` verde en runner con Docker (CI cableado, falta el primer push).
+
+**GATE F2 — por qué NO-GO preliminar.** La condición **(b) EDGE** no se cumple con el
+criterio literal del plan: de 8 símbolos, solo XAUUSD tiene Sharpe neto holdout ≥ 0.8
+(+1.32), y al pasarlo por la batería de robustez (2.6) resulta **FRÁGIL** — el CI de
+Monte Carlo del holdout es **[−1.43, +3.76]** (cruza cero) y el edge depende del
+régimen ADX. Confirma **F-02 (P0, sin edge)** a nivel de universo (7/8 con Sharpe
+holdout negativo). (a) queda parcial (determinismo de la cadena de decisión ✅ vía
+2.2; corrida real testnet ⏳ 2.1/2.3) y (c) sin evaluar — ninguna de las dos puede
+revertir el NO-GO.
+
+**Qué sigue.** Mini-plan de pivote de 4–8 semanas (detalle en
+`CORE_VALIDATION_DECISION_2026-08-30.md`): **Rama 0** (cerrar formalmente (a)/(c) +
+pase de auditoría cuantitativa independiente) + **Rama 1** (extender histórico 1h a
+≥ 4–5 años, revisar el `CostModel` de XAUUSD, re-correr 2.5/2.6 sobre el holdout
+largo y sobre las estrategias alternativas de XAUUSD). Si Rama 1 no da GO: 4h/1d y
+familias nuevas → replanteo de universo → replanteo de producto. **No se inicia
+ningún entregable de F3–F10 hasta que el GATE F2 dé GO.**
+
+> **Rama 1 — subset ejecutado (2026-08-30)** — `docs/CORE_VALIDATION_RAMA1_2026-08-30.md`.
+> (1) **CostModel de XAUUSD**: bug de unidades ~100× corregido (`spread_pips` 0.25→30);
+> XAUUSD/Momentum cae de holdout Sharpe 1.32 a **1.02** y baja del gate 0.8 a costos
+> ×1.75; el MC full-sample pasa a cruzar cero. `i1_gate_report.json` quedó optimista.
+> (2) **BTC/ETH**: los parquet de 9 años ya existían sin cablear; con holdout de
+> 1.8 años **todas** las familias 1h dan Sharpe neto holdout **negativo** → la
+> hipótesis "es longitud de datos" se **refuta** para cripto.
+> (3) **Alternativas de XAUUSD** bajo 2.6: ninguna pasa (b); **`MA_10_30`** es el
+> mejor candidato (holdout 2.31, sobrevive costos ×3, MC full CI inf +0.25) pero
+> falla mono-régimen ADX y por −0.04 en el MC holdout.
+> **Pendiente por infra:** histórico 1h de XAUUSD ≥ 4–5 años (proveedor externo;
+> yfinance no da intradía > ~730 días) para re-probar `MA_10_30`; Rama 0 completa.
+> **NO-GO de (b) reforzado.**
 
 ---
 
@@ -66,6 +117,9 @@ F0 ──▶ F1 ──▶ F2 ──[⛔ GATE: funciona Y edge Y sin pérdida no 
 
 ## FASE 0 — Gobernanza mínima
 
+> **Estado (2026-08-30): ✅ GO.** 0.1 y 0.2 hechos. `docs/audits/AUDIT_F0_2026-08-28.md`
+> (3 discrepancias doc↔código P3 corregidas en el pase; sin regresiones).
+
 **Objetivo.** Fijar solo las decisiones y el instrumental imprescindibles para que la validación del core sea auditable. Se difiere la reescritura de documentación y la consolidación de docs a la Fase 3 (post-GATE).
 
 **Entregables.**
@@ -82,6 +136,12 @@ F0 ──▶ F1 ──▶ F2 ──[⛔ GATE: funciona Y edge Y sin pérdida no 
 ---
 
 ## FASE 1 — Habilitación mínima del core
+
+> **Estado (2026-08-30): ✅ GO CON CONDICIONES.** Los 9 entregables (1.1–1.9) hechos
+> con tests verdes (`pytest tests/unit tests/quant` → **410 passed / 2 skipped / 0
+> failed**). `docs/audits/AUDIT_F1_2026-08-30.md`. **F-01 (P0) cerrado.** Diferido a
+> F3.2: columna DB `correlation_id` (migración alembic). Condiciones abiertas:
+> (1) pase de auditoría fresco; (2) `pytest -m integration` verde en CI con Docker.
 
 **Objetivo.** Que el pipeline se pueda ejecutar end-to-end de forma determinista y que sus resultados sean confiables y trazables. Incluye el suelo de seguridad barato y la base de tests herméticos. **No** incluye robustez de arquitectura, MLOps, observabilidad completa ni HA.
 
@@ -114,6 +174,18 @@ F0 ──▶ F1 ──▶ F2 ──[⛔ GATE: funciona Y edge Y sin pérdida no 
 ---
 
 ## FASE 2 — Validación del core  ·  ⛔ GATE (funciona Y edge Y sin pérdida no explicada)
+
+> **Estado (2026-08-30): ⛔ NO-GO preliminar.** Hechos: **2.2** (reproducibilidad —
+> `scripts/check_reproducibility.py`, digests SHA-256 idénticos en 2 pasadas, 0 RNG de
+> decisión sin semilla), **2.4** (auditoría de leakage — features sin look-ahead; 6
+> puntos en `target_engine.py` no cableados; `scripts/audit_data_quality.py` → 0
+> violaciones duras en 6 parquet), **2.5** (`scripts/run_quant_report.py` — H2.1 ✅,
+> XAUUSD Momentum holdout Sharpe 1.3232 = gate), **2.6** (`scripts/run_edge_robustness.py`
+> — XAUUSD/Momentum = **FRÁGIL**: CI Monte Carlo holdout [−1.43, +3.76], mono-régimen
+> ADX), **2.7** (`docs/CORE_VALIDATION_DECISION_2026-08-30.md`). Pendientes por infra:
+> **2.1** y **2.3** (stack Docker + testnet + ventana de ~2 semanas). Reportes en
+> `data/reports/{reproducibility_report,data_quality_report,quant_report,edge_robustness}.{json,md}`.
+> **Veredicto (b) EDGE: no cumplido.** F3–F10 no arrancan.
 
 **Objetivo.** Responder con datos si el core (a) funciona correctamente de punta a punta, (b) tiene edge estadístico robusto neto de costos en ≥1 activo, y (c) opera ~2 semanas en paper sin ninguna decisión sin explicar. Score: Quant 2.5 → (5.0 si GO / se congela); Core Trading 5.0 → 6.5; Backtesting → 6.0.
 
@@ -151,11 +223,23 @@ F0 ──▶ F1 ──▶ F2 ──[⛔ GATE: funciona Y edge Y sin pérdida no 
   - **GO** solo si se cumplen las tres → se continúa a F3.
   - **NO-GO** en cualquiera → **el plan se detiene aquí.** Se ejecuta `docs/CORE_VALIDATION_DECISION` y su mini-plan de investigación/arreglo. F3–F10 se re-planifican después. No se invierte en robustecer un core no validado.
 
-> **F3–F10 asumen GATE F2 = GO.**
+> **Veredicto real (2026-08-30): ⛔ NO-GO preliminar** — condición (b) incumplida
+> (`docs/CORE_VALIDATION_DECISION_2026-08-30.md`). El checklist y el pase fresco
+> quedan pendientes de la corrida paper (2.1/2.3) y de la auditoría cuantitativa
+> independiente, pero **ninguno puede convertir (b) en GO**. **El plan está en el
+> ciclo de arreglo/pivote de 4–8 semanas.**
+
+> **F3–F10 asumen GATE F2 = GO.** Hoy ese supuesto **no se cumple** → todo el Bloque
+> B está en pausa.
 
 ---
 
 # BLOQUE B — ROBUSTECER (solo si GATE F2 = GO)
+
+> **⏸ EN PAUSA (2026-08-30).** El GATE F2 dio **NO-GO preliminar** (sin edge robusto).
+> Ninguna fase de este bloque arranca hasta que un ciclo de pivote produzca un edge
+> que pase la condición (b) y se re-abra F2 con veredicto GO. Al re-planificar,
+> revisar alcance y estimaciones a la luz de lo aprendido en el pivote.
 
 ## FASE 3 — Coherencia arquitectónica
 

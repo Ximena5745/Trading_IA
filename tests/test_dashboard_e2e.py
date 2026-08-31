@@ -1,16 +1,32 @@
 """
 End-to-End Tests for Dashboard
 Validates: HTML rendering, chart elements, API endpoints, zoom sync
+
+Hermetic (SPEC-B01): the `live_server` fixture starts api.main:app on a free
+port for the session — no external server needed.
 """
-import pytest
-import requests
 import json
 from pathlib import Path
 from time import sleep
 
+import httpx as requests
+import pytest
+
+pytestmark = pytest.mark.integration
+
 BASE_URL = "http://127.0.0.1:8000"
 DASHBOARD_URL = f"{BASE_URL}/dashboard"
 HEALTH_URL = f"{BASE_URL}/health"
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _bind_live_server(live_server):
+    """Point the module's URL constants at the live test server."""
+    global BASE_URL, DASHBOARD_URL, HEALTH_URL
+    BASE_URL = live_server
+    DASHBOARD_URL = f"{BASE_URL}/dashboard"
+    HEALTH_URL = f"{BASE_URL}/health"
+    yield
 
 
 class TestDashboardHealth:
