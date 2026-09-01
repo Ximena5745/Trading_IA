@@ -224,6 +224,23 @@ Ver **`docs/CORE_VALIDATION_RAMA1_2026-08-30.md`**. Resumen:
 
 **⛔ El NO-GO de (b) es CONCLUYENTE en cuanto al edge:** las dos vías que podían
 salvarlo (más datos de cripto — 9 años; más datos de oro — 28 años) están
-**agotadas y ambas lo refutan**. Siguiente paso del plan de pivote: **Rama 2**
-(4h/1d + familias nuevas; el terminal MT5 IC Markets ya sirve ~28 años de todo el
-universo). Rama 0 y el pase independiente siguen pendientes pero no revierten (b).
+**agotadas y ambas lo refutan**.
+
+---
+
+## Actualización — Rama 2 ejecutada (barrido 4h/1d) — 2026-08-31
+
+Ver **`docs/CORE_VALIDATION_RAMA2_2026-08-31.md`**. Barrido de **84 combos**
+(7 símbolos × 6 familias × {1d, 4h}) sobre 14-28 años de datos MT5 IC Markets →
+**83 FRAGILE, 1 EDGE_ROBUST** (`US500/vol_breakout_v1/1d`). Ese único candidato es
+**falso positivo**: sobre `^GSPC` diario real 1970→2026 (57 años, holdout 11 años)
+da holdout Sharpe **−0.18**, P(Sharpe>0) full-sample **0.117**. Era artefacto de
+datos post-2012 + holdout en el bull 2023-2026.
+
+**Acumulado Ramas 1+2: ~95 combos (activo × estrategia × timeframe) sobre 9-57
+años → 0 con edge robusto.** Ramas 1 y 2 del plan de pivote **agotadas sin GO**.
+
+**Quedan Rama 3 (replanteo de universo) y Rama 4 (replanteo de producto) — decisión
+de negocio del usuario.** Rama 0 y el pase de auditoría cuantitativa independiente
+siguen pendientes (recomendado hacer el pase independiente **antes** de invertir en
+Rama 3). F3-F10 no arrancan.

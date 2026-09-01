@@ -73,7 +73,50 @@
 - **Alternativas de XAUUSD bajo 2.6** (`run_edge_robustness.py` extendido con `--strategy`): `data/reports/edge_robustness_XAUUSD_{tsmom_v1,MA_10_30}.{json,md}`. Ninguna pasa (b) con el holdout corto; `MA_10_30` parecía cerca (MC holdout −0.04).
 - **XAUUSD holdout largo (Palanca 4):** `pip install MetaTrader5` + descarga de terminales MT5 locales. Bullfy → 28 399 barras / 4.8 a. **IC Markets** (`ICMarketsSC-Demo`) → `data/raw/parquet/1h/xauusd_icm_1h.parquet` = **67 694 barras H1, 1998→2026 = 28.4 años**; holdout 20% = 13 538 barras ≈ **2.2 años** (cumple el corte de Rama 1). Spread ECN broker $0.05–0.10 → CostModel $0.30 conservador ~3–6×. `run_edge_robustness.py --data-file`. Reportes `edge_robustness_XAUUSD_{MA_10_30,Momentum}_{long,icm}.{json,md}`.
 - **Resultado concluyente:** cada métrica se degrada monótonamente al alargar la muestra (2.4a → 4.8a → 28.4a). A 28 años: `MA_10_30` MC full-sample **[−0.60, +0.54]** (P(Sh>0)=0.45), anchored WF 29 folds **−0.18 → FAIL**; `Momentum` **falla los 4 criterios** (holdout 0.63 < gate 0.8, negativo a costos ×2, WF −0.72). El "edge" era la ventana alcista 2021-2026.
-- **Veredicto:** las dos vías que podían salvar (b) — más datos de cripto (9 a) y más datos de oro (28 a) — están **agotadas y ambas refutan** la hipótesis de longitud de datos. **⛔ NO-GO de (b) CONCLUYENTE** (deja de ser preliminar en cuanto al edge). Siguiente: **Rama 2** del pivote (4h/1d + familias nuevas; el terminal MT5 IC Markets sirve ~28 años de todo el universo). Rama 0 y el pase independiente siguen pendientes pero no revierten (b).
+- **Veredicto:** las dos vías que podían salvar (b) — más datos de cripto (9 a) y más datos de oro (28 a) — están **agotadas y ambas refutan** la hipótesis de longitud de datos. **⛔ NO-GO de (b) CONCLUYENTE** (deja de ser preliminar en cuanto al edge). Rama 0 y el pase independiente siguen pendientes pero no revierten (b).
+
+**Rama 2 — barrido 4h/1d ejecutado (2026-08-31):** `docs/CORE_VALIDATION_RAMA2_2026-08-31.md`.
+- `scripts/fetch_mt5_history.py` (nuevo) + `run_edge_robustness.py --timeframe`. Datos MT5 IC Markets: XAUUSD 28a, XAGUSD 24a, FX/índices 14a.
+- **Barrido de 84 combos** (7 símbolos × 6 familias × {1d, 4h}), batería 2.6 completa → **83 FRAGILE, 1 EDGE_ROBUST** (`US500/vol_breakout_v1/1d`). Patrón universal: MC full-sample cruza cero en todos.
+- El único candidato es **falso positivo**: verificado sobre `^GSPC` diario real 1970→2026 (57 años, holdout 11a) → holdout Sharpe **−0.18**, P(Sharpe>0) full-sample **0.117** → FRAGILE. Era artefacto de datos post-2012 + holdout en el bull 2023-2026. `data/reports/rama2/spx57_*`.
+- **Acumulado del pivote (Ramas 1+2): ~95 combos (activo × estrategia × TF) sobre 9-57 años → 0 con edge robusto.** El universo de 8 macros líquidos no tiene edge direccional demostrable a 1h/4h/1d.
+
+---
+
+## ⛔ Estado del plan (2026-08-31) — decisión pendiente del usuario
+
+**Ramas 1 y 2 del plan de pivote agotadas sin GO.** El GATE F2-(b) es un NO-GO
+concluyente sobre el universo y las familias de estrategia actuales.
+
+Quedan dos caminos, y es **decisión de negocio del usuario**:
+- **Rama 3 — replanteo de universo** (cripto mid-cap, futuros de materias primas con
+  term structure, cestas de acciones por factores). Requiere datos y adaptadores nuevos.
+- **Rama 4 — replanteo de producto**: (a) pivotar a ejecución/analytics/risk (el
+  pipeline, la traza y el risk manager tienen valor sin alfa), (b) pausar + quant
+  externo, (c) archivar.
+
+**Decisión del usuario (2026-08-31): auditoría cuantitativa independiente primero.**
+Brief preparado: **`docs/audits/AUDIT_F2_QUANT_INDEPENDENT_BRIEF.md`** (para ejecutar
+en sesión nueva sin contexto, con `TRADER_AI_PROMPT_MAESTRO.md`).
+
+Revisión adversaria de método adelantada por el pivote (no es el pase independiente):
+- **M-1 CONFIRMADO Y CORREGIDO** — `net_returns` (`core/ml/i1_gate_validator/costs.py`)
+  sobre-cobraba **~2×** a los instrumentos MT5 (multiplicaba por `signals.diff().abs()`
+  =2/round-trip asumiendo coste de medio spread, pero la rama MT5 devolvía el spread
+  completo; la cripto sí devolvía coste por lado). **Fix:** rama MT5 → `/2`. Costes RT
+  ahora: XAUUSD 1.13 bps, EURUSD 0.56, US500 0.80. **Re-verificado con M-1 corregido
+  (1000 paths):** XAUUSD MA_10_30 28a pasa MC-holdout y costos ×2, pero el MC
+  **full-sample sigue cruzando cero** ([−0.40,+0.73], P=0.73) y fallan
+  `not_single_regime` + anchored WF. **El NO-GO de (b) se sostiene.** Ningún combo
+  llega a EDGE_ROBUST ni con M-1 corregido ni con coste cero.
+- **H1 (tamaño de bloque MC)** — no explica el NO-GO (block 5→30 apenas mueve la CI;
+  MC full-sample y anchored WF invariantes).
+- **P2** — el check `not_single_regime` tiene un hueco (deja pasar concentración de
+  P&L > 85% si el bucket menor no es negativo) → sesga a **aceptar**.
+
+El auditor independiente debe: verificar el fix de M-1 y su re-verificación, ponderar
+si M-1 afectó decisiones previas, y confirmar que el NO-GO de (b) se sostiene. En
+paralelo, cerrar Rama 0 (a)/(c). **F3-F10 no arrancan.**
 
 ---
 

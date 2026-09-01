@@ -182,6 +182,16 @@ XAUUSD era **enteramente un artefacto de la ventana alcista 2021‑2026**:
 **queda refutada de forma concluyente para XAUUSD** con la muestra más larga
 obtenible (28 años). El oro a 1h con estrategias técnicas **no tiene edge**.
 
+> **Addendum (2026-08-31) — corrección M-1.** Las cifras de esta sección se
+> calcularon con `net_returns` **sobre-cobrando ~2×** a los instrumentos MT5
+> (ver `docs/audits/AUDIT_F2_QUANT_INDEPENDENT_BRIEF.md` §M-1). Tras corregirlo
+> (rama MT5 → medio spread), la re-verificación (1000 paths) da:
+> XAUUSD/Momentum 28a holdout **+1.00** (MC full-sample [−0.47,+0.72] P=0.65, WF −0.08);
+> XAUUSD/MA_10_30 28a holdout **+1.42** (MC-holdout pasa, pero MC full-sample
+> **[−0.40,+0.73] P=0.73** y fallan `not_single_regime` + WF). **El veredicto no
+> cambia:** ninguno alcanza (b). Reportes: `data/reports/audit/m1_*.json`,
+> `data/reports/edge_robustness.{json,md}` (regenerado con M-1 + datos ICM 28a).
+
 ---
 
 ## Veredicto de Rama 1

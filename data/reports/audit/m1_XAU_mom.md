@@ -1,25 +1,25 @@
-# Edge Robustness — 2026-09-01T02:08:34.149460+00:00
+# Edge Robustness — 2026-09-01T02:06:40.550049+00:00
 
 Gate F2-(b) criteria · timeframe: 1h · periods/year: 6048 · paths: 1000 · block: 24 bars
 
 ## XAUUSD — Momentum {'lookback': 16} — **FRAGILE**
 
-- Holdout Sharpe neto (recalculado): **1.0086** (aprobado: 1.3232) · holdout bars = 13538 · turnover = 2054.0 · cost drag = 0.3805
-- **Monte Carlo (holdout)** 1000 paths: CI95 = [-0.2408, 2.3868], P(Sharpe>0) = 0.939 -> FAIL
-- Monte Carlo (full sample, contexto): CI95 = [-0.4829, 0.7242], P(Sharpe>0) = 0.641
-- **Cost sweep**: Sharpe neto ×2 = 0.63; anulación (≤0) en ×None; < gate 0.8 en ×1.75 -> PASS
+- Holdout Sharpe neto (recalculado): **1.004** (aprobado: 1.3232) · holdout bars = 13538 · turnover = 2054.0 · cost drag = 0.3805
+- **Monte Carlo (holdout)** 1000 paths: CI95 = [-0.2549, 2.4062], P(Sharpe>0) = 0.941 -> FAIL
+- Monte Carlo (full sample, contexto): CI95 = [-0.4668, 0.719], P(Sharpe>0) = 0.647
+- **Cost sweep**: Sharpe neto ×2 = 0.6254; anulación (≤0) en ×None; < gate 0.8 en ×1.75 -> PASS
 - **Regime**: ADX+ buckets = 1/2, vol+ buckets = 1/2, single-regime = True -> FAIL
 - **Anchored WF**: 29 folds, 11 positivos, OOS Sharpe neto = -0.0764 -> FAIL
 
 | Cost × | Sharpe net |
 |--:|--:|
-| 1.0 | 1.0086 |
-| 1.25 | 0.9138 |
-| 1.5 | 0.8191 |
-| 1.75 | 0.7245 |
-| 2.0 | 0.63 |
-| 2.5 | 0.4415 |
-| 3.0 | 0.2536 |
+| 1.0 | 1.004 |
+| 1.25 | 0.9091 |
+| 1.5 | 0.8144 |
+| 1.75 | 0.7199 |
+| 2.0 | 0.6254 |
+| 2.5 | 0.4369 |
+| 3.0 | 0.249 |
 
 | Fold | train bars | best params | IS Sharpe | OOS Sharpe |
 |--:|--:|---|--:|--:|
